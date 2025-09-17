@@ -38,7 +38,7 @@
     </button>
 
     <!-- Image Count -->
-    @if ((property().images?.length ?? 1) > 1) {
+    @if (property().images.length > 1) {
       <div class="image-count">
         <mat-icon>photo_library</mat-icon>
         {{ property().images.length }}

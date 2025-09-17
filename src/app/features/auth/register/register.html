@@ -198,11 +198,15 @@
                           (click)="onSubmit()"
                           [disabled]="!passwordForm.valid || isLoading()">
                     @if (isLoading()) {
-                      <mat-icon class="spin">refresh</mat-icon>
-                      Registrazione...
+                      <ng-container>
+                        <mat-icon class="spin">refresh</mat-icon>
+                        Registrazione...
+                      </ng-container>
                     } @else {
-                      <mat-icon>person_add</mat-icon>
-                      Crea Account
+                      <ng-container>
+                        <mat-icon>person_add</mat-icon>
+                        Crea Account
+                      </ng-container>
                     }
                   </button>
                 }
@@ -252,10 +256,14 @@
                           (click)="onSubmit()"
                           [disabled]="!agentInfoForm.valid || isLoading()">
                     @if (isLoading()) {
-                      <mat-icon class="spin">refresh</mat-icon>
-                      Registrazione...
+                      <ng-container>
+                        <mat-icon class="spin">refresh</mat-icon>
+                        Registrazione...
+                      </ng-container>
                     } @else {
-                      <mat-icon>person_add</mat-icon>
+                      <ng-container>
+                        <mat-icon>person_add</mat-icon>
+                        </ng-container>
                       Crea Account Agente
                     }
                   </button>

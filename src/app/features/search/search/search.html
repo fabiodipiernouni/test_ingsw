@@ -12,7 +12,7 @@
     </div>
 
     <!-- Search Form -->
-    <!-- [initialFilters]="currentFilters()"-->
+    <!-- TODO [initialFilters]="currentFilters()"-->
     <app-search-form
       (filtersChanged)="onFiltersChanged($event)"
       (searchExecuted)="onSearchExecuted($event)">
@@ -137,8 +137,10 @@
                 <mat-spinner diameter="20"></mat-spinner>
                 Caricamento...
               } @else {
-                <mat-icon>expand_more</mat-icon>
-                Carica Altri Immobili
+                <ng-container>
+                  <mat-icon>clear</mat-icon>
+                  Pulisci Ricerca
+                </ng-container>
               }
             </button>
 

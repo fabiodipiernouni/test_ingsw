@@ -278,11 +278,15 @@
                       (click)="onSubmit()"
                       [disabled]="isLoading() || !basicInfoForm.valid || !detailsForm.valid || !addressForm.valid">
                 @if (isLoading()) {
-                  <mat-icon class="spin">refresh</mat-icon>
-                  Caricamento...
+                  <ng-container>
+                    <mat-icon class="spin">refresh</mat-icon>
+                    Caricamento...
+                  </ng-container>
                 } @else {
-                  <mat-icon>publish</mat-icon>
-                  Pubblica Immobile
+                  <ng-container>
+                    <mat-icon>publish</mat-icon>
+                    Pubblica Immobile
+                  </ng-container>
                 }
               </button>
             </div>

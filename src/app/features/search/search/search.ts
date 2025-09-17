@@ -9,7 +9,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SearchForm } from '../search-form/search-form';
 import { PropertyList } from '../../properties/property-list/property-list';
-import { PropertyService } from '../../../core/services/property.service';
+import { PropertyService } from '@core/services/property.service';
 import { SearchFilters, SearchResult } from '@core/models/search.model';
 import { Property } from '@core/models/property.model';
 import {MatTooltip} from '@angular/material/tooltip';

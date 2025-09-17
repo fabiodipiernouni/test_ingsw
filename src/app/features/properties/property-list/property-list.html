@@ -18,8 +18,8 @@
 
     <div class="property-grid">
       @for (prop of properties(); track prop.id) {
+        <!--   TODO       [property]="prop"-->
         <app-property-card
-          [property]="prop"
           (propertyClick)="onPropertyClick($event)">
         </app-property-card>
       }

@@ -60,11 +60,15 @@
                   class="login-button"
                   [disabled]="!loginForm.valid || isLoading()">
             @if (isLoading()) {
-              <mat-icon class="spin">refresh</mat-icon>
-              Accesso in corso...
+              <ng-container>
+                <mat-icon class="spin">refresh</mat-icon>
+                Accesso in corso...
+              </ng-container>
             } @else {
-              <mat-icon>login</mat-icon>
-              Accedi
+              <ng-container>
+                <mat-icon>login</mat-icon>
+                Accedi
+              </ng-container>
             }
           </button>
         </form>
