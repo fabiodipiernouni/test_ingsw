@@ -1,1 +1,253 @@
-<p>header works!</p>
+<mat-toolbar class="app-header">
+  <div class="header-container">
+    <!-- Logo and Brand -->
+    <div class="brand" routerLink="/">
+      <mat-icon class="brand-icon">home</mat-icon>
+      <span class="brand-text">DietiEstates25</span>
+    </div>
+
+    <!-- Desktop Navigation -->
+    <nav class="desktop-nav">
+      <a mat-button routerLink="/search" routerLinkActive="active">
+        <mat-icon>search</mat-icon>
+        Cerca
+      </a>
+
+      @if (isAuthenticated()) {
+        <a mat-button routerLink="/saved-searches" routerLinkActive="active">
+          <mat-icon>bookmark</mat-icon>
+          Ricerche Salvate
+        </a>
+
+        @if (isAgent()) {
+          <a mat-button routerLink="/properties/upload" routerLinkActive="active">
+            <mat-icon>add_home</mat-icon>
+            Carica Immobile
+          </a>
+
+          <a mat-button routerLink="/dashboard" routerLinkActive="active">
+            <mat-icon>dashboard</mat-icon>
+            Dashboard
+          </a>
+        }
+      }
+    </nav>
+
+    <!-- User Actions -->
+    <div class="user-actions">
+      @if (isAuthenticated()) {
+        <!-- Notifications -->
+        <button mat-icon-button
+                class="notification-button"
+                (click)="onNotificationsClick()"
+                matTooltip="Notifiche">
+          @if (unreadNotifications() > 0) {
+            <mat-icon [matBadge]="unreadNotifications()"
+                      matBadgeColor="warn"
+                      matBadgeSize="small">
+              notifications
+            </mat-icon>
+          } @else {
+            <mat-icon>notifications_none</mat-icon>
+          }
+        </button>
+
+        <!-- User Menu -->
+        <button mat-icon-button
+                [matMenuTriggerFor]="userMenu"
+                class="user-avatar"
+                matTooltip="{{ getUserDisplayName() }}">
+          @if (currentUser()?.avatar) {
+            <img [src]="currentUser()?.avatar"
+                 [alt]="getUserDisplayName()"
+                 class="avatar-image">
+          } @else {
+            <div class="avatar-initials">
+              {{ getUserInitials() }}
+            </div>
+          }
+        </button>
+
+        <mat-menu #userMenu="matMenu" class="user-menu">
+          <div class="user-info">
+            <div class="user-name">{{ getUserDisplayName() }}</div>
+            <div class="user-email">{{ currentUser()?.email }}</div>
+            @if (isAgent()) {
+              <div class="user-role">Agente Immobiliare</div>
+            }
+          </div>
+
+          <mat-divider></mat-divider>
+
+          <button mat-menu-item (click)="onProfileClick()">
+            <mat-icon>person</mat-icon>
+            <span>Il Mio Profilo</span>
+          </button>
+
+          @if (isAgent()) {
+            <button mat-menu-item (click)="onUploadProperty()">
+              <mat-icon>add_home</mat-icon>
+              <span>Carica Immobile</span>
+            </button>
+
+            <button mat-menu-item routerLink="/dashboard">
+              <mat-icon>dashboard</mat-icon>
+              <span>Dashboard</span>
+            </button>
+          } @else {
+            <button mat-menu-item routerLink="/favorites">
+              <mat-icon>favorite</mat-icon>
+              <span>I Miei Preferiti</span>
+            </button>
+          }
+
+          <button mat-menu-item routerLink="/saved-searches">
+            <mat-icon>bookmark</mat-icon>
+            <span>Ricerche Salvate</span>
+          </button>
+
+          <button mat-menu-item routerLink="/notifications">
+            <mat-icon>notifications</mat-icon>
+            <span>Notifiche</span>
+            @if (unreadNotifications() > 0) {
+              <mat-chip class="unread-badge">{{ unreadNotifications() }}</mat-chip>
+            }
+          </button>
+
+          <mat-divider></mat-divider>
+
+          <button mat-menu-item routerLink="/settings">
+            <mat-icon>settings</mat-icon>
+            <span>Impostazioni</span>
+          </button>
+
+          <button mat-menu-item (click)="onLogout()" class="logout-item">
+            <mat-icon>logout</mat-icon>
+            <span>Esci</span>
+          </button>
+        </mat-menu>
+      } @else {
+        <!-- Guest Actions -->
+        <button mat-button (click)="onLogin()" class="login-button">
+          <mat-icon>login</mat-icon>
+          Accedi
+        </button>
+
+        <button mat-raised-button
+                color="primary"
+                (click)="onRegister()"
+                class="register-button">
+          <mat-icon>person_add</mat-icon>
+          Registrati
+        </button>
+      }
+
+      <!-- Mobile Menu Toggle -->
+      <button mat-icon-button
+              class="mobile-menu-toggle"
+              (click)="toggleMobileMenu()"
+              [class.active]="isMobileMenuOpen()">
+        <mat-icon>{{ isMobileMenuOpen() ? 'close' : 'menu' }}</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Navigation -->
+  @if (isMobileMenuOpen()) {
+    <div class="mobile-nav">
+      <div class="mobile-nav-content">
+        @if (isAuthenticated()) {
+          <!-- User Info -->
+          <div class="mobile-user-info">
+            <div class="mobile-avatar">
+              @if (currentUser()?.avatar) {
+                <img [src]="currentUser()?.avatar"
+                     [alt]="getUserDisplayName()">
+              } @else {
+                <div class="avatar-initials">{{ getUserInitials() }}</div>
+              }
+            </div>
+            <div class="user-details">
+              <div class="user-name">{{ getUserDisplayName() }}</div>
+              <div class="user-email">{{ currentUser()?.email }}</div>
+            </div>
+          </div>
+
+          <mat-divider></mat-divider>
+        }
+
+        <!-- Navigation Links -->
+        <div class="mobile-nav-links">
+          <a mat-button routerLink="/search" (click)="toggleMobileMenu()">
+            <mat-icon>search</mat-icon>
+            <span>Cerca Immobili</span>
+          </a>
+
+          @if (isAuthenticated()) {
+            <a mat-button routerLink="/saved-searches" (click)="toggleMobileMenu()">
+              <mat-icon>bookmark</mat-icon>
+              <span>Ricerche Salvate</span>
+            </a>
+
+            <a mat-button routerLink="/notifications" (click)="toggleMobileMenu()">
+              <mat-icon>notifications</mat-icon>
+              <span>Notifiche</span>
+              @if (unreadNotifications() > 0) {
+                <mat-chip class="unread-badge">{{ unreadNotifications() }}</mat-chip>
+              }
+            </a>
+
+            @if (isAgent()) {
+              <a mat-button routerLink="/properties/upload" (click)="toggleMobileMenu()">
+                <mat-icon>add_home</mat-icon>
+                <span>Carica Immobile</span>
+              </a>
+
+              <a mat-button routerLink="/dashboard" (click)="toggleMobileMenu()">
+                <mat-icon>dashboard</mat-icon>
+                <span>Dashboard</span>
+              </a>
+            } @else {
+              <a mat-button routerLink="/favorites" (click)="toggleMobileMenu()">
+                <mat-icon>favorite</mat-icon>
+                <span>I Miei Preferiti</span>
+              </a>
+            }
+
+            <a mat-button (click)="onProfileClick()">
+              <mat-icon>person</mat-icon>
+              <span>Il Mio Profilo</span>
+            </a>
+
+            <a mat-button routerLink="/settings" (click)="toggleMobileMenu()">
+              <mat-icon>settings</mat-icon>
+              <span>Impostazioni</span>
+            </a>
+
+            <mat-divider></mat-divider>
+
+            <button mat-button (click)="onLogout()" class="logout-button">
+              <mat-icon>logout</mat-icon>
+              <span>Esci</span>
+            </button>
+          } @else {
+            <div class="guest-actions">
+              <button mat-button (click)="onLogin()" class="mobile-login">
+                <mat-icon>login</mat-icon>
+                <span>Accedi</span>
+              </button>
+
+              <button mat-raised-button
+                      color="primary"
+                      (click)="onRegister()"
+                      class="mobile-register">
+                <mat-icon>person_add</mat-icon>
+                <span>Registrati</span>
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</mat-toolbar>

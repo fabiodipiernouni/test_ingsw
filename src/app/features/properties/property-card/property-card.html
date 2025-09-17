@@ -1,1 +1,142 @@
-<p>property-card works!</p>
+<mat-card class="property-card"
+          matRipple
+          [matRippleDisabled]="false"
+          (click)="onCardClick()">
+
+  <!-- Property Image -->
+  <div class="property-image-container">
+    <div class="property-image"
+         [style.background-image]="'url(' + getImageUrl() + ')'"
+         [class.loaded]="imageLoaded()">
+      <img [src]="getImageUrl()"
+           (load)="onImageLoad()"
+           (error)="onImageLoad()"
+           style="display: none;"
+           alt="Immagine immobile">
+
+      @if (!imageLoaded()) {
+        <div class="image-placeholder">
+          <mat-icon>home_work</mat-icon>
+        </div>
+      }
+    </div>
+
+    <!-- Property Badge -->
+    <div class="property-badge"
+         [class.sale]="property().listingType === 'sale'"
+         [class.rent]="property().listingType === 'rent'">
+      {{ getListingTypeLabel() }}
+    </div>
+
+    <!-- Favorite Button -->
+    <button mat-icon-button
+            class="favorite-button"
+            [class.active]="isFavorite()"
+            (click)="onFavoriteClick($event)"
+            [attr.aria-label]="isFavorite() ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti'">
+      <mat-icon>{{ isFavorite() ? 'favorite' : 'favorite_border' }}</mat-icon>
+    </button>
+
+    <!-- Image Count -->
+    @if ((property().images?.length ?? 1) > 1) {
+      <div class="image-count">
+        <mat-icon>photo_library</mat-icon>
+        {{ property().images.length }}
+      </div>
+    }
+  </div>
+
+  <!-- Property Content -->
+  <mat-card-content class="property-content">
+    <!-- Price -->
+    <div class="property-price">
+      {{ property().price | currency:'EUR':'symbol':'1.0-0' }}
+      @if (property().listingType === 'rent') {
+        <span class="price-period">/mese</span>
+      }
+    </div>
+
+    <!-- Title -->
+    <h3 class="property-title">{{ property().title }}</h3>
+
+    <!-- Property Type -->
+    <div class="property-type">{{ getPropertyTypeLabel() }}</div>
+
+    <!-- Location -->
+    <div class="property-location">
+      <mat-icon>location_on</mat-icon>
+      <span>{{ property().address.city }}, {{ property().address.province }}</span>
+    </div>
+
+    <!-- Features -->
+    <div class="property-features">
+      <div class="feature">
+        <mat-icon>bed</mat-icon>
+        <span>{{ property().bedrooms }}</span>
+      </div>
+      <div class="feature">
+        <mat-icon>bathtub</mat-icon>
+        <span>{{ property().bathrooms }}</span>
+      </div>
+      <div class="feature">
+        <mat-icon>square_foot</mat-icon>
+        <span>{{ property().area }}m²</span>
+      </div>
+      @if (property().energyClass) {
+        <div class="feature energy-class"
+             [style.color]="getEnergyClassColor()">
+          <mat-icon>energy_savings_leaf</mat-icon>
+          <span>{{ property().energyClass }}</span>
+        </div>
+      }
+    </div>
+
+    <!-- Amenities Tags -->
+    <div class="property-amenities">
+      @if (property().hasElevator) {
+        <mat-chip class="amenity-chip">
+          <mat-icon matChipLeading>elevator</mat-icon>
+          Ascensore
+        </mat-chip>
+      }
+      @if (property().hasBalcony) {
+        <mat-chip class="amenity-chip">
+          <mat-icon matChipLeading>balcony</mat-icon>
+          Balcone
+        </mat-chip>
+      }
+      @if (property().hasGarden) {
+        <mat-chip class="amenity-chip">
+          <mat-icon matChipLeading>yard</mat-icon>
+          Giardino
+        </mat-chip>
+      }
+      @if (property().hasParking) {
+        <mat-chip class="amenity-chip">
+          <mat-icon matChipLeading>local_parking</mat-icon>
+          Parcheggio
+        </mat-chip>
+      }
+    </div>
+  </mat-card-content>
+
+  <!-- Actions -->
+  <mat-card-actions class="property-actions">
+    <button mat-raised-button
+            color="primary"
+            class="action-button primary">
+      <mat-icon>visibility</mat-icon>
+      Dettagli
+    </button>
+    <button mat-button
+            class="action-button secondary">
+      <mat-icon>phone</mat-icon>
+      Contatta
+    </button>
+    <button mat-icon-button
+            class="action-button share"
+            title="Condividi">
+      <mat-icon>share</mat-icon>
+    </button>
+  </mat-card-actions>
+</mat-card>

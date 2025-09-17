@@ -1,12 +1,31 @@
-// core/models/user.model.ts
 export interface User {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
-  userType: 'client' | 'agent' | 'admin';
-  isActive: boolean;
+  role: 'client' | 'agent' | 'admin';
+  avatar?: string;
+  phone?: string;
+  isVerified: boolean;
   createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Agent extends User {
+  role: 'agent';
+  agencyName: string;
+  licenseNumber: string;
+  biography?: string;
+  rating: number;
+  reviewsCount: number;
+  specializations: string[];
+}
+
+export interface AuthResponse {
+  user: User;
+  token: string;
+  refreshToken: string;
+  expiresIn: number;
 }
 
 export interface LoginRequest {
@@ -19,11 +38,7 @@ export interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
-  userType: 'client' | 'agent';
-}
-
-export interface AuthResponse {
-  user: User;
-  accessToken: string;
-  refreshToken: string;
+  role: 'client' | 'agent';
+  agencyName?: string;
+  licenseNumber?: string;
 }

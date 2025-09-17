@@ -1,0 +1,126 @@
+import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+
+@Component({
+  selector: 'app-not-found',
+  standalone: true,
+  imports: [
+    CommonModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule
+  ],
+  template: `
+    <div class="error-container">
+      <mat-card class="error-card">
+        <mat-card-content>
+          <div class="error-content">
+            <div class="error-number">404</div>
+            <mat-icon class="error-icon">search_off</mat-icon>
+            <h1>Pagina Non Trovata</h1>
+            <p>
+              La pagina che stai cercando non esiste o è stata spostata.
+              <br>
+              Controlla l'URL o torna alla homepage.
+            </p>
+            <div class="error-actions">
+              <button mat-raised-button color="primary" (click)="goHome()">
+                <mat-icon>home</mat-icon>
+                Torna alla Home
+              </button>
+              <button mat-button (click)="goToSearch()">
+                <mat-icon>search</mat-icon>
+                Cerca Immobili
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  `,
+  styles: [`
+    .error-container {
+      min-height: calc(100vh - 140px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+
+    .error-card {
+      max-width: 500px;
+      text-align: center;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .error-content {
+      padding: 2rem;
+    }
+
+    .error-number {
+      font-size: 6rem;
+      font-weight: 700;
+      color: #3f51b5;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #3f51b5, #9c27b0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .error-icon {
+      font-size: 3rem;
+      width: 3rem;
+      height: 3rem;
+      color: #cbd5e0;
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      color: #1a202c;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    p {
+      color: #718096;
+      margin-bottom: 2rem;
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+
+    .error-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 480px) {
+      .error-number {
+        font-size: 4rem;
+      }
+
+      .error-actions {
+        flex-direction: column;
+      }
+    }
+  `]
+})
+export class NotFound {
+  private router = inject(Router);
+
+  goHome(): void {
+    this.router.navigate(['/']);
+  }
+
+  goToSearch(): void {
+    this.router.navigate(['/search']);
+  }
+}

@@ -1,0 +1,249 @@
+.register-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.register-card {
+  width: 100%;
+  max-width: 600px;
+
+  .mat-mdc-card {
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+  }
+}
+
+.register-header {
+  text-align: center;
+  padding: 1rem 0;
+
+  .logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+
+    mat-icon {
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+      color: #3f51b5;
+    }
+
+    span {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #3f51b5, #9c27b0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  }
+
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #1a202c;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    color: #718096;
+    font-size: 1rem;
+    margin: 0;
+  }
+}
+
+.mat-mdc-card-content {
+  padding: 2rem;
+}
+
+.form-section {
+  margin-bottom: 2rem;
+
+  h3 {
+    color: #1a202c;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.full-width {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.account-types {
+  h3 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #2d3748;
+  }
+}
+
+.account-type-option {
+  margin-bottom: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: #3f51b5;
+    background: rgba(63, 81, 181, 0.02);
+  }
+
+  .mat-mdc-radio-button {
+    width: 100%;
+    padding: 1.5rem;
+
+    .mdc-radio {
+      align-self: flex-start;
+      margin-top: 0.25rem;
+    }
+  }
+}
+
+.account-type-content {
+  margin-left: 2rem;
+
+  h4 {
+    color: #1a202c;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+  }
+
+  p {
+    color: #718096;
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+}
+
+.password-requirements {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: #fef7f0;
+  border-radius: 8px;
+  border: 1px solid #fed7aa;
+
+  p {
+    color: #c2410c;
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+  }
+}
+
+.requirements-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.requirement {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #dc2626;
+
+  &.met {
+    color: #16a34a;
+  }
+
+  mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+.terms-checkbox {
+  margin: 1.5rem 0;
+
+  .terms-link {
+    color: #3f51b5;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.step-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2rem;
+  gap: 1rem;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+  margin-right: 0.5rem;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.mat-mdc-card-footer {
+  padding: 1.5rem 2rem 2rem 2rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.login-link {
+  text-align: center;
+
+  span {
+    color: #718096;
+    font-size: 0.95rem;
+  }
+
+  .login-button {
+    color: #3f51b5;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .register-container {
+    padding: 1rem 0.5rem;
+  }
+
+  .mat-mdc-card-content {
+    padding: 1.5rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .step-actions {
+    flex-direction: column;
+  }
+}
