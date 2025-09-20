@@ -1,0 +1,787 @@
+openapi: 3.0.3
+info:
+  title: DietiEstates25 Notification Service
+  version: 1.0.0
+  description: Sistema di notifiche per eventi e comunicazioni (Requisito 11)
+
+servers:
+  - url: http://localhost:3005
+    description: Development server
+
+paths:
+  /notifications:
+    get:
+      operationId: getNotifications
+      summary: Ottieni notifiche utente
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/NotificationType'
+        - name: priority
+          in: query
+          schema:
+            type: string
+            enum: [low, normal, high, urgent]
+      responses:
+        '200':
+          description: User notifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+                  unreadCount:
+                    type: integer
+                    minimum: 0
+                  totalCount:
+                    type: integer
+                    minimum: 0
+                  currentPage:
+                    type: integer
+                    minimum: 1
+                  totalPages:
+                    type: integer
+                    minimum: 0
+                  hasNextPage:
+                    type: boolean
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      operationId: createNotification
+      summary: Crea nuova notifica (uso interno tra servizi)
+      security:
+        - serviceAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+      responses:
+        '201':
+          description: Notification created and sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '400':
+          description: Invalid notification data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /notifications/{notificationId}:
+    get:
+      operationId: getNotificationById
+      summary: Ottieni singola notifica
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Notification details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /notifications/{notificationId}/read:
+    post:
+      operationId: markNotificationAsRead
+      summary: Marca notifica come letta
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /notifications/mark-all-read:
+    post:
+      operationId: markAllNotificationsAsRead
+      summary: Marca tutte le notifiche come lette
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  $ref: '#/components/schemas/NotificationType'
+                  description: "Optional: mark only specific type as read"
+      responses:
+        '200':
+          description: All notifications marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  markedCount:
+                    type: integer
+                    minimum: 0
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /notifications/send-bulk:
+    post:
+      operationId: sendBulkNotifications
+      summary: Invio notifiche bulk (sistema interno)
+      security:
+        - serviceAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkNotificationRequest'
+      responses:
+        '200':
+          description: Bulk notifications sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sentCount:
+                    type: integer
+                    minimum: 0
+                  failedCount:
+                    type: integer
+                    minimum: 0
+                  notificationIds:
+                    type: array
+                    items:
+                      type: string
+                      format: uuid
+        '400':
+          description: Invalid bulk request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /notifications/templates:
+    get:
+      operationId: getNotificationTemplates
+      summary: Ottieni template notifiche disponibili
+      security:
+        - serviceAuth: []
+      responses:
+        '200':
+          description: Notification templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationTemplate'
+
+  /notifications/stats:
+    get:
+      operationId: getNotificationStats
+      summary: Statistiche notifiche utente
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 30
+            minimum: 1
+            maximum: 365
+      responses:
+        '200':
+          description: Notification statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationStats'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /notifications/preferences:
+    get:
+      operationId: getNotificationPreferences
+      summary: Ottieni preferenze di notifica
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Notification preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      operationId: updateNotificationPreferences
+      summary: Aggiorna preferenze di notifica
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPreferencesUpdate'
+      responses:
+        '200':
+          description: Preferences updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /notifications/push/subscribe:
+    post:
+      operationId: subscribeToPushNotifications
+      summary: Sottoscrivi push notifications
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - endpoint
+                - keys
+              properties:
+                endpoint:
+                  type: string
+                  format: uri
+                keys:
+                  type: object
+                  properties:
+                    p256dh:
+                      type: string
+                    auth:
+                      type: string
+                deviceInfo:
+                  type: object
+                  properties:
+                    userAgent:
+                      type: string
+                    platform:
+                      type: string
+      responses:
+        '201':
+          description: Push subscription created
+        '400':
+          description: Invalid subscription data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /notifications/push/unsubscribe:
+    post:
+      operationId: unsubscribeFromPushNotifications
+      summary: Disattiva push notifications
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - endpoint
+              properties:
+                endpoint:
+                  type: string
+                  format: uri
+      responses:
+        '200':
+          description: Push subscription removed
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    serviceAuth:
+      type: apiKey
+      in: header
+      name: X-Service-Token
+
+  schemas:
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/NotificationType'
+        title:
+          type: string
+          maxLength: 200
+        message:
+          type: string
+          maxLength: 1000
+        data:
+          type: object
+          description: "Additional notification data (property details, etc.)"
+          additionalProperties: true
+        isRead:
+          type: boolean
+          default: false
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+          default: normal
+        channel:
+          type: string
+          enum: [in_app, email, push, sms]
+          default: in_app
+        actionUrl:
+          type: string
+          format: uri
+          description: "URL to navigate when notification is clicked"
+        imageUrl:
+          type: string
+          format: uri
+          description: "Optional image for rich notifications"
+        expiresAt:
+          type: string
+          format: date-time
+          description: "When notification expires (optional)"
+        createdAt:
+          type: string
+          format: date-time
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+        scheduledAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: "For scheduled notifications"
+        sentAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    NotificationType:
+      type: string
+      enum:
+        - new_property_match
+        - price_change
+        - property_status_change
+        - saved_search_results
+        - account_verification
+        - property_view
+        - favorite_added
+        - message_received
+        - system_maintenance
+        - payment_reminder
+        - new_review
+        - property_approved
+        - property_expired
+
+    NotificationRequest:
+      type: object
+      required:
+        - userId
+        - type
+        - title
+        - message
+      properties:
+        userId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/NotificationType'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        message:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        data:
+          type: object
+          additionalProperties: true
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+          default: normal
+        channel:
+          type: string
+          enum: [in_app, email, push, sms]
+          default: in_app
+        actionUrl:
+          type: string
+          format: uri
+        imageUrl:
+          type: string
+          format: uri
+        scheduledAt:
+          type: string
+          format: date-time
+          description: "Optional: schedule notification for later"
+        expiresAt:
+          type: string
+          format: date-time
+
+    BulkNotificationRequest:
+      type: object
+      required:
+        - userIds
+        - type
+        - title
+        - message
+      properties:
+        userIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+          maxItems: 1000
+        type:
+          $ref: '#/components/schemas/NotificationType'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        message:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        data:
+          type: object
+          additionalProperties: true
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+          default: normal
+        channel:
+          type: string
+          enum: [in_app, email, push, sms]
+          default: in_app
+        actionUrl:
+          type: string
+          format: uri
+        imageUrl:
+          type: string
+          format: uri
+        scheduledAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+
+    NotificationPreferences:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        emailNotifications:
+          type: boolean
+          default: true
+        pushNotifications:
+          type: boolean
+          default: true
+        smsNotifications:
+          type: boolean
+          default: false
+        enabledTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationType'
+          description: "Which notification types user wants to receive"
+        quietHours:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              default: false
+            startTime:
+              type: string
+              format: time
+              example: "22:00"
+            endTime:
+              type: string
+              format: time
+              example: "08:00"
+            timezone:
+              type: string
+              example: "Europe/Rome"
+        frequency:
+          type: string
+          enum: [immediate, daily_digest, weekly_digest]
+          default: immediate
+        language:
+          type: string
+          enum: [it, en]
+          default: it
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    NotificationPreferencesUpdate:
+      type: object
+      properties:
+        emailNotifications:
+          type: boolean
+        pushNotifications:
+          type: boolean
+        smsNotifications:
+          type: boolean
+        enabledTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationType'
+        quietHours:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+            startTime:
+              type: string
+              format: time
+            endTime:
+              type: string
+              format: time
+            timezone:
+              type: string
+        frequency:
+          type: string
+          enum: [immediate, daily_digest, weekly_digest]
+        language:
+          type: string
+          enum: [it, en]
+
+    NotificationTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/NotificationType'
+        name:
+          type: string
+        titleTemplate:
+          type: string
+        messageTemplate:
+          type: string
+        defaultData:
+          type: object
+        requiredFields:
+          type: array
+          items:
+            type: string
+        channels:
+          type: array
+          items:
+            type: string
+            enum: [in_app, email, push, sms]
+        isActive:
+          type: boolean
+
+    NotificationStats:
+      type: object
+      properties:
+        totalSent:
+          type: integer
+          minimum: 0
+        totalRead:
+          type: integer
+          minimum: 0
+        unreadCount:
+          type: integer
+          minimum: 0
+        readRate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        byType:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              sent:
+                type: integer
+              read:
+                type: integer
+              unread:
+                type: integer
+        byChannel:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              sent:
+                type: integer
+              delivered:
+                type: integer
+              failed:
+                type: integer
+        recentActivity:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              count:
+                type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: integer
+        details:
+          type: object
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time

@@ -1,0 +1,579 @@
+openapi: 3.0.3
+info:
+  title: DietiEstates25 Auth Service
+  version: 1.0.0
+  description: Gestione autenticazione locale e tramite provider esterni (OAuth2)
+servers:
+  - url: http://localhost:3001
+    description: Development server
+
+paths:
+  /login:
+    post:
+      operationId: login
+      summary: Login utente con password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /oauth/{provider}:
+    get:
+      operationId: oauthRedirect
+      summary: Avvia autenticazione tramite provider esterno
+      description: Avvia flow OAuth2 con redirect verso il provider selezionato (google, facebook, github)
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, facebook, github]
+          description: Provider OAuth2 da utilizzare
+        - name: redirect_uri
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uri
+          description: URL di callback personalizzato
+      responses:
+        '302':
+          description: Redirect al provider OAuth
+          headers:
+            Location:
+              description: URL del provider OAuth
+              schema:
+                type: string
+                format: uri
+        '400':
+          description: Provider non supportato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /oauth/{provider}/callback:
+    get:
+      operationId: oauthCallback
+      summary: Callback OAuth2 provider
+      description: Callback su cui il provider esterno ridireziona l'utente dopo la login
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, facebook, github]
+          description: Provider OAuth2 utilizzato
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Authorization code dal provider OAuth
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+          description: State parameter per sicurezza CSRF
+        - name: error
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Errore dal provider OAuth
+        - name: error_description
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Descrizione errore dal provider
+      responses:
+        '200':
+          description: Login tramite provider esterno completato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '302':
+          description: Redirect al frontend con token
+          headers:
+            Location:
+              description: URL del frontend con token nei query params
+              schema:
+                type: string
+                format: uri
+        '400':
+          description: Errore nel callback OAuth
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid OAuth code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /oauth/{provider}/link:
+    post:
+      operationId: linkOAuthAccount
+      summary: Collega account esistente a provider OAuth
+      description: Permette di collegare un account esistente a un provider OAuth esterno
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, facebook, github]
+          description: Provider OAuth2 da collegare
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - accessToken
+              properties:
+                accessToken:
+                  type: string
+                  description: Access token dal provider OAuth
+      responses:
+        '200':
+          description: Account collegato con successo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  linkedProvider:
+                    type: string
+        '400':
+          description: Errore nel collegamento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Account già collegato a questo provider
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /oauth/{provider}/unlink:
+    delete:
+      operationId: unlinkOAuthAccount
+      summary: Scollega provider OAuth
+      description: Rimuove il collegamento con un provider OAuth esterno
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, facebook, github]
+          description: Provider OAuth2 da scollegare
+      responses:
+        '200':
+          description: Provider scollegato con successo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '400':
+          description: Provider non collegato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /register:
+    post:
+      operationId: register
+      summary: Registrazione nuovo utente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /refresh:
+    post:
+      operationId: refreshToken
+      summary: Refresh del token JWT
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /logout:
+    post:
+      operationId: logout
+      summary: Logout utente
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /verify-email:
+    post:
+      operationId: verifyEmail
+      summary: Verifica email utente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+      responses:
+        '200':
+          description: Email verified successfully
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /forgot-password:
+    post:
+      operationId: forgotPassword
+      summary: Richiesta reset password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Reset email sent
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /reset-password:
+    post:
+      operationId: resetPassword
+      summary: Reset password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - password
+              properties:
+                token:
+                  type: string
+                password:
+                  type: string
+                  minLength: 8
+      responses:
+        '200':
+          description: Password reset successful
+        '400':
+          description: Invalid or expired reset token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    oauthGoogle:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://accounts.google.com/o/oauth2
+          tokenUrl: https://oauth2.googleapis.com/token
+          scopes:
+            profile: "Google basic profile info"
+            email: "Google email info"
+    oauthFacebook:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://www.facebook.com/v18.0/dialog/oauth
+          tokenUrl: https://graph.facebook.com/v18.0/oauth/access_token
+          scopes:
+            public_profile: "Facebook public profile"
+            email: "Facebook email"
+    oauthGithub:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://github.com/login/oauth/authorize
+          tokenUrl: https://github.com/login/oauth/access_token
+          scopes:
+            user: "Github user info"
+            user:email: "Github email"
+
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          minLength: 8
+          example: "password123"
+        rememberMe:
+          type: boolean
+          default: false
+          description: "Se mantenere la sessione attiva più a lungo"
+
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - firstName
+        - lastName
+        - role
+        - acceptTerms
+        - acceptPrivacy
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]'
+          description: "Password deve contenere almeno: 1 minuscola, 1 maiuscola, 1 numero, 1 carattere speciale"
+        firstName:
+          type: string
+          minLength: 2
+          maxLength: 50
+        lastName:
+          type: string
+          minLength: 2
+          maxLength: 50
+        role:
+          type: string
+          enum: [client, agent]
+        phone:
+          type: string
+          pattern: '^\+?[1-9]\d{1,14}$'
+        agencyName:
+          type: string
+          minLength: 2
+          maxLength: 200
+          description: "Required if role is agent"
+        licenseNumber:
+          type: string
+          minLength: 5
+          maxLength: 50
+          description: "Required if role is agent"
+        acceptTerms:
+          type: boolean
+          description: "Accettazione termini e condizioni"
+        acceptPrivacy:
+          type: boolean
+          description: "Accettazione privacy policy"
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+          description: "JWT access token"
+        refreshToken:
+          type: string
+          description: "JWT refresh token"
+        expiresIn:
+          type: integer
+          description: "Token expiration time in seconds"
+          example: 3600
+        tokenType:
+          type: string
+          default: "Bearer"
+        isNewUser:
+          type: boolean
+          description: "True se è la prima volta che l'utente fa login (utile per onboarding)"
+        rememberMe:
+          type: boolean
+          description: "Indica se è stata selezionata l'opzione 'Remember Me'"
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+          enum: [client, agent, admin]
+        avatar:
+          type: string
+          format: uri
+        phone:
+          type: string
+        isVerified:
+          type: boolean
+        linkedProviders:
+          type: array
+          items:
+            type: string
+            enum: [google, facebook, github]
+          description: "Provider OAuth collegati"
+        lastLoginAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: false
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+          description: "API endpoint che ha generato l'errore"

@@ -1,0 +1,88 @@
+import dotenv from 'dotenv';
+import { AppConfig, DatabaseConfig, JWTConfig, OAuthConfig, EmailConfig, RedisConfig, UploadConfig } from '@shared/types/config.types';
+
+dotenv.config();
+
+const databaseConfig: DatabaseConfig = {
+  username: process.env.DB_USERNAME || '',
+  password: process.env.DB_PASSWORD || '',
+  dialect: 'oracle',
+  connectString: process.env.DB_CONNECT_STRING || '',
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
+  },
+  logging: process.env.NODE_ENV === 'development' ? console.log : false
+};
+
+const jwtConfig: JWTConfig = {
+  secret: process.env.JWT_SECRET || 'your-secret-key',
+  refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
+  expiresIn: process.env.JWT_EXPIRES_IN || '1h',
+  refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d'
+};
+
+const oauthConfig: OAuthConfig = {
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID || '',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET || ''
+  },
+  facebook: {
+    appId: process.env.FACEBOOK_APP_ID || '',
+    appSecret: process.env.FACEBOOK_APP_SECRET || ''
+  },
+  github: {
+    clientId: process.env.GITHUB_CLIENT_ID || '',
+    clientSecret: process.env.GITHUB_CLIENT_SECRET || ''
+  }
+};
+
+const emailConfig: EmailConfig = {
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  user: process.env.SMTP_USER || '',
+  password: process.env.SMTP_PASSWORD || '',
+  from: process.env.EMAIL_FROM || 'noreply@dietiestates25.com'
+};
+
+const redisConfig: RedisConfig = {
+  host: process.env.REDIS_HOST || 'localhost',
+  port: parseInt(process.env.REDIS_PORT || '6379'),
+  password: process.env.REDIS_PASSWORD
+};
+
+const uploadConfig: UploadConfig = {
+  dir: process.env.UPLOAD_DIR || 'uploads',
+  maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760'), // 10MB default
+  allowedImageTypes: (process.env.ALLOWED_IMAGE_TYPES || 'image/jpeg,image/png,image/webp').split(',')
+};
+
+const config: AppConfig = {
+  nodeEnv: process.env.NODE_ENV || 'development',
+  port: parseInt(process.env.PORT || '3000'),
+  database: databaseConfig,
+  jwt: jwtConfig,
+  oauth: oauthConfig,
+  email: emailConfig,
+  redis: redisConfig,
+  upload: uploadConfig,
+  serviceSecret: process.env.SERVICE_SECRET || 'your-internal-service-secret',
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+  rateLimit: {
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
+    maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100')
+  }
+};
+
+// Service-specific ports
+export const servicePorts = {
+  auth: parseInt(process.env.AUTH_SERVICE_PORT || '3001'),
+  property: parseInt(process.env.PROPERTY_SERVICE_PORT || '3002'),
+  search: parseInt(process.env.SEARCH_SERVICE_PORT || '3003'),
+  user: parseInt(process.env.USER_SERVICE_PORT || '3004'),
+  notification: parseInt(process.env.NOTIFICATION_SERVICE_PORT || '3005')
+};
+
+export default config;
