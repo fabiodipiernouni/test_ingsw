@@ -1,8 +1,9 @@
 import { Sequelize } from 'sequelize-typescript';
 import oracledb from 'oracledb';
-import config from '@shared/config';
+import config from '../config/index';
 import {
   User,
+  Agency,
   Property,
   PropertyImage,
   SearchHistory,
@@ -29,6 +30,7 @@ class Database {
       logging: config.database.logging,
       models: [
         User,
+        Agency,
         Property,
         PropertyImage,
         SearchHistory,
@@ -44,8 +46,8 @@ class Database {
         freezeTableName: true,
         underscored: true,
         timestamps: true,
-        createdAt: 'created_at',
-        updatedAt: 'updated_at'
+        // createdAt: 'created_at',
+        // updatedAt: 'updated_at'
       }
     });
   }
@@ -53,7 +55,7 @@ class Database {
   async connect(): Promise<void> {
     try {
       // Initialize Oracle client
-      await oracledb.initOracleClient();
+      oracledb.initOracleClient();
       
       await this.sequelize.authenticate();
       console.log('Database connection established successfully');
@@ -61,7 +63,7 @@ class Database {
       // Sync models in development
       if (config.nodeEnv === 'development') {
         await this.sequelize.sync({ force: false });
-        console.log('Database models synchronized');
+        await Agency.addCreatorForeignKey(this.sequelize);
       }
     } catch (error) {
       console.error('Unable to connect to the database:', error);

@@ -464,9 +464,6 @@ components:
           type: boolean
         preferences:
           $ref: '#/components/schemas/UserPreferences'
-        agencyName:
-          type: string
-          description: "Only for agents"
         licenseNumber:
           type: string
           description: "Only for agents"
@@ -494,6 +491,10 @@ components:
         updatedAt:
           type: string
           format: date-time
+        agency:
+          allOf:
+            - $ref: '#/components/schemas/Agency'
+          description: "Agenzia di appartenenza (se l'utente è un agent)"
 
     PublicUser:
       type: object
@@ -511,9 +512,10 @@ components:
         avatar:
           type: string
           format: uri
-        agencyName:
-          type: string
-          description: "Only for agents"
+        agency:
+          allOf:
+            - $ref: '#/components/schemas/Agency'
+          description: "Agenzia di appartenenza (se l'utente è un agent)"
         rating:
           type: number
           format: float
@@ -593,9 +595,6 @@ components:
         pushNotifications:
           type: boolean
           default: true
-        smsNotifications:
-          type: boolean
-          default: false
         notificationTypes:
           type: array
           items:
@@ -638,8 +637,7 @@ components:
           type: boolean
         pushNotifications:
           type: boolean
-        smsNotifications:
-          type: boolean
+
         notificationTypes:
           type: array
           items:
@@ -810,6 +808,46 @@ components:
         - favorite_added
         - message_received
         - system_maintenance
+
+    Agency:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        website:
+          type: string
+          format: uri
+        logo:
+          type: string
+          format: uri
+        licenseNumber:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
     ErrorResponse:
       type: object

@@ -36,18 +36,13 @@ export class Header implements OnInit {
   private notificationService = inject(NotificationService);
   private router = inject(Router);
 
-  currentUser = signal<User | null>(null);
-  isAuthenticated = signal<boolean>(false);
+  // Use signals directly from AuthService
+  currentUser = this.authService.currentUser;
+  isAuthenticated = this.authService.isAuthenticated;
   unreadNotifications = signal<number>(0);
   isMobileMenuOpen = signal<boolean>(false);
 
   ngOnInit(): void {
-    // Subscribe to auth state
-    this.authService.currentUser$.subscribe(user => {
-      this.currentUser.set(user);
-      this.isAuthenticated.set(!!user);
-    });
-
     // Subscribe to notification count
     this.notificationService.unreadCount$.subscribe(count => {
       this.unreadNotifications.set(count);
@@ -63,7 +58,7 @@ export class Header implements OnInit {
   }
 
   onLogout(): void {
-    this.authService.logout();
+    this.authService.logout().subscribe();
     this.isMobileMenuOpen.set(false);
   }
 

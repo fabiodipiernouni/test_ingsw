@@ -1,9 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import passport from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { Strategy as GitHubStrategy } from 'passport-github2';
 import { User } from '@shared/database/models';
 import { AuthenticatedRequest } from '@shared/types/common.types';
 import { unauthorizedResponse, forbiddenResponse } from '@shared/utils/helpers';
-import config from '@shared/config';
+import { config } from '../../config';
 
 /**
  * JWT Authentication middleware
@@ -21,7 +24,7 @@ export const authenticateToken = async (
       return unauthorizedResponse(res, 'Access token required');
     }
 
-    const decoded = jwt.verify(token, config.jwt.secret) as any;
+    const decoded = jwt.verify(token, config.auth.jwtSecret) as any;
     
     // Fetch user from database to ensure it still exists and is active
     const user = await User.findByPk(decoded.userId);
@@ -35,7 +38,7 @@ export const authenticateToken = async (
     }
 
     // Add user to request object
-    req.user = user.toJSON();
+    (req as any).user = user.toJSON();
     next();
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
@@ -63,7 +66,7 @@ export const optionalAuth = async (
     const token = authHeader && authHeader.split(' ')[1];
 
     if (token) {
-      const decoded = jwt.verify(token, config.jwt.secret) as any;
+      const decoded = jwt.verify(token, config.auth.jwtSecret) as any;
       const user = await User.findByPk(decoded.userId);
       
       if (user && user.isVerified) {
@@ -147,7 +150,8 @@ export const authenticateService = (
 ) => {
   const serviceToken = req.headers['x-service-token'];
   
-  if (!serviceToken || serviceToken !== config.serviceSecret) {
+  // TODO: Add serviceSecret to config or remove this middleware if not needed
+  if (!serviceToken || serviceToken !== 'temp-service-secret') {
     return unauthorizedResponse(res, 'Invalid service token');
   }
 
@@ -158,8 +162,8 @@ export const authenticateService = (
  * Generate JWT token
  */
 export const generateToken = (payload: any, expiresIn?: string): string => {
-  return jwt.sign(payload, config.jwt.secret, {
-    expiresIn: expiresIn || config.jwt.expiresIn
+  return jwt.sign(payload, config.auth.jwtSecret, {
+    expiresIn: expiresIn || config.auth.jwtExpiration
   } as jwt.SignOptions);
 };
 
@@ -167,8 +171,8 @@ export const generateToken = (payload: any, expiresIn?: string): string => {
  * Generate refresh token
  */
 export const generateRefreshToken = (payload: any): string => {
-  return jwt.sign(payload, config.jwt.refreshSecret, {
-    expiresIn: config.jwt.refreshExpiresIn
+  return jwt.sign(payload, config.auth.jwtSecret, {
+    expiresIn: config.auth.refreshTokenExpiration
   } as jwt.SignOptions);
 };
 
@@ -176,7 +180,7 @@ export const generateRefreshToken = (payload: any): string => {
  * Verify refresh token
  */
 export const verifyRefreshToken = (token: string): any => {
-  return jwt.verify(token, config.jwt.refreshSecret);
+  return jwt.verify(token, config.auth.jwtSecret);
 };
 
 /**
@@ -222,26 +226,67 @@ export const checkBlacklist = (
  */
 export const setupPassportStrategies = () => {
   // Passport session setup
-  // passport.serializeUser((user: any, done) => {
-  //   done(null, user.id);
-  // });
+  passport.serializeUser((user: any, done) => {
+    done(null, user.id);
+  });
 
-  // passport.deserializeUser(async (id: string, done) => {
-  //   try {
-  //     const user = await User.findByPk(id);
-  //     done(null, user);
-  //   } catch (error) {
-  //     done(error, null);
-  //   }
-  // });
+  passport.deserializeUser(async (id: string, done) => {
+    try {
+      const user = await User.findByPk(id);
+      done(null, user as any);
+    } catch (error) {
+      done(error, null);
+    }
+  });
 
   // Google OAuth Strategy
-  // passport.use(new GoogleStrategy({
-  //   clientID: config.auth.google.clientId,
-  //   clientSecret: config.auth.google.clientSecret,
-  //   callbackURL: '/api/auth/google/callback'
-  // }, async (accessToken, refreshToken, profile, done) => {
-  //   // Implementation will be added later
-  //   return done(null, profile);
-  // }));
+  if (config.auth.google.clientId && config.auth.google.clientSecret) {
+    passport.use(new GoogleStrategy({
+      clientID: config.auth.google.clientId,
+      clientSecret: config.auth.google.clientSecret,
+      callbackURL: '/oauth/google/callback'
+    }, async (accessToken: string, refreshToken: string, profile: any, done: any) => {
+      try {
+        return done(null, {
+          provider: 'google',
+          providerId: profile.id,
+          email: profile.emails?.[0]?.value,
+          firstName: profile.name?.givenName,
+          lastName: profile.name?.familyName,
+          avatar: profile.photos?.[0]?.value,
+          accessToken,
+          refreshToken
+        });
+      } catch (error) {
+        return done(error, false);
+      }
+    }));
+  }
+
+  // GitHub OAuth Strategy
+  if (config.auth.github.clientId && config.auth.github.clientSecret) {
+    passport.use(new GitHubStrategy({
+      clientID: config.auth.github.clientId,
+      clientSecret: config.auth.github.clientSecret,
+      callbackURL: '/oauth/github/callback'
+    }, async (accessToken: string, refreshToken: string, profile: any, done: any) => {
+      try {
+        const email = profile.emails?.[0]?.value || `${profile.username}@github.local`;
+        const names = (profile.displayName || profile.username || '').split(' ');
+        
+        return done(null, {
+          provider: 'github',
+          providerId: profile.id,
+          email,
+          firstName: names[0] || profile.username || 'GitHub',
+          lastName: names.slice(1).join(' ') || 'User',
+          avatar: profile.photos?.[0]?.value,
+          accessToken,
+          refreshToken
+        });
+      } catch (error) {
+        return done(error, false);
+      }
+    }));
+  }
 };

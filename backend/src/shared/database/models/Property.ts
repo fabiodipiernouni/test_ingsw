@@ -46,7 +46,7 @@ export class Property extends Model {
   title!: string;
 
   @AllowNull(false)
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING(4000))
   description!: string;
 
   @AllowNull(false)

@@ -24,10 +24,6 @@ export interface OAuthConfig {
     clientId: string;
     clientSecret: string;
   };
-  facebook: {
-    appId: string;
-    appSecret: string;
-  };
   github: {
     clientId: string;
     clientSecret: string;

@@ -9,3 +9,4 @@ export { NotificationPreferences } from './NotificationPreferences';
 export { UserPreferences } from './UserPreferences';
 export { PropertyFavorite } from './PropertyFavorite';
 export { PropertyView } from './PropertyView';
+export { Agency } from './Agency';

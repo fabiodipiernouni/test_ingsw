@@ -7,8 +7,7 @@ import {
   Default,
   AllowNull,
   ForeignKey,
-  BelongsTo,
-  Index
+  BelongsTo
 } from 'sequelize-typescript';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from './User';
@@ -41,11 +40,6 @@ export class NotificationPreferences extends Model {
   @Default(true)
   @Column({ type: DataType.BOOLEAN, field: 'push_notifications' })
   pushNotifications!: boolean;
-
-  @AllowNull(false)
-  @Default(false)
-  @Column({ type: DataType.BOOLEAN, field: 'sms_notifications' })
-  smsNotifications!: boolean;
 
   @AllowNull(true)
   @Column({ type: DataType.JSON, field: 'enabled_types' })
@@ -115,7 +109,7 @@ export class NotificationPreferences extends Model {
     }
   }
 
-  canReceiveNotification(type: NotificationType, channel: 'email' | 'push' | 'sms'): boolean {
+  canReceiveNotification(type: NotificationType, channel: 'email' | 'push'): boolean {
     // Check if notification type is enabled
     if (!this.isNotificationTypeEnabled(type)) {
       return false;
@@ -128,9 +122,6 @@ export class NotificationPreferences extends Model {
         break;
       case 'push':
         if (!this.pushNotifications) return false;
-        break;
-      case 'sms':
-        if (!this.smsNotifications) return false;
         break;
     }
 

@@ -18,21 +18,44 @@ export const routes: Routes = [
   {
     path: 'login',
     loadComponent: () => import('./features/auth/login/login').then(m => m.Login),
-    canActivateChild: [guestGuard],
+    canActivate: [guestGuard],
     title: 'Accedi - DietiEstates25'
   },
   {
     path: 'register',
     loadComponent: () => import('./features/auth/register/register').then(m => m.Register),
-    canActivateChild: [guestGuard],
+    canActivate: [guestGuard],
     title: 'Registrati - DietiEstates25'
+  },
+  {
+    path: 'auth/callback',
+    loadComponent: () => import('./features/auth/oauth/oauth').then(m => m.OAuthCallback),
+    title: 'Autenticazione in corso... - DietiEstates25'
   },
 
   // Protected routes (require authentication)
   {
+    path: 'dashboard',
+    loadComponent: () => import('./features/dashboard/dashboard').then(m => m.Dashboard),
+    canActivate: [authGuard],
+    title: 'Dashboard - DietiEstates25'
+  },
+  {
+    path: 'onboarding',
+    loadComponent: () => import('./features/onboarding/onboarding').then(m => m.Onboarding),
+    canActivate: [authGuard],
+    title: 'Benvenuto - DietiEstates25'
+  },
+  {
+    path: 'profile',
+    loadComponent: () => import('./features/profile/profile').then(m => m.Profile),
+    canActivate: [authGuard],
+    title: 'Il Mio Profilo - DietiEstates25'
+  },
+  {
     path: 'saved-searches',
     loadComponent: () => import('./features/saved-searches/saved-searches/saved-searches').then(m => m.SavedSearches),
-    canActivateChild: [authGuard],
+    canActivate: [authGuard],
     title: 'Ricerche Salvate - DietiEstates25'
   },
 
@@ -43,7 +66,7 @@ export const routes: Routes = [
       {
         path: 'upload',
         loadComponent: () => import('./features/properties/property-upload/property-upload').then(m => m.PropertyUpload),
-        canActivateChild: [authGuard, agentGuard],
+        canActivate: [authGuard, agentGuard],
         title: 'Carica Immobile - DietiEstates25'
       }
     ]

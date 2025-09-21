@@ -43,11 +43,6 @@ export class UserPreferences extends Model {
   @Column(DataType.BOOLEAN)
   pushNotifications!: boolean;
 
-  @AllowNull(false)
-  @Default(false)
-  @Column(DataType.BOOLEAN)
-  smsNotifications!: boolean;
-
   @AllowNull(true)
   @Column(DataType.JSON)
   notificationTypes?: NotificationType[];

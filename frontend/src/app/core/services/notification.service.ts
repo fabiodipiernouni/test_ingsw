@@ -23,7 +23,6 @@ export interface NotificationPreferences {
   marketing: boolean;
   emailEnabled: boolean;
   pushEnabled: boolean;
-  smsEnabled: boolean;
 }
 
 @Injectable({
@@ -50,8 +49,7 @@ export class NotificationService {
     offers: true,
     marketing: false,
     emailEnabled: true,
-    pushEnabled: true,
-    smsEnabled: false
+    pushEnabled: true
   });
 
   // Mock data

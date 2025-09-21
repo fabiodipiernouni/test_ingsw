@@ -70,7 +70,7 @@ export class Notification extends Model {
   title!: string;
 
   @AllowNull(false)
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING(4000))
   message!: string;
 
   @AllowNull(true)
@@ -91,16 +91,16 @@ export class Notification extends Model {
 
   @AllowNull(false)
   @Default('in_app')
-  @Column(DataType.ENUM('in_app', 'email', 'push', 'sms'))
-  channel!: 'in_app' | 'email' | 'push' | 'sms';
+  @Column(DataType.ENUM('in_app', 'email', 'push'))
+  channel!: 'in_app' | 'email' | 'push';
 
   @AllowNull(true)
-  @Column(DataType.TEXT)
-  actionUrl?: string;
+    @Column(DataType.STRING(2000))
+    actionUrl?: string;
 
   @AllowNull(true)
-  @Column(DataType.TEXT)
-  imageUrl?: string;
+    @Column(DataType.STRING(2000))
+    imageUrl?: string;
 
   @AllowNull(true)
 

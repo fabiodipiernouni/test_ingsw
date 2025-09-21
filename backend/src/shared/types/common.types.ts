@@ -9,16 +9,16 @@ export interface User {
   avatar?: string;
   phone?: string;
   isVerified: boolean;
-  linkedProviders: Array<'google' | 'facebook' | 'github'>;
+  linkedProviders: Array<'google' | 'github'>;
   lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface AuthenticatedRequest extends Request {
-  user?: User;
-  file?: Express.Multer.File;
-  files?: Express.Multer.File[];
+  user?: any;
+  file?: any;
+  files?: any[];
 }
 
 export interface PropertyAddress {

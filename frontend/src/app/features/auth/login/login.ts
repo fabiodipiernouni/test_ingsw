@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -10,6 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services/auth.service';
+import { OAuthProviders } from '../oauth/oauth-providers';
 
 @Component({
   selector: 'app-login',
@@ -22,7 +23,9 @@ import { AuthService } from '../../../core/services/auth.service';
     MatInputModule,
     MatButtonModule,
     MatIconModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    RouterLink,
+    OAuthProviders
   ],
   templateUrl: './login.html',
   styleUrl: './login.scss'
@@ -55,17 +58,11 @@ export class Login implements OnInit {
 
       const credentials = {
         email: this.loginForm.value.email,
-        password: this.loginForm.value.password
+        password: this.loginForm.value.password,
+        rememberMe: this.loginForm.value.rememberMe
       };
 
       this.authService.login(credentials).subscribe({
-        next: (response) => {
-          this.snackBar.open('Accesso effettuato con successo!', 'Chiudi', {
-            duration: 3000,
-            panelClass: ['success-snackbar']
-          });
-          this.router.navigate([this.returnUrl()]);
-        },
         error: (error) => {
           this.isLoading.set(false);
           this.snackBar.open(
@@ -81,19 +78,7 @@ export class Login implements OnInit {
     }
   }
 
-  onGoogleLogin(): void {
-    // Implement Google OAuth login
-    this.snackBar.open('Accesso con Google non ancora implementato', 'Chiudi', {
-      duration: 3000
-    });
-  }
 
-  onFacebookLogin(): void {
-    // Implement Facebook OAuth login
-    this.snackBar.open('Accesso con Facebook non ancora implementato', 'Chiudi', {
-      duration: 3000
-    });
-  }
 
   getErrorMessage(field: string): string {
     const control = this.loginForm.get(field);

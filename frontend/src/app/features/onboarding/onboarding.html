@@ -1,0 +1,136 @@
+<div class="onboarding-container">
+    <div class="welcome-header">
+    <mat-icon class="welcome-icon">celebration</mat-icon>
+    <h1>Benvenuto in DietiEstates25, {{ currentUser?.firstName }}!</h1>
+    <p class="welcome-subtitle">
+        La registrazione è avvenuta con successo. Scopri cosa puoi fare con il tuo nuovo account.
+    </p>
+    </div>
+
+    @if(currentUser?.shouldChangePassword) {
+    <!-- Messaggio per cambio password se necessario -->
+    <mat-card class="password-notice-card">
+    <mat-card-header>
+        <mat-icon mat-card-avatar color="warn">security</mat-icon>
+        <mat-card-title>Sicurezza Account</mat-card-title>
+        <mat-card-subtitle>Consigliato per la tua sicurezza</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+        <p><strong>Il tuo account è stato creato con credenziali predefinite.</strong></p>
+        <p>Per garantire la massima sicurezza del tuo account, ti consigliamo vivamente di cambiare la password con una personalizzata.</p>
+    </mat-card-content>
+    <mat-card-actions>
+        <button mat-raised-button color="warn" (click)="goToChangePassword()">
+        <mat-icon>lock_reset</mat-icon>
+        Cambia Password Ora
+        </button>
+    </mat-card-actions>
+    </mat-card>
+    }
+
+    <div class="features-grid">
+    <!-- Ricerca Immobili -->
+    <mat-card class="feature-card">
+        <mat-card-header>
+        <mat-icon mat-card-avatar color="primary">search</mat-icon>
+        <mat-card-title>Ricerca Avanzata</mat-card-title>
+        <mat-card-subtitle>Trova l'immobile perfetto</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+        <p>Utilizza i nostri filtri avanzati per cercare immobili per zona, prezzo, caratteristiche e molto altro.</p>
+        <ul>
+            <li>Filtri per tipologia e prezzo</li>
+            <li>Ricerca per mappa interattiva</li>
+            <li>Notifiche per nuovi immobili</li>
+        </ul>
+        </mat-card-content>
+        <mat-card-actions>
+        <button mat-raised-button color="primary" routerLink="/search">
+            Inizia a Cercare
+        </button>
+        </mat-card-actions>
+    </mat-card>
+
+    <!-- Ricerche Salvate -->
+    <mat-card class="feature-card">
+        <mat-card-header>
+        <mat-icon mat-card-avatar color="accent">bookmark</mat-icon>
+        <mat-card-title>Ricerche Salvate</mat-card-title>
+        <mat-card-subtitle>Non perdere mai un'opportunità</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+        <p>Salva le tue ricerche preferite e ricevi notifiche quando sono disponibili nuovi immobili.</p>
+        <ul>
+            <li>Salva fino a 10 ricerche</li>
+            <li>Notifiche email automatiche</li>
+            <li>Gestione semplice e intuitiva</li>
+        </ul>
+        </mat-card-content>
+        <mat-card-actions>
+        <button mat-button color="accent" routerLink="/saved-searches">
+            Gestisci Ricerche
+        </button>
+        </mat-card-actions>
+    </mat-card>
+
+    <!-- Funzionalità Agente (solo per agenti) -->
+    <mat-card class="feature-card" *ngIf="currentUser?.role === 'agent'">
+        <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #4caf50">home_work</mat-icon>
+        <mat-card-title>Gestione Immobili</mat-card-title>
+        <mat-card-subtitle>Strumenti per agenti</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+        <p>Come agente immobiliare, hai accesso a strumenti avanzati per la gestione dei tuoi immobili.</p>
+        <ul>
+            <li>Caricamento immobili con foto</li>
+            <li>Gestione richieste clienti</li>
+            <li>Statistiche e analytics</li>
+        </ul>
+        </mat-card-content>
+        <mat-card-actions>
+        <button mat-raised-button style="background-color: #4caf50; color: white;" routerLink="/properties/upload">
+            Carica Immobile
+        </button>
+        </mat-card-actions>
+    </mat-card>
+
+    <!-- Consigli per iniziare -->
+    <mat-card class="feature-card tips-card">
+        <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #ff9800">lightbulb</mat-icon>
+        <mat-card-title>Consigli per Iniziare</mat-card-title>
+        <mat-card-subtitle>Massimizza la tua esperienza</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+        <div class="tips-list">
+            <div class="tip-item">
+            <mat-icon class="tip-icon">check_circle</mat-icon>
+            <span>Completa il tuo profilo per ricevere suggerimenti personalizzati</span>
+            </div>
+            <div class="tip-item">
+            <mat-icon class="tip-icon">check_circle</mat-icon>
+            <span>Attiva le notifiche per non perdere opportunità</span>
+            </div>
+            <div class="tip-item">
+            <mat-icon class="tip-icon">check_circle</mat-icon>
+            <span>Salva le tue ricerche preferite per un accesso rapido</span>
+            </div>
+        </div>
+        </mat-card-content>
+    </mat-card>
+    </div>
+
+    <!-- Azioni Finali -->
+    <div class="action-section">
+    <h3>Sei pronto per iniziare?</h3>
+    <div class="action-buttons">
+        <button mat-raised-button color="primary" size="large" (click)="goToDashboard()">
+        Vai alla Dashboard
+        </button>
+        <button mat-raised-button color="accent" size="large" routerLink="/search">
+        Inizia a Cercare
+        </button>
+    </div>
+    </div>
+</div>

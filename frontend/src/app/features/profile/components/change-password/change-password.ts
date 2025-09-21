@@ -1,0 +1,194 @@
+import { Component, Output, EventEmitter, OnInit, signal, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar } from '@angular/material/snack-bar';
+
+import { UserService } from '../../../../core/services/user.service';
+import { ChangePasswordRequest } from '../../../../core/models/user.model';
+
+@Component({
+  selector: 'app-change-password',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule
+  ],
+  templateUrl: './change-password.html',
+  styleUrls: ['./change-password.scss']
+})
+export class ChangePassword implements OnInit {
+  @Output() passwordChanged = new EventEmitter<void>();
+
+  private fb = inject(FormBuilder);
+  private userService = inject(UserService);
+  private snackBar = inject(MatSnackBar);
+
+  isLoading = signal<boolean>(false);
+  hideCurrentPassword = signal<boolean>(true);
+  hideNewPassword = signal<boolean>(true);
+  hideConfirmPassword = signal<boolean>(true);
+  
+  passwordRequirements = signal<boolean>(false);
+  passwordChecks = signal({
+    hasLower: false,
+    hasUpper: false,
+    hasNumber: false,
+    hasSpecial: false,
+    hasLength: false
+  });
+
+  changePasswordForm!: FormGroup;
+
+  ngOnInit(): void {
+    this.initializeForm();
+    this.setupPasswordValidation();
+  }
+
+  private initializeForm(): void {
+    this.changePasswordForm = this.fb.group({
+      currentPassword: ['', [Validators.required]],
+      newPassword: ['', [Validators.required, Validators.minLength(8), this.passwordValidator.bind(this)]],
+      confirmPassword: ['', [Validators.required]]
+    }, { validators: this.passwordMatchValidator });
+  }
+
+  private setupPasswordValidation(): void {
+    // Monitor new password changes for requirements display
+    this.changePasswordForm.get('newPassword')?.valueChanges.subscribe(value => {
+      if (value) {
+        this.passwordRequirements.set(true);
+        this.updatePasswordChecks(value);
+      } else {
+        this.passwordRequirements.set(false);
+      }
+    });
+  }
+
+  private updatePasswordChecks(password: string): void {
+    this.passwordChecks.set({
+      hasLower: /[a-z]/.test(password),
+      hasUpper: /[A-Z]/.test(password),
+      hasNumber: /[0-9]/.test(password),
+      hasSpecial: /[#?!@$%^&*-]/.test(password),
+      hasLength: password.length >= 8
+    });
+  }
+
+  private passwordValidator(control: AbstractControl): { [key: string]: any } | null {
+    const value = control.value;
+    if (!value) return null;
+
+    const hasNumber = /[0-9]/.test(value);
+    const hasUpper = /[A-Z]/.test(value);
+    const hasLower = /[a-z]/.test(value);
+    const hasSpecial = /[#?!@$%^&*-]/.test(value);
+
+    const valid = hasNumber && hasUpper && hasLower && hasSpecial;
+
+    if (!valid) {
+      return {
+        passwordStrength: {
+          hasNumber,
+          hasUpper,
+          hasLower,
+          hasSpecial
+        }
+      };
+    }
+
+    return null;
+  }
+
+  private passwordMatchValidator(group: AbstractControl): { [key: string]: any } | null {
+    const newPassword = group.get('newPassword');
+    const confirmPassword = group.get('confirmPassword');
+
+    if (!newPassword || !confirmPassword) return null;
+
+    return newPassword.value === confirmPassword.value ? null : { passwordMismatch: true };
+  }
+
+  onSubmit(): void {
+    if (this.changePasswordForm.valid) {
+      this.isLoading.set(true);
+
+      const changePasswordData: ChangePasswordRequest = {
+        currentPassword: this.changePasswordForm.value.currentPassword,
+        newPassword: this.changePasswordForm.value.newPassword
+      };
+
+      this.userService.changePassword(changePasswordData).subscribe({
+        next: (response) => {
+          this.isLoading.set(false);
+          this.passwordChanged.emit();
+          this.changePasswordForm.reset();
+          this.passwordRequirements.set(false);
+          
+          this.snackBar.open(
+            response.message || 'Password cambiata con successo',
+            'Chiudi',
+            {
+              duration: 5000,
+              panelClass: ['success-snackbar']
+            }
+          );
+        },
+        error: (error) => {
+          this.isLoading.set(false);
+          this.snackBar.open(
+            error.error?.message || 'Errore durante il cambio password',
+            'Chiudi',
+            {
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            }
+          );
+        }
+      });
+    } else {
+      this.markFormGroupTouched();
+    }
+  }
+
+  onReset(): void {
+    this.changePasswordForm.reset();
+    this.passwordRequirements.set(false);
+  }
+
+  private markFormGroupTouched(): void {
+    Object.keys(this.changePasswordForm.controls).forEach(key => {
+      const control = this.changePasswordForm.get(key);
+      control?.markAsTouched();
+    });
+  }
+
+  getErrorMessage(fieldName: string): string {
+    const control = this.changePasswordForm.get(fieldName);
+    
+    if (control?.hasError('required')) {
+      return 'Campo obbligatorio';
+    }
+    if (control?.hasError('minlength')) {
+      const minLength = control.getError('minlength').requiredLength;
+      return `Minimo ${minLength} caratteri`;
+    }
+    if (fieldName === 'confirmPassword' && this.changePasswordForm.hasError('passwordMismatch')) {
+      return 'Le password non corrispondono';
+    }
+    if (control?.hasError('passwordStrength')) {
+      return 'La password non soddisfa i requisiti di sicurezza';
+    }
+    
+    return '';
+  }
+}

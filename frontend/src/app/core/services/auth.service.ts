@@ -3,7 +3,22 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
 import { map, tap, catchError } from 'rxjs/operators';
-import { User, AuthResponse, LoginRequest, RegisterRequest } from '../models/user.model';
+import { 
+  User, 
+  AuthResponse, 
+  LoginRequest, 
+  RegisterRequest, 
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
+  VerifyEmailRequest,
+  RefreshTokenRequest,
+  LinkOAuthRequest,
+  OAuthLinkResponse,
+  OAuthProvider,
+  ErrorResponse,
+  ChangePasswordRequest,
+  ChangePasswordResponse
+} from '../models/user.model';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +27,7 @@ export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
 
-  private readonly API_URL = 'http://localhost:8080/api/auth';
+  private readonly API_URL = 'http://localhost:3001';
   private readonly TOKEN_KEY = 'auth_token';
   private readonly USER_KEY = 'auth_user';
 
@@ -53,8 +68,19 @@ export class AuthService {
   login(credentials: LoginRequest): Observable<AuthResponse> {
     this.isLoading.set(true);
 
-    // Simulate API call - replace with actual HTTP request
-    return this.simulateLogin(credentials).pipe(
+    return this.http.post<any>(`${this.API_URL}/login`, credentials).pipe(
+      map(backendResponse => {
+        // Map backend wrapped response to frontend AuthResponse format
+        return {
+          user: backendResponse.data.user,
+          token: backendResponse.data.token,
+          refreshToken: backendResponse.data.refreshToken,
+          expiresIn: backendResponse.data.expiresIn,
+          tokenType: backendResponse.data.tokenType,
+          isNewUser: backendResponse.data.isNewUser,
+          rememberMe: backendResponse.data.rememberMe
+        } as AuthResponse;
+      }),
       tap(response => {
         this.handleAuthSuccess(response);
       }),
@@ -68,8 +94,19 @@ export class AuthService {
   register(userData: RegisterRequest): Observable<AuthResponse> {
     this.isLoading.set(true);
 
-    // Simulate API call - replace with actual HTTP request
-    return this.simulateRegister(userData).pipe(
+    return this.http.post<any>(`${this.API_URL}/register`, userData).pipe(
+      map(backendResponse => {
+        // Map backend wrapped response to frontend AuthResponse format
+        return {
+          user: backendResponse.data.user,
+          token: backendResponse.data.token,
+          refreshToken: backendResponse.data.refreshToken,
+          expiresIn: backendResponse.data.expiresIn,
+          tokenType: backendResponse.data.tokenType,
+          isNewUser: backendResponse.data.isNewUser,
+          rememberMe: backendResponse.data.rememberMe
+        } as AuthResponse;
+      }),
       tap(response => {
         this.handleAuthSuccess(response);
       }),
@@ -80,9 +117,34 @@ export class AuthService {
     );
   }
 
-  logout(): void {
+  logout(): Observable<void> {
+    const token = this.getToken();
+    if (token) {
+      return this.http.post(`${this.API_URL}/logout`, {}, { 
+        observe: 'response',
+        responseType: 'text'
+      }).pipe(
+        map(() => void 0), // Convert response to void
+        tap(() => {
+          this.clearAuthData();
+        }),
+        catchError(() => {
+          // Even if API call fails, clear local data
+          this.clearAuthData();
+          return of(void 0);
+        })
+      );
+    } else {
+      this.clearAuthData();
+      return of(void 0);
+    }
+  }
+
+  private clearAuthData(): void {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('token_expiry');
     this.setCurrentUser(null);
     this.router.navigate(['/login']);
   }
@@ -93,9 +155,16 @@ export class AuthService {
       return throwError(() => new Error('No refresh token available'));
     }
 
-    return this.http.post<AuthResponse>(`${this.API_URL}/refresh`, { refreshToken }).pipe(
+    const refreshRequest: RefreshTokenRequest = { refreshToken };
+
+    return this.http.post<AuthResponse>(`${this.API_URL}/refresh`, refreshRequest).pipe(
       tap(response => {
         this.handleAuthSuccess(response);
+      }),
+      catchError(error => {
+        // If refresh fails, logout user
+        this.clearAuthData();
+        return throwError(() => error);
       })
     );
   }
@@ -106,10 +175,23 @@ export class AuthService {
       return of(false);
     }
 
-    return this.http.post<{ valid: boolean }>(`${this.API_URL}/validate`, { token }).pipe(
-      map(response => response.valid),
-      catchError(() => of(false))
-    );
+    try {
+      // Simple JWT validation (check expiry)
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const isExpired = payload.exp * 1000 < Date.now();
+      
+      if (isExpired) {
+        // Try to refresh token
+        return this.refreshToken().pipe(
+          map(() => true),
+          catchError(() => of(false))
+        );
+      }
+      
+      return of(true);
+    } catch (error) {
+      return of(false);
+    }
   }
 
   getToken(): string | null {
@@ -131,78 +213,102 @@ export class AuthService {
   }
 
   private handleAuthSuccess(response: AuthResponse): void {
+    console.log('Auth success - response:', response);
+    console.log('Auth success - user data:', response.user);
+    
+    if (!response.user || !response.token) {
+      console.error('Invalid auth response - missing user or token');
+      return;
+    }
+
+    const user = response.user;
     localStorage.setItem(this.TOKEN_KEY, response.token);
-    localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
+    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+    
     if (response.refreshToken) {
       localStorage.setItem('refresh_token', response.refreshToken);
     }
 
-    this.setCurrentUser(response.user);
+    // Store additional auth metadata
+    if (response.expiresIn) {
+      const expiryTime = new Date(Date.now() + response.expiresIn * 1000);
+      localStorage.setItem('token_expiry', expiryTime.toISOString());
+    }
+
+    console.log('Data saved to localStorage:');
+    console.log('- Token:', localStorage.getItem(this.TOKEN_KEY)?.substring(0, 20) + '...');
+    console.log('- User:', localStorage.getItem(this.USER_KEY));
+
+    this.setCurrentUser(user);
     this.isLoading.set(false);
+
+    // Navigate based on user type and if it's a new user
+    if (response.isNewUser) {
+      this.router.navigate(['/onboarding']);
+    } else {
+      this.router.navigate(['/dashboard']);
+    }
   }
 
   private setCurrentUser(user: User | null): void {
+    console.log('Setting current user:', user);
     this.currentUser.set(user);
     this.isAuthenticated.set(!!user);
     this.currentUserSubject.next(user);
   }
 
-  // Simulate API calls - replace with actual HTTP requests
-  private simulateLogin(credentials: LoginRequest): Observable<AuthResponse> {
-    return new Observable(observer => {
-      setTimeout(() => {
-        if (credentials.email === 'test@example.com' && credentials.password === 'password') {
-          const mockUser: User = {
-            id: '1',
-            email: credentials.email,
-            firstName: 'Mario',
-            lastName: 'Rossi',
-            role: 'client',
-            isVerified: true,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          };
-
-          const response: AuthResponse = {
-            user: mockUser,
-            token: 'mock-jwt-token',
-            refreshToken: 'mock-refresh-token',
-            expiresIn: 3600
-          };
-
-          observer.next(response);
-          observer.complete();
-        } else {
-          observer.error({ error: { message: 'Credenziali non valide' } });
-        }
-      }, 1000);
-    });
+  // Email verification
+  verifyEmail(request: VerifyEmailRequest): Observable<void> {
+    return this.http.post<void>(`${this.API_URL}/verify-email`, request);
   }
 
-  private simulateRegister(userData: RegisterRequest): Observable<AuthResponse> {
-    return new Observable(observer => {
-      setTimeout(() => {
-        const mockUser: User = {
-          id: Math.random().toString(36),
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          role: userData.role,
-          isVerified: false,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
+  // Password reset
+  forgotPassword(request: ForgotPasswordRequest): Observable<void> {
+    return this.http.post<void>(`${this.API_URL}/forgot-password`, request);
+  }
 
-        const response: AuthResponse = {
-          user: mockUser,
-          token: 'mock-jwt-token',
-          refreshToken: 'mock-refresh-token',
-          expiresIn: 3600
-        };
+  resetPassword(request: ResetPasswordRequest): Observable<void> {
+    return this.http.post<void>(`${this.API_URL}/reset-password`, request);
+  }
 
-        observer.next(response);
-        observer.complete();
-      }, 1000);
-    });
+  changePassword(request: ChangePasswordRequest): Observable<ChangePasswordResponse> {
+    return this.http.post<ChangePasswordResponse>(`${this.API_URL}/change-password`, request);
+  }
+
+  // OAuth methods
+  startOAuthFlow(provider: OAuthProvider, redirectUri?: string): void {
+    let url = `${this.API_URL}/oauth/${provider}`;
+    if (redirectUri) {
+      url += `?redirect_uri=${encodeURIComponent(redirectUri)}`;
+    }
+    window.location.href = url;
+  }
+
+  handleOAuthSuccess(token: string, refreshToken?: string, user?: any, isNewUser?: boolean): void {
+    const authResponse: AuthResponse = {
+      user: user,
+      token: token,
+      refreshToken: refreshToken,
+      expiresIn: 3600, // Default 1 hour
+      tokenType: 'Bearer',
+      isNewUser: isNewUser || false,
+      rememberMe: false
+    };
+    
+    this.handleAuthSuccess(authResponse);
+  }
+
+  linkOAuthAccount(provider: OAuthProvider, request: LinkOAuthRequest): Observable<OAuthLinkResponse> {
+    return this.http.post<OAuthLinkResponse>(`${this.API_URL}/oauth/${provider}/link`, request);
+  }
+
+  unlinkOAuthAccount(provider: OAuthProvider): Observable<{success: boolean, message: string}> {
+    return this.http.delete<{success: boolean, message: string}>(`${this.API_URL}/oauth/${provider}/unlink`);
+  }
+
+  // Utility method to check if user has specific OAuth provider linked
+  hasLinkedProvider(provider: OAuthProvider): boolean {
+    const user = this.getCurrentUser();
+    return user?.linkedProviders?.includes(provider) ?? false;
   }
 }

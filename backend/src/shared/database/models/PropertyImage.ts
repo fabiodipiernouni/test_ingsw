@@ -32,7 +32,7 @@ export class PropertyImage extends Model {
   property!: Property;
 
   @AllowNull(false)
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING(2000))
   url!: string;
 
   @AllowNull(true)

@@ -8,11 +8,14 @@ import {
   AllowNull,
   Unique,
   HasMany,
+  ForeignKey,
+  BelongsTo,
   BeforeCreate,
   BeforeUpdate
 } from 'sequelize-typescript';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcrypt';
+import { Agency } from './Agency';
 import { Property } from './Property';
 import { SearchHistory } from './SearchHistory';
 import { SavedSearch } from './SavedSearch';
@@ -55,7 +58,7 @@ export class User extends Model {
   role!: 'client' | 'agent' | 'admin';
 
   @AllowNull(true)
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING(2000))
   avatar?: string;
 
   @AllowNull(true)
@@ -74,32 +77,40 @@ export class User extends Model {
 
   @AllowNull(true)
   @Column(DataType.JSON)
-  linkedProviders?: Array<'google' | 'facebook' | 'github'>;
+  linkedProviders?: Array<'google' | 'github'>;
 
   @AllowNull(true)
   @Column(DataType.DATE)
   lastLoginAt?: Date;
 
   // Legal acceptance timestamps
-  @AllowNull(true)
+  @AllowNull(false)
   @Column(DataType.DATE)
-  acceptedTermsAt?: Date;
+  acceptedTermsAt!: Date;
 
-  @AllowNull(true)
+  @AllowNull(false)
   @Column(DataType.DATE)
-  acceptedPrivacyAt?: Date;
+  acceptedPrivacyAt!: Date;
+
+  // Password management
+  @AllowNull(false)
+  @Default(false)
+  @Column(DataType.BOOLEAN)
+  shouldChangePassword!: boolean;
+
+  // Agency association
+  @AllowNull(true)
+  @ForeignKey(() => Agency)
+  @Column(DataType.UUID)
+  agencyId?: string;
 
   // Agent-specific fields
-  @AllowNull(true)
-  @Column(DataType.STRING(200))
-  agencyName?: string;
-
   @AllowNull(true)
   @Column(DataType.STRING(50))
   licenseNumber?: string;
 
   @AllowNull(true)
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING(4000))
   biography?: string;
 
   @AllowNull(true)
@@ -117,7 +128,7 @@ export class User extends Model {
 
   // Authentication tokens
   @AllowNull(true)
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING(2000))
   refreshToken?: string;
 
   @AllowNull(true)
@@ -143,13 +154,12 @@ export class User extends Model {
 
   @AllowNull(true)
   @Column(DataType.STRING(255))
-  facebookId?: string;
-
-  @AllowNull(true)
-  @Column(DataType.STRING(255))
   githubId?: string;
 
   // Associations
+  @BelongsTo(() => Agency, { foreignKey: 'agencyId', as: 'agency' })
+  agency?: Agency;
+
   @HasMany(() => Property)
   properties!: Property[];
 

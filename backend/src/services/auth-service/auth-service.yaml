@@ -36,14 +36,14 @@ paths:
     get:
       operationId: oauthRedirect
       summary: Avvia autenticazione tramite provider esterno
-      description: Avvia flow OAuth2 con redirect verso il provider selezionato (google, facebook, github)
+      description: Avvia flow OAuth2 con redirect verso il provider selezionato (google, github)
       parameters:
         - name: provider
           in: path
           required: true
           schema:
             type: string
-            enum: [google, facebook, github]
+            enum: [google, github]
           description: Provider OAuth2 da utilizzare
         - name: redirect_uri
           in: query
@@ -79,7 +79,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [google, facebook, github]
+            enum: [google, github]
           description: Provider OAuth2 utilizzato
         - name: code
           in: query
@@ -146,7 +146,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [google, facebook, github]
+            enum: [google, github]
           description: Provider OAuth2 da collegare
       requestBody:
         required: true
@@ -206,7 +206,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [google, facebook, github]
+            enum: [google, github]
           description: Provider OAuth2 da scollegare
       responses:
         '200':
@@ -405,15 +405,6 @@ components:
           scopes:
             profile: "Google basic profile info"
             email: "Google email info"
-    oauthFacebook:
-      type: oauth2
-      flows:
-        authorizationCode:
-          authorizationUrl: https://www.facebook.com/v18.0/dialog/oauth
-          tokenUrl: https://graph.facebook.com/v18.0/oauth/access_token
-          scopes:
-            public_profile: "Facebook public profile"
-            email: "Facebook email"
     oauthGithub:
       type: oauth2
       flows:
@@ -497,6 +488,21 @@ components:
     AuthResponse:
       type: object
       properties:
+        success:
+          type: boolean
+          default: true
+        message:
+          type: string
+          example: "Login successful"
+        data:
+          $ref: '#/components/schemas/AuthData'
+        timestamp:
+          type: string
+          format: date-time
+
+    AuthData:
+      type: object
+      properties:
         user:
           $ref: '#/components/schemas/User'
         token:
@@ -512,9 +518,6 @@ components:
         tokenType:
           type: string
           default: "Bearer"
-        isNewUser:
-          type: boolean
-          description: "True se è la prima volta che l'utente fa login (utile per onboarding)"
         rememberMe:
           type: boolean
           description: "Indica se è stata selezionata l'opzione 'Remember Me'"
@@ -546,7 +549,7 @@ components:
           type: array
           items:
             type: string
-            enum: [google, facebook, github]
+            enum: [google, github]
           description: "Provider OAuth collegati"
         lastLoginAt:
           type: string
@@ -557,6 +560,10 @@ components:
         updatedAt:
           type: string
           format: date-time
+        agency:
+          allOf:
+            - $ref: '#/components/schemas/Agency'
+          description: "Agenzia di appartenenza (se l'utente è un agent)"
 
     ErrorResponse:
       type: object
@@ -577,3 +584,43 @@ components:
         path:
           type: string
           description: "API endpoint che ha generato l'errore"
+
+    Agency:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        website:
+          type: string
+          format: uri
+        logo:
+          type: string
+          format: uri
+        licenseNumber:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time

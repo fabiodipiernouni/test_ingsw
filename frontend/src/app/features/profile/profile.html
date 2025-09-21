@@ -1,0 +1,174 @@
+<div class="profile-container">
+  <div class="profile-header">
+    <mat-card class="profile-card">
+      <mat-card-header class="user-info">
+        <div class="avatar-section">
+          <img 
+            [src]="getAvatarUrl()" 
+            [alt]="fullName()"
+            class="user-avatar">
+          <button mat-icon-button class="avatar-edit-btn">
+            <mat-icon>photo_camera</mat-icon>
+          </button>
+        </div>
+        
+        <div class="user-details">
+          <h1 class="user-name">{{ fullName() }}</h1>
+          <div class="user-role">
+            <mat-icon>{{ isAgent() ? 'work' : isAdmin() ? 'admin_panel_settings' : 'person' }}</mat-icon>
+            {{ userRoleLabel() }}
+          </div>
+          
+          @if (currentUser()?.email) {
+            <div class="user-email">
+              <mat-icon>email</mat-icon>
+              {{ currentUser()?.email }}
+            </div>
+          }
+
+          @if (currentUser()?.phone) {
+            <div class="user-phone">
+              <mat-icon>phone</mat-icon>
+              {{ currentUser()?.phone }}
+            </div>
+          }
+
+          @if (isAgent() && currentUser()?.agency?.name) {
+            <div class="agency-info">
+              <mat-icon>business</mat-icon>
+              {{ currentUser()?.agency?.name }}
+            </div>
+          }
+
+          @if (isAgent() && currentUser()?.licenseNumber) {
+            <div class="license-info">
+              <mat-icon>badge</mat-icon>
+              Licenza: {{ currentUser()?.licenseNumber }}
+            </div>
+          }
+        </div>
+
+        <div class="user-stats">
+          @if (isAgent()) {
+            <div class="stat-item">
+              <span class="stat-value">{{ currentUser()?.rating || 0 }}</span>
+              <span class="stat-label">Rating</span>
+              <div class="rating-stars">
+                @for (star of [1,2,3,4,5]; track star) {
+                  <mat-icon [class.filled]="star <= (currentUser()?.rating || 0)">
+                    {{ star <= (currentUser()?.rating || 0) ? 'star' : 'star_border' }}
+                  </mat-icon>
+                }
+              </div>
+            </div>
+
+            <mat-divider vertical></mat-divider>
+
+            <div class="stat-item">
+              <span class="stat-value">{{ currentUser()?.reviewsCount || 0 }}</span>
+              <span class="stat-label">Recensioni</span>
+            </div>
+          }
+
+          <div class="stat-item">
+            <span class="stat-label">Membro dal</span>
+            <span class="stat-value">{{ getJoinDateLabel() }}</span>
+          </div>
+        </div>
+      </mat-card-header>
+
+      @if (isAgent() && currentUser()?.biography) {
+        <mat-card-content>
+          <div class="biography-section">
+            <h3>
+              <mat-icon>info</mat-icon>
+              Biografia
+            </h3>
+            <p>{{ currentUser()?.biography }}</p>
+          </div>
+        </mat-card-content>
+      }
+
+      @if (isAgent() && currentUser()?.specializations && currentUser()!.specializations!.length > 0) {
+        <mat-card-content>
+          <div class="specializations-section">
+            <h3>
+              <mat-icon>work_outline</mat-icon>
+              Specializzazioni
+            </h3>
+            <div class="specializations-chips">
+              @for (spec of currentUser()?.specializations; track spec) {
+                <mat-chip>{{ spec }}</mat-chip>
+              }
+            </div>
+          </div>
+        </mat-card-content>
+      }
+
+      <mat-card-actions class="profile-actions">
+        <button mat-button (click)="goToDashboard()">
+          <mat-icon>dashboard</mat-icon>
+          Dashboard
+        </button>
+        
+        @if (currentUser()?.shouldChangePassword) {
+          <button mat-raised-button color="warn" (click)="onTabChange(1)">
+            <mat-icon>security</mat-icon>
+            Cambia Password (Consigliato)
+          </button>
+        }
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <div class="profile-tabs">
+    <mat-card>
+      <mat-tab-group [selectedIndex]="selectedTab()" (selectedIndexChange)="onTabChange($event)">
+        <!-- Tab Modifica Profilo -->
+        <mat-tab label="Modifica Profilo">
+          <ng-template matTabContent>
+            <div class="tab-content">
+              <app-personal-data (userUpdated)="onUserUpdated($event)" [currentUser]="currentUser()"></app-personal-data>
+              <app-contact-info [user]="currentUser()!"></app-contact-info>
+            </div>
+          </ng-template>
+        </mat-tab>
+
+        <!-- Tab Cambia Password -->
+        <mat-tab label="Sicurezza">
+          <ng-template matTabContent>
+            <div class="tab-content">
+              <app-change-password 
+                (passwordChanged)="onPasswordChanged()">
+              </app-change-password>
+            </div>
+          </ng-template>
+        </mat-tab>
+
+        <!-- Tab Preferenze -->
+        <mat-tab label="Notifiche">
+          <ng-template matTabContent>
+            <div class="tab-content">
+              <app-notification-preferences [user]="currentUser()!"></app-notification-preferences>
+            </div>
+          </ng-template>
+        </mat-tab>
+
+        @if (isAgent()) {
+          <!-- Tab Attività Agente -->
+          <mat-tab label="Attività">
+            <ng-template matTabContent>
+              <div class="tab-content">
+                <div class="coming-soon">
+                  <mat-icon>analytics</mat-icon>
+                  <h3>Statistiche Attività</h3>
+                  <p>Visualizzazione delle statistiche attività sarà disponibile presto.</p>
+                </div>
+              </div>
+            </ng-template>
+          </mat-tab>
+        }
+      </mat-tab-group>
+    </mat-card>
+  </div>
+</div>

@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -9,10 +9,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatStepperModule } from '@angular/material/stepper';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services/auth.service';
-import {MatRadioButton} from '@angular/material/radio';
+import { OAuthProviders } from '../oauth/oauth-providers';
 
 @Component({
   selector: 'app-register',
@@ -27,8 +26,8 @@ import {MatRadioButton} from '@angular/material/radio';
     MatIconModule,
     MatSelectModule,
     MatCheckboxModule,
-    MatStepperModule,
-    MatRadioButton
+    RouterLink,
+    OAuthProviders
   ],
   templateUrl: './register.html',
   styleUrl: './register.scss'
@@ -43,56 +42,33 @@ export class Register {
   hideConfirmPassword = signal(true);
   isLoading = signal(false);
 
-  // Step 1: Account Type
-  accountTypeForm: FormGroup = this.fb.group({
-    role: ['client', Validators.required]
-  });
-
-  // Step 2: Personal Information
-  personalInfoForm: FormGroup = this.fb.group({
+  // Single registration form for clients only
+  registrationForm: FormGroup = this.fb.group({
     firstName: ['', [Validators.required, Validators.minLength(2)]],
     lastName: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
-    phone: ['', [Validators.pattern(/^[0-9+\-\s()]+$/)]]
-  });
-
-  // Step 3: Password
-  passwordForm: FormGroup = this.fb.group({
+    phone: ['', [Validators.pattern(/^[0-9+\-\s()]+$/)]],
     password: ['', [Validators.required, Validators.minLength(8), this.passwordValidator]],
     confirmPassword: ['', Validators.required],
-    acceptTerms: [false, Validators.requiredTrue]
+    acceptTerms: [false, Validators.requiredTrue],
+    acceptPrivacy: [false, Validators.requiredTrue]
   }, { validators: this.passwordMatchValidator });
 
-  // Step 4: Agent Details (conditional)
-  agentInfoForm: FormGroup = this.fb.group({
-    agencyName: [''],
-    licenseNumber: [''],
-    biography: ['']
-  });
-
-  accountTypes = [
-    { value: 'client', label: 'Cliente', description: 'Cerca e acquista immobili' },
-    { value: 'agent', label: 'Agente Immobiliare', description: 'Gestisci e vendi immobili' }
-  ];
-
-  get isAgent(): boolean {
-    return this.accountTypeForm.get('role')?.value === 'agent';
-  }
-
   onSubmit(): void {
-    if (this.isFormValid()) {
+    if (this.registrationForm.valid) {
       this.isLoading.set(true);
 
+      const formValue = this.registrationForm.value;
       const userData = {
-        ...this.personalInfoForm.value,
-        ...this.passwordForm.value,
-        role: this.accountTypeForm.value.role,
-        ...(this.isAgent ? this.agentInfoForm.value : {})
+        firstName: formValue.firstName,
+        lastName: formValue.lastName,
+        email: formValue.email,
+        phone: formValue.phone || undefined,
+        password: formValue.password,
+        role: 'client' as const, // Always client for public registration
+        acceptTerms: formValue.acceptTerms,
+        acceptPrivacy: formValue.acceptPrivacy
       };
-
-      // Remove confirmPassword and acceptTerms
-      delete userData.confirmPassword;
-      delete userData.acceptTerms;
 
       this.authService.register(userData).subscribe({
         next: (response) => {
@@ -100,7 +76,7 @@ export class Register {
             duration: 3000,
             panelClass: ['success-snackbar']
           });
-          this.router.navigate(['/dashboard']);
+          this.router.navigate(['/onboarding']);
         },
         error: (error) => {
           this.isLoading.set(false);
@@ -117,21 +93,7 @@ export class Register {
     }
   }
 
-  private isFormValid(): boolean {
-    const basicValid = this.accountTypeForm.valid &&
-      this.personalInfoForm.valid &&
-      this.passwordForm.valid;
 
-    if (this.isAgent) {
-      // Validate agent-specific fields
-      this.agentInfoForm.get('agencyName')?.setValidators([Validators.required]);
-      this.agentInfoForm.get('licenseNumber')?.setValidators([Validators.required]);
-      this.agentInfoForm.updateValueAndValidity();
-      return basicValid && this.agentInfoForm.valid;
-    }
-
-    return basicValid;
-  }
 
   private passwordValidator(control: AbstractControl): { [key: string]: any } | null {
     const value = control.value;
@@ -167,8 +129,8 @@ export class Register {
     return password.value === confirmPassword.value ? null : { passwordMismatch: true };
   }
 
-  getErrorMessage(form: FormGroup, field: string): string {
-    const control = form.get(field);
+  getErrorMessage(field: string): string {
+    const control = this.registrationForm.get(field);
     if (control?.hasError('required')) {
       return 'Campo obbligatorio';
     }
@@ -181,8 +143,11 @@ export class Register {
     if (control?.hasError('pattern')) {
       return 'Formato non valido';
     }
-    if (field === 'confirmPassword' && this.passwordForm.hasError('passwordMismatch')) {
+    if (field === 'confirmPassword' && this.registrationForm.hasError('passwordMismatch')) {
       return 'Le password non corrispondono';
+    }
+    if (control?.hasError('passwordStrength')) {
+      return 'La password non soddisfa i requisiti di sicurezza';
     }
     return '';
   }

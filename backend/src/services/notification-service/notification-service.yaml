@@ -464,7 +464,7 @@ components:
           default: normal
         channel:
           type: string
-          enum: [in_app, email, push, sms]
+          enum: [in_app, email, push]
           default: in_app
         actionUrl:
           type: string
@@ -542,7 +542,7 @@ components:
           default: normal
         channel:
           type: string
-          enum: [in_app, email, push, sms]
+          enum: [in_app, email, push]
           default: in_app
         actionUrl:
           type: string
@@ -592,7 +592,7 @@ components:
           default: normal
         channel:
           type: string
-          enum: [in_app, email, push, sms]
+          enum: [in_app, email, push]
           default: in_app
         actionUrl:
           type: string
@@ -619,9 +619,7 @@ components:
         pushNotifications:
           type: boolean
           default: true
-        smsNotifications:
-          type: boolean
-          default: false
+
         enabledTypes:
           type: array
           items:
@@ -666,8 +664,7 @@ components:
           type: boolean
         pushNotifications:
           type: boolean
-        smsNotifications:
-          type: boolean
+
         enabledTypes:
           type: array
           items:
@@ -716,7 +713,7 @@ components:
           type: array
           items:
             type: string
-            enum: [in_app, email, push, sms]
+            enum: [in_app, email, push]
         isActive:
           type: boolean
 

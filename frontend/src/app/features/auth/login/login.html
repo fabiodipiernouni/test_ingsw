@@ -49,7 +49,7 @@
             <mat-checkbox formControlName="rememberMe">
               Ricordami
             </mat-checkbox>
-            <a href="#" class="forgot-password-link">
+            <a routerLink="/forgot-password" class="forgot-password-link">
               Password dimenticata?
             </a>
           </div>
@@ -73,25 +73,7 @@
           </button>
         </form>
 
-        <div class="divider">
-          <span>oppure</span>
-        </div>
-
-        <div class="social-login">
-          <button mat-stroked-button
-                  class="social-button google-button"
-                  (click)="onGoogleLogin()">
-            <mat-icon svgIcon="google"></mat-icon>
-            Continua con Google
-          </button>
-
-          <button mat-stroked-button
-                  class="social-button facebook-button"
-                  (click)="onFacebookLogin()">
-            <mat-icon svgIcon="facebook"></mat-icon>
-            Continua con Facebook
-          </button>
-        </div>
+        <app-oauth-providers mode="login"></app-oauth-providers>
       </mat-card-content>
 
       <mat-card-footer>
@@ -104,27 +86,3 @@
       </mat-card-footer>
     </mat-card>
   </div>
-
-  <!-- Demo credentials info -->
-  <div class="demo-info">
-    <mat-card class="demo-card">
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon>info</mat-icon>
-          Demo Credentials
-        </mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <p>Per testare l'applicazione, utilizza queste credenziali:</p>
-        <div class="demo-credentials">
-          <div class="credential-item">
-            <strong>Email:</strong> test@example.com
-          </div>
-          <div class="credential-item">
-            <strong>Password:</strong> password
-          </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
-  </div>
-</div>

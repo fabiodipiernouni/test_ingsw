@@ -41,7 +41,7 @@ export class PropertyFavorite extends Model {
   property!: Property;
 
   @AllowNull(true)
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING(2000))
   notes?: string;
 
   @AllowNull(true)

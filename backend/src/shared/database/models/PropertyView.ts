@@ -56,7 +56,7 @@ export class PropertyView extends Model {
   ipAddress?: string;
 
   @AllowNull(true)
-  @Column(DataType.TEXT)
+  @Column(DataType.STRING(2000))
   userAgent?: string;
 
   @AllowNull(true)

@@ -26,7 +26,8 @@
       "@notification/*": ["src/services/notification-service/*"],
       "@generated/*": ["src/services/generated/*"]
     },
-    "typeRoots": ["./node_modules/@types", "./src/shared/types"]
+    "typeRoots": ["./node_modules/@types", "./src/shared/types"],
+    "types": ["node", "express"]
   },
   "include": [
     "src/**/*"

@@ -13,265 +13,154 @@
       </mat-card-header>
 
       <mat-card-content>
-        <mat-stepper #stepper>
-          <!-- Step 1: Account Type -->
-          <mat-step [stepControl]="accountTypeForm" label="Tipo Account">
-            <form [formGroup]="accountTypeForm">
-              <div class="account-types">
-                <h3>Che tipo di account vuoi creare?</h3>
+        <form [formGroup]="registrationForm" (ngSubmit)="onSubmit()">
+          <!-- Personal Information -->
+          <div class="form-section">
+            <h3>Informazioni Personali</h3>
 
-                @for (type of accountTypes; track type.value) {
-                  <div class="account-type-option">
-                    <mat-radio-button
-                      [value]="type.value"
-                      formControlName="role"
-                      class="account-radio">
-                      <div class="account-type-content">
-                        <h4>{{ type.label }}</h4>
-                        <p>{{ type.description }}</p>
-                      </div>
-                    </mat-radio-button>
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Nome</mat-label>
+                <input matInput
+                       formControlName="firstName"
+                       placeholder="Mario"
+                       autocomplete="given-name">
+                <mat-error>{{ getErrorMessage('firstName') }}</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Cognome</mat-label>
+                <input matInput
+                       formControlName="lastName"
+                       placeholder="Rossi"
+                       autocomplete="family-name">
+                <mat-error>{{ getErrorMessage('lastName') }}</mat-error>
+              </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Email</mat-label>
+              <input matInput
+                     type="email"
+                     formControlName="email"
+                     placeholder="mario.rossi@email.com"
+                     autocomplete="email">
+              <mat-icon matSuffix>email</mat-icon>
+              <mat-error>{{ getErrorMessage('email') }}</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Telefono (opzionale)</mat-label>
+              <input matInput
+                     type="tel"
+                     formControlName="phone"
+                     placeholder="+39 123 456 7890"
+                     autocomplete="tel">
+              <mat-icon matSuffix>phone</mat-icon>
+              <mat-error>{{ getErrorMessage('phone') }}</mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Password Section -->
+          <div class="form-section">
+            <h3>Imposta la tua password</h3>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Password</mat-label>
+              <input matInput
+                     [type]="hidePassword() ? 'password' : 'text'"
+                     formControlName="password"
+                     placeholder="Scegli una password sicura"
+                     autocomplete="new-password">
+              <button mat-icon-button
+                      matSuffix
+                      type="button"
+                      (click)="hidePassword.set(!hidePassword())"
+                      [attr.aria-label]="'Toggle password visibility'"
+                      [attr.aria-pressed]="!hidePassword()">
+                <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              <mat-error>{{ getErrorMessage('password') }}</mat-error>
+            </mat-form-field>
+
+            <!-- Password Strength Indicator -->
+            @if (registrationForm.get('password')?.hasError('passwordStrength')) {
+              <div class="password-requirements">
+                <p>La password deve contenere:</p>
+                <div class="requirements-list">
+                  @let requirements = registrationForm.get('password')?.getError('passwordStrength');
+                  <div class="requirement" [class.met]="requirements?.hasLower">
+                    <mat-icon>{{ requirements?.hasLower ? 'check' : 'close' }}</mat-icon>
+                    Almeno una lettera minuscola
                   </div>
-                }
-              </div>
-
-              <div class="step-actions">
-                <button mat-raised-button
-                        color="primary"
-                        matStepperNext
-                        [disabled]="!accountTypeForm.valid">
-                  Continua
-                  <mat-icon>arrow_forward</mat-icon>
-                </button>
-              </div>
-            </form>
-          </mat-step>
-
-          <!-- Step 2: Personal Info -->
-          <mat-step [stepControl]="personalInfoForm" label="Dati Personali">
-            <form [formGroup]="personalInfoForm">
-              <div class="form-section">
-                <h3>Informazioni Personali</h3>
-
-                <div class="form-row">
-                  <mat-form-field appearance="outline">
-                    <mat-label>Nome</mat-label>
-                    <input matInput
-                           formControlName="firstName"
-                           placeholder="Mario">
-                    <mat-error>{{ getErrorMessage(personalInfoForm, 'firstName') }}</mat-error>
-                  </mat-form-field>
-
-                  <mat-form-field appearance="outline">
-                    <mat-label>Cognome</mat-label>
-                    <input matInput
-                           formControlName="lastName"
-                           placeholder="Rossi">
-                    <mat-error>{{ getErrorMessage(personalInfoForm, 'lastName') }}</mat-error>
-                  </mat-form-field>
-                </div>
-
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Email</mat-label>
-                  <input matInput
-                         type="email"
-                         formControlName="email"
-                         placeholder="mario.rossi@email.com">
-                  <mat-icon matSuffix>email</mat-icon>
-                  <mat-error>{{ getErrorMessage(personalInfoForm, 'email') }}</mat-error>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Telefono (opzionale)</mat-label>
-                  <input matInput
-                         type="tel"
-                         formControlName="phone"
-                         placeholder="+39 123 456 7890">
-                  <mat-icon matSuffix>phone</mat-icon>
-                  <mat-error>{{ getErrorMessage(personalInfoForm, 'phone') }}</mat-error>
-                </mat-form-field>
-              </div>
-
-              <div class="step-actions">
-                <button mat-button matStepperPrevious>
-                  <mat-icon>arrow_back</mat-icon>
-                  Indietro
-                </button>
-                <button mat-raised-button
-                        color="primary"
-                        matStepperNext
-                        [disabled]="!personalInfoForm.valid">
-                  Continua
-                  <mat-icon>arrow_forward</mat-icon>
-                </button>
-              </div>
-            </form>
-          </mat-step>
-
-          <!-- Step 3: Password -->
-          <mat-step [stepControl]="passwordForm" label="Password">
-            <form [formGroup]="passwordForm">
-              <div class="form-section">
-                <h3>Imposta la tua password</h3>
-
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Password</mat-label>
-                  <input matInput
-                         [type]="hidePassword() ? 'password' : 'text'"
-                         formControlName="password"
-                         placeholder="Scegli una password sicura">
-                  <button mat-icon-button
-                          matSuffix
-                          type="button"
-                          (click)="hidePassword.set(!hidePassword())">
-                    <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
-                  </button>
-                  <mat-error>{{ getErrorMessage(passwordForm, 'password') }}</mat-error>
-                </mat-form-field>
-
-                <!-- Password Strength Indicator -->
-                @if (passwordForm.get('password')?.hasError('passwordStrength')) {
-                  <div class="password-requirements">
-                    <p>La password deve contenere:</p>
-                    <div class="requirements-list">
-                      @let requirements = passwordForm.get('password')?.getError('passwordStrength');
-                      <div class="requirement" [class.met]="requirements?.hasLower">
-                        <mat-icon>{{ requirements?.hasLower ? 'check' : 'close' }}</mat-icon>
-                        Almeno una lettera minuscola
-                      </div>
-                      <div class="requirement" [class.met]="requirements?.hasUpper">
-                        <mat-icon>{{ requirements?.hasUpper ? 'check' : 'close' }}</mat-icon>
-                        Almeno una lettera maiuscola
-                      </div>
-                      <div class="requirement" [class.met]="requirements?.hasNumber">
-                        <mat-icon>{{ requirements?.hasNumber ? 'check' : 'close' }}</mat-icon>
-                        Almeno un numero
-                      </div>
-                      <div class="requirement" [class.met]="requirements?.hasSpecial">
-                        <mat-icon>{{ requirements?.hasSpecial ? 'check' : 'close' }}</mat-icon>
-                        Almeno un carattere speciale
-                      </div>
-                    </div>
+                  <div class="requirement" [class.met]="requirements?.hasUpper">
+                    <mat-icon>{{ requirements?.hasUpper ? 'check' : 'close' }}</mat-icon>
+                    Almeno una lettera maiuscola
                   </div>
-                }
-
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Conferma Password</mat-label>
-                  <input matInput
-                         [type]="hideConfirmPassword() ? 'password' : 'text'"
-                         formControlName="confirmPassword"
-                         placeholder="Ripeti la password">
-                  <button mat-icon-button
-                          matSuffix
-                          type="button"
-                          (click)="hideConfirmPassword.set(!hideConfirmPassword())">
-                    <mat-icon>{{ hideConfirmPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
-                  </button>
-                  <mat-error>{{ getErrorMessage(passwordForm, 'confirmPassword') }}</mat-error>
-                </mat-form-field>
-
-                <div class="terms-checkbox">
-                  <mat-checkbox formControlName="acceptTerms">
-                    Accetto i <a href="#" class="terms-link">Termini di Servizio</a>
-                    e la <a href="#" class="terms-link">Privacy Policy</a>
-                  </mat-checkbox>
+                  <div class="requirement" [class.met]="requirements?.hasNumber">
+                    <mat-icon>{{ requirements?.hasNumber ? 'check' : 'close' }}</mat-icon>
+                    Almeno un numero
+                  </div>
+                  <div class="requirement" [class.met]="requirements?.hasSpecial">
+                    <mat-icon>{{ requirements?.hasSpecial ? 'check' : 'close' }}</mat-icon>
+                    Almeno un carattere speciale
+                  </div>
                 </div>
               </div>
+            }
 
-              <div class="step-actions">
-                <button mat-button matStepperPrevious>
-                  <mat-icon>arrow_back</mat-icon>
-                  Indietro
-                </button>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Conferma Password</mat-label>
+              <input matInput
+                     [type]="hideConfirmPassword() ? 'password' : 'text'"
+                     formControlName="confirmPassword"
+                     placeholder="Ripeti la password"
+                     autocomplete="new-password">
+              <button mat-icon-button
+                      matSuffix
+                      type="button"
+                      (click)="hideConfirmPassword.set(!hideConfirmPassword())"
+                      [attr.aria-label]="'Toggle confirm password visibility'"
+                      [attr.aria-pressed]="!hideConfirmPassword()">
+                <mat-icon>{{ hideConfirmPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              <mat-error>{{ getErrorMessage('confirmPassword') }}</mat-error>
+            </mat-form-field>
+          </div>
 
-                @if (isAgent) {
-                  <button mat-raised-button
-                          color="primary"
-                          matStepperNext
-                          [disabled]="!passwordForm.valid">
-                    Continua
-                    <mat-icon>arrow_forward</mat-icon>
-                  </button>
-                } @else {
-                  <button mat-raised-button
-                          color="primary"
-                          (click)="onSubmit()"
-                          [disabled]="!passwordForm.valid || isLoading()">
-                    @if (isLoading()) {
-                      <ng-container>
-                        <mat-icon class="spin">refresh</mat-icon>
-                        Registrazione...
-                      </ng-container>
-                    } @else {
-                      <ng-container>
-                        <mat-icon>person_add</mat-icon>
-                        Crea Account
-                      </ng-container>
-                    }
-                  </button>
-                }
-              </div>
-            </form>
-          </mat-step>
+          <!-- Terms and Conditions -->
+          <div class="terms-section">
+            <div class="terms-checkbox">
+              <mat-checkbox formControlName="acceptTerms">
+                Accetto i <a href="#" class="terms-link">Termini di Servizio</a>
+              </mat-checkbox>
+              
+              <mat-checkbox formControlName="acceptPrivacy">
+                Accetto la <a href="#" class="terms-link">Privacy Policy</a>
+              </mat-checkbox>
+            </div>
 
-          <!-- Step 4: Agent Info (conditional) -->
-          @if (isAgent) {
-            <mat-step [stepControl]="agentInfoForm" label="Info Agente">
-              <form [formGroup]="agentInfoForm">
-                <div class="form-section">
-                  <h3>Informazioni Professionali</h3>
-
-                  <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Nome Agenzia</mat-label>
-                    <input matInput
-                           formControlName="agencyName"
-                           placeholder="Es: Immobiliare Rossi & Associati">
-                    <mat-error>{{ getErrorMessage(agentInfoForm, 'agencyName') }}</mat-error>
-                  </mat-form-field>
-
-                  <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Numero Licenza</mat-label>
-                    <input matInput
-                           formControlName="licenseNumber"
-                           placeholder="Es: AG123456789">
-                    <mat-error>{{ getErrorMessage(agentInfoForm, 'licenseNumber') }}</mat-error>
-                  </mat-form-field>
-
-                  <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Biografia Professionale (opzionale)</mat-label>
-                    <textarea matInput
-                              formControlName="biography"
-                              rows="4"
-                              placeholder="Descrivi la tua esperienza e specializzazioni..."></textarea>
-                  </mat-form-field>
-                </div>
-
-                <div class="step-actions">
-                  <button mat-button matStepperPrevious>
-                    <mat-icon>arrow_back</mat-icon>
-                    Indietro
-                  </button>
-                  <button mat-raised-button
-                          color="primary"
-                          (click)="onSubmit()"
-                          [disabled]="!agentInfoForm.valid || isLoading()">
-                    @if (isLoading()) {
-                      <ng-container>
-                        <mat-icon class="spin">refresh</mat-icon>
-                        Registrazione...
-                      </ng-container>
-                    } @else {
-                      <ng-container>
-                        <mat-icon>person_add</mat-icon>
-                        </ng-container>
-                      Crea Account Agente
-                    }
-                  </button>
-                </div>
-              </form>
-            </mat-step>
-          }
-        </mat-stepper>
+            <button mat-raised-button
+                    color="primary"
+                    type="submit"
+                    class="register-button"
+                    [disabled]="!registrationForm.valid || isLoading()">
+              @if (isLoading()) {
+                <ng-container>
+                  <mat-icon class="spin">refresh</mat-icon>
+                  Registrazione in corso...
+                </ng-container>
+              } @else {
+                <ng-container>
+                  <mat-icon>person_add</mat-icon>
+                  Crea Account Cliente
+                </ng-container>
+              }
+            </button>
+          </div>
+        </form>
+        
+        <app-oauth-providers mode="register"></app-oauth-providers>
       </mat-card-content>
 
       <mat-card-footer>

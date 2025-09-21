@@ -25,8 +25,6 @@ export class App implements OnInit {
   private titleService = inject(Title);
 
   ngOnInit(): void {
-    // Initialize authentication state
-    this.initializeAuth();
 
     // Initialize notifications
     this.initializeNotifications();
@@ -41,20 +39,12 @@ export class App implements OnInit {
       // Scroll to top on route change
       window.scrollTo(0, 0);
 
-      // You can add analytics tracking here
-      // this.analytics.trackPageView(event.url);
     });
 
-    // Request notification permissions
-    this.requestNotificationPermissions();
-  }
-
-  private initializeAuth(): void {
-    // Auth service automatically loads user from storage in constructor
-    // Additional initialization can be done here if needed
   }
 
   private initializeNotifications(): void {
+    // TODO
     // Load notifications if user is authenticated
     this.authService.currentUser$.subscribe(user => {
       if (user) {
@@ -62,16 +52,6 @@ export class App implements OnInit {
         this.notificationService.getNotifications().subscribe();
       }
     });
-  }
-
-  private requestNotificationPermissions(): void {
-    if ('Notification' in window && Notification.permission === 'default') {
-      this.notificationService.requestNotificationPermission().subscribe(
-        permission => {
-          console.log('Notification permission:', permission);
-        }
-      );
-    }
   }
 
   private updatePageTitle(url: string): void {
