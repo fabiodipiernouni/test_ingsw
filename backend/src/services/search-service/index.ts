@@ -40,7 +40,8 @@ app.get('/health', (req, res) => {
 });
 
 // Routes
-// app.use('/', searchRoutes);
+import searchRoutes from './routes/search';
+app.use('/search', searchRoutes);
 
 // 404 handler for undefined routes
 app.use(notFoundHandler);

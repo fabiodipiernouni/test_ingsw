@@ -1,0 +1,128 @@
+### Test dell'API Search Service
+
+### 1. Test Health Check
+GET http://localhost:3003/health
+
+### 2. Test Ricerca Base - Tutte le proprietà attive
+POST http://localhost:3003/search
+Content-Type: application/json
+
+{
+  "page": 1,
+  "limit": 20,
+  "sortBy": "relevance"
+}
+
+### 3. Test Ricerca per Città
+POST http://localhost:3003/search
+Content-Type: application/json
+
+{
+  "city": "Milano",
+  "page": 1,
+  "limit": 10,
+  "sortBy": "price_asc"
+}
+
+### 4. Test Ricerca per Tipo Proprietà e Range Prezzo
+POST http://localhost:3003/search
+Content-Type: application/json
+
+{
+  "propertyType": "apartment",
+  "listingType": "sale",
+  "priceMin": 200000,
+  "priceMax": 500000,
+  "bedrooms": 2,
+  "page": 1,
+  "limit": 15
+}
+
+### 5. Test Ricerca Geografica (raggio)
+POST http://localhost:3003/search
+Content-Type: application/json
+
+{
+  "centerLat": 45.4642,
+  "centerLng": 9.1900,
+  "radius": 5,
+  "page": 1,
+  "limit": 20
+}
+
+### 6. Test Ricerca Avanzata con Filtri Multipli
+POST http://localhost:3003/search
+Content-Type: application/json
+
+{
+  "query": "centro storico",
+  "city": "Milano",
+  "propertyType": "apartment",
+  "listingType": "sale",
+  "priceMin": 300000,
+  "priceMax": 800000,
+  "bedrooms": 3,
+  "bathrooms": 2,
+  "areaMin": 80,
+  "areaMax": 150,
+  "hasElevator": true,
+  "hasBalcony": true,
+  "energyClass": "B",
+  "features": ["aria condizionata", "ristrutturato"],
+  "sortBy": "price_desc",
+  "page": 1,
+  "limit": 10
+}
+
+### 7. Test Suggerimenti di Ricerca - Locations
+GET http://localhost:3003/search/suggestions?query=Mil&type=location
+
+### 8. Test Suggerimenti di Ricerca - Property Types
+GET http://localhost:3003/search/suggestions?query=apart&type=property_type
+
+### 9. Test Suggerimenti di Ricerca - Features
+GET http://localhost:3003/search/suggestions?query=aria&type=feature
+
+### 10. Test Validazione - Parametri Invalidi (dovrebbe fallire)
+POST http://localhost:3003/search
+Content-Type: application/json
+
+{
+  "priceMin": 500000,
+  "priceMax": 300000,
+  "page": -1,
+  "limit": 150
+}
+
+### 11. Test Validazione - Ricerca Geografica Incompleta (dovrebbe fallire)
+POST http://localhost:3003/search
+Content-Type: application/json
+
+{
+  "centerLat": 45.4642,
+  "radius": 5
+}
+
+### 12. Test Suggerimenti - Query Troppo Corta (dovrebbe restituire array vuoto)
+GET http://localhost:3003/search/suggestions?query=M&type=location
+
+### 13. Test Ricerche Salvate - GET (richiede autenticazione, dovrebbe fallire senza token)
+GET http://localhost:3003/search/saved
+
+### 14. Test Storico Ricerche - GET (richiede autenticazione, dovrebbe fallire senza token)
+GET http://localhost:3003/search/history?page=1&limit=20
+
+### 15. Test Salvataggio Ricerca (richiede autenticazione, dovrebbe fallire senza token)
+POST http://localhost:3003/search/saved
+Content-Type: application/json
+
+{
+  "name": "Appartamenti Milano Centro",
+  "filters": {
+    "city": "Milano",
+    "propertyType": "apartment",
+    "priceMin": 300000,
+    "priceMax": 600000
+  },
+  "isNotificationEnabled": true
+}

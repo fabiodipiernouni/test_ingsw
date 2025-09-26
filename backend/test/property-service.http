@@ -1,0 +1,33 @@
+### Creazione Proprietà
+POST http://localhost:3002/properties
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyOWU5MGY5Yi0wNGE0LTQ1ZGItODFhZi00NzhiZTRkOWI5YmIiLCJlbWFpbCI6ImZhYmlvQHRlY25vY2FzYS5pdCIsInJvbGUiOiJhZ2VudCIsImlhdCI6MTc1ODkwNjc0MSwiZXhwIjoxNzU4OTEwMzQxfQ.vhUhT5yCwoim3LfkvwdhOVZxAtNDchh_My2oBqAuHTo
+
+{
+  "title": "Bellissimo Appartamento nel Centro Storico di Milano",
+  "description": "Elegante appartamento di 120 mq situato nel cuore del centro storico di Milano, a pochi passi dal Duomo. L'immobile si trova al terzo piano di un elegante palazzo d'epoca con ascensore. L'appartamento è composto da un luminoso soggiorno con cucina a vista, tre camere da letto di cui una matrimoniale, due bagni completi e un balcone che affaccia su una tranquilla corte interna. L'immobile è in ottime condizioni, completamente ristrutturato e arredato con gusto moderno. Riscaldamento autonomo, aria condizionata, parquet e doppi vetri. Ideale per famiglie o professionisti. Zona servita da tutti i mezzi pubblici.",
+  "price": 450000,
+  "propertyType": "apartment",
+  "listingType": "sale",
+  "bedrooms": 3,
+  "bathrooms": 2,
+  "area": 120,
+  "floor": "3",
+  "energyClass": "B",
+  "hasElevator": true,
+  "hasBalcony": true,
+  "hasGarden": false,
+  "hasParking": false,
+  "features": ["aria condizionata", "riscaldamento autonomo", "parquet", "doppi vetri", "ristrutturato"],
+  "address": {
+    "street": "Via Giuseppe Verdi, 15",
+    "city": "Milano",
+    "province": "Milano",
+    "zipCode": "20121",
+    "country": "Italy"
+  },
+  "location": {
+    "latitude": 45.4654219,
+    "longitude": 9.1859243
+  }
+}

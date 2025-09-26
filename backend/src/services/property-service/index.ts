@@ -40,7 +40,8 @@ app.get('/health', (req, res) => {
 });
 
 // Routes
-// app.use('/', propertyRoutes);
+import propertyRoutes from './routes/properties';
+app.use('/properties', propertyRoutes);
 
 // 404 handler for undefined routes
 app.use(notFoundHandler);

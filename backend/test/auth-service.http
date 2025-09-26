@@ -1,0 +1,17 @@
+### Login Admin
+POST http://localhost:3001/login
+Content-Type: application/json
+
+{
+  "email": "giuseppe@tecnocasa.it",
+  "password": "GSDe=&pd#HKg"
+}
+
+### Login Agent
+POST http://localhost:3001/login
+Content-Type: application/json
+
+{
+  "email": "fabio@tecnocasa.it",
+  "password": "sPWIAD&C5ucX"
+}
