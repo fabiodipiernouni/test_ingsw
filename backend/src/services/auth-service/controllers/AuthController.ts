@@ -34,12 +34,9 @@ export class AuthController {
         password, 
         firstName, 
         lastName, 
-        role = 'client',
         acceptTerms,
         acceptPrivacy,
-        phone,
-        agencyName,
-        licenseNumber
+        phone
       } = req.body;
 
       // Validazione accettazione termini e privacy (obbligatori)
@@ -57,22 +54,6 @@ export class AuthController {
         });
       }
 
-      // Validazione campi agente (se role è 'agent')
-      if (role === 'agent') {
-        if (!agencyName || agencyName.trim().length < 2) {
-          return res.status(400).json({
-            success: false,
-            message: 'Agency name is required for agents'
-          });
-        }
-        if (!licenseNumber || licenseNumber.trim().length < 5) {
-          return res.status(400).json({
-            success: false,
-            message: 'License number is required for agents'
-          });
-        }
-      }
-
       // Verifica se l'utente esiste già
       const existingUser = await User.findOne({ where: { email } });
       if (existingUser) {
@@ -88,7 +69,7 @@ export class AuthController {
         password, // Password in chiaro - sarà hashata dal hook del modello
         firstName,
         lastName,
-        role,
+        role: 'client', // Solo client per la registrazione pubblica
         isVerified: false,
         isActive: true,
         acceptedTermsAt: new Date(), // Timestamp accettazione termini
@@ -97,10 +78,6 @@ export class AuthController {
 
       // Campi opzionali
       if (phone) userData.phone = phone;
-      if (role === 'agent') {
-        userData.agencyName = agencyName;
-        userData.licenseNumber = licenseNumber;
-      }
 
       const user = await User.create(userData);
 

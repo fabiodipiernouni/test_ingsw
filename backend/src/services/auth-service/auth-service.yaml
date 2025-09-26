@@ -236,7 +236,7 @@ paths:
   /register:
     post:
       operationId: register
-      summary: Registrazione nuovo utente
+      summary: Registrazione nuovo utente client
       requestBody:
         required: true
         content:
@@ -442,7 +442,6 @@ components:
         - password
         - firstName
         - lastName
-        - role
         - acceptTerms
         - acceptPrivacy
       properties:
@@ -462,22 +461,9 @@ components:
           type: string
           minLength: 2
           maxLength: 50
-        role:
-          type: string
-          enum: [client, agent]
         phone:
           type: string
           pattern: '^\+?[1-9]\d{1,14}$'
-        agencyName:
-          type: string
-          minLength: 2
-          maxLength: 200
-          description: "Required if role is agent"
-        licenseNumber:
-          type: string
-          minLength: 5
-          maxLength: 50
-          description: "Required if role is agent"
         acceptTerms:
           type: boolean
           description: "Accettazione termini e condizioni"

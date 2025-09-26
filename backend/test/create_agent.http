@@ -1,0 +1,17 @@
+POST http://localhost:3004/users/create-agent
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI0OWZjYWYyZi1kNzVmLTQwZmItODcwNy05NDI1ODY2OTdmZDYiLCJlbWFpbCI6ImdpdXNlcHBlQHRlY25vY2FzYS5pdCIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1ODkwNTI4NywiZXhwIjoxNzU4OTA4ODg3fQ.oFfPIM-ftHfFmkVMS2f97zeOTw7GDMI_FotbTHxd8bI
+
+{
+  "email": "fabio@tecnocasa.it",
+  "firstName": "Fabio",
+  "lastName": "Di Pierno",
+  "phone": "+393929292929",
+  "licenseNumber": "AB12345",
+  "biography": "Very good agent",
+  "specializations": [
+    "residential",
+    "commercial"
+  ],
+  "shouldChangePassword": true
+}

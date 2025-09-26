@@ -419,4 +419,162 @@ export class UserController {
       });
     }
   }
+
+  /**
+   * POST /users/create-agent
+   * Crea un nuovo agente per l'agenzia
+   */
+  async createAgent(req: AuthenticatedRequest, res: Response) {
+    try {
+      const {
+        email,
+        firstName,
+        lastName,
+        phone,
+        licenseNumber,
+        biography,
+        specializations,
+        shouldChangePassword = true
+      } = req.body;
+
+      // Verifica che l'utente non esista già
+      const existingUser = await User.findOne({ where: { email } });
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: 'A user with this email already exists'
+        });
+      }
+
+      // Genera password temporanea
+      const { generateSecurePassword } = await import('../../../shared/utils/passwordHelpers');
+      const password = generateSecurePassword();
+
+      // Crea l'utente agente
+      const agentData: any = {
+        email,
+        password: password,
+        firstName,
+        lastName,
+        role: 'agent',
+        agencyId: req.userAgency?.id,
+        licenseNumber,
+        shouldChangePassword,
+        isVerified: false,
+        isActive: true,
+        acceptedTermsAt: new Date(),
+        acceptedPrivacyAt: new Date()
+      };
+
+      // Campi opzionali
+      if (phone) agentData.phone = phone;
+      if (biography) agentData.biography = biography;
+      if (specializations && Array.isArray(specializations)) {
+        agentData.specializations = specializations;
+      }
+
+      const newAgent = await User.create(agentData);
+
+      // Risposta senza password per sicurezza
+      const response = {
+        success: true,
+        message: 'Agent created successfully',
+        user: {
+          id: newAgent.id,
+          email: newAgent.email,
+          firstName: newAgent.firstName,
+          lastName: newAgent.lastName,
+          role: newAgent.role,
+          shouldChangePassword: newAgent.shouldChangePassword
+        },
+        password,
+        timestamp: new Date().toISOString()
+      };
+
+      logger.info(`Agent created successfully: ${newAgent.email} by admin: ${req.user?.email}`);
+      res.status(201).json(response);
+
+    } catch (error) {
+      logger.error('Error creating agent:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+
+  /**
+   * POST /users/create-admin
+   * Crea un nuovo admin per l'agenzia
+   */
+  async createAdmin(req: AuthenticatedRequest, res: Response) {
+    try {
+      const {
+        email,
+        firstName,
+        lastName,
+        phone,
+        shouldChangePassword = true
+      } = req.body;
+
+      // Verifica che l'utente non esista già
+      const existingUser = await User.findOne({ where: { email } });
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: 'A user with this email already exists'
+        });
+      }
+
+      // Genera password temporanea
+      const { generateSecurePassword } = await import('../../../shared/utils/passwordHelpers');
+      const password = generateSecurePassword();
+
+      // Crea l'utente admin
+      const adminData: any = {
+        email,
+        password: password,
+        firstName,
+        lastName,
+        role: 'admin',
+        agencyId: req.userAgency?.id,
+        shouldChangePassword,
+        isVerified: false,
+        isActive: true,
+        acceptedTermsAt: new Date(),
+        acceptedPrivacyAt: new Date()
+      };
+
+      // Campi opzionali
+      if (phone) adminData.phone = phone;
+
+      const newAdmin = await User.create(adminData);
+
+      // Risposta senza password per sicurezza
+      const response = {
+        success: true,
+        message: 'Administrator created successfully',
+        user: {
+          id: newAdmin.id,
+          email: newAdmin.email,
+          firstName: newAdmin.firstName,
+          lastName: newAdmin.lastName,
+          role: newAdmin.role,
+          shouldChangePassword: newAdmin.shouldChangePassword
+        },
+        password,
+        timestamp: new Date().toISOString()
+      };
+
+      logger.info(`Admin created successfully: ${newAdmin.email} by creator: ${req.user?.email}`);
+      res.status(201).json(response);
+
+    } catch (error) {
+      logger.error('Error creating admin:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
 }

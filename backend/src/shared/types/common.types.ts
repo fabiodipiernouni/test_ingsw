@@ -17,6 +17,7 @@ export interface User {
 
 export interface AuthenticatedRequest extends Request {
   user?: any;
+  userAgency?: any;
   file?: any;
   files?: any[];
 }

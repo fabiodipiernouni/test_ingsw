@@ -197,25 +197,15 @@ export const authValidations = {
     commonValidations.name('firstName'),
     commonValidations.name('lastName'),
     
-    body('role')
-      .isIn(['client', 'agent'])
-      .withMessage('Role must be either client or agent'),
-      
     commonValidations.phone(),
     
-    body('agencyName')
-      .if(body('role').equals('agent'))
-      .isLength({ min: 2, max: 200 })
-      .trim()
-      .escape()
-      .withMessage('Agency name is required for agents'),
+    body('acceptTerms')
+      .isBoolean()
+      .withMessage('Terms acceptance is required'),
       
-    body('licenseNumber')
-      .if(body('role').equals('agent'))
-      .isLength({ min: 5, max: 50 })
-      .trim()
-      .escape()
-      .withMessage('License number is required for agents')
+    body('acceptPrivacy')
+      .isBoolean()
+      .withMessage('Privacy acceptance is required')
   ],
   
   login: [
@@ -264,7 +254,55 @@ export const searchValidations = {
 };
 
 /**
+ * User management validations
+ */
+export const userValidations = {
+  createAgent: [
+    commonValidations.email(),
+    commonValidations.name('firstName'),
+    commonValidations.name('lastName'),
+    commonValidations.phone(),
+    
+    body('licenseNumber')
+      .isLength({ min: 5, max: 50 })
+      .trim()
+      .escape()
+      .withMessage('License number is required for agents'),
+      
+    body('biography')
+      .optional()
+      .isLength({ max: 1000 })
+      .trim()
+      .escape(),
+      
+    body('specializations')
+      .optional()
+      .isArray()
+      .withMessage('Specializations must be an array'),
+      
+    body('shouldChangePassword')
+      .optional()
+      .isBoolean()
+      .withMessage('shouldChangePassword must be boolean')
+  ],
+  
+  createAdmin: [
+    commonValidations.email(),
+    commonValidations.name('firstName'),
+    commonValidations.name('lastName'),
+    commonValidations.phone(),
+    
+    body('shouldChangePassword')
+      .optional()
+      .isBoolean()
+      .withMessage('shouldChangePassword must be boolean')
+  ]
+};
+
+/**
  * Convenient exports for specific validations
  */
 export const validateLogin = authValidations.login;
 export const validateRegister = authValidations.register;
+export const validateCreateAgent = userValidations.createAgent;
+export const validateCreateAdmin = userValidations.createAdmin;

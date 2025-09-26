@@ -12,7 +12,6 @@
  */
 
 import readline from 'readline';
-import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { database } from '../src/shared/database';
 import { User, Agency } from '../src/shared/database/models';

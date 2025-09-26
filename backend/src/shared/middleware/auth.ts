@@ -33,10 +33,6 @@ export const authenticateToken = async (
       return unauthorizedResponse(res, 'User not found');
     }
 
-    if (!user.isVerified) {
-      return unauthorizedResponse(res, 'Account not verified');
-    }
-
     // Add user to request object
     (req as any).user = user.toJSON();
     next();

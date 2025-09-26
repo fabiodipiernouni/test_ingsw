@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { UserController } from '../controllers/UserController';
 import { authenticateToken } from '../../../shared/middleware/auth';
+import { requireAgencyAdmin, requireAgencyCreator } from '../../../shared/middleware/authorization';
+import { validateCreateAgent, validateCreateAdmin } from '../../../shared/middleware/validation';
 
 const router = Router();
 const userController = new UserController();
@@ -24,5 +26,20 @@ router.post('/avatar', authenticateToken, userController.uploadAvatar.bind(userC
 
 // User activity endpoint
 router.get('/activity', authenticateToken, userController.getUserActivity.bind(userController));
+
+// User creation endpoints - require special permissions
+router.post('/create-agent', 
+  authenticateToken, 
+  requireAgencyAdmin, 
+  validateCreateAgent, 
+  userController.createAgent.bind(userController)
+);
+
+router.post('/create-admin', 
+  authenticateToken, 
+  requireAgencyCreator, 
+  validateCreateAdmin, 
+  userController.createAdmin.bind(userController)
+);
 
 export default router;
