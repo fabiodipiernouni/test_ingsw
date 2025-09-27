@@ -85,7 +85,7 @@
         <p><strong>Nome:</strong> {{ currentUser?.firstName }} {{ currentUser?.lastName }}</p>
         <p><strong>Email:</strong> {{ currentUser?.email }}</p>
         <p *ngIf="currentUser?.phone"><strong>Telefono:</strong> {{ currentUser?.phone }}</p>
-        <p><strong>Tipo Account:</strong> 
+        <p><strong>Tipo Account:</strong>
             <mat-chip [color]="currentUser?.role === 'agent' ? 'accent' : 'primary'">
             {{ getUserRoleLabel() }}
             </mat-chip>
@@ -93,19 +93,19 @@
         <div *ngIf="currentUser?.agency" class="agency-info">
           <p><strong>Agenzia:</strong> {{ currentUser?.agency?.name }}</p>
           <p *ngIf="currentUser?.agency?.description"><strong>Descrizione:</strong> {{ currentUser?.agency?.description }}</p>
-          <p *ngIf="currentUser?.agency?.address"><strong>Indirizzo:</strong> 
+          <p *ngIf="currentUser?.agency?.address"><strong>Indirizzo:</strong>
             {{ currentUser?.agency?.address }}
-            <span *ngIf="currentUser?.agency?.city">, {{ currentUser?.agency?.city }}</span>
-            <span *ngIf="currentUser?.agency?.postalCode"> ({{ currentUser?.agency?.postalCode }})</span>
+            <span *ngIf="currentUser?.agency?.address?.zipCode"> ({{ currentUser?.agency?.address?.zipCode }})</span>
+            <span *ngIf="currentUser?.agency?.address?.city">, {{ currentUser?.agency?.address?.city }}</span>
           </p>
           <p *ngIf="currentUser?.agency?.phone"><strong>Telefono Agenzia:</strong> {{ currentUser?.agency?.phone }}</p>
           <p *ngIf="currentUser?.agency?.email"><strong>Email Agenzia:</strong> {{ currentUser?.agency?.email }}</p>
-          <p *ngIf="currentUser?.agency?.website"><strong>Sito Web:</strong> 
+          <p *ngIf="currentUser?.agency?.website"><strong>Sito Web:</strong>
             <a [href]="currentUser?.agency?.website" target="_blank" rel="noopener">{{ currentUser?.agency?.website }}</a>
           </p>
         </div>
         <p *ngIf="currentUser?.licenseNumber"><strong>Licenza:</strong> {{ currentUser?.licenseNumber }}</p>
-        <p><strong>Account Verificato:</strong> 
+        <p><strong>Account Verificato:</strong>
             <mat-chip [color]="currentUser?.isVerified ? 'primary' : 'warn'">
             {{ currentUser?.isVerified ? 'Verificato' : 'Non Verificato' }}
             </mat-chip>
