@@ -1,3 +1,4 @@
+//TODO: cancellare elementi non usati
 /**
  * Utility functions for password generation and management
  */

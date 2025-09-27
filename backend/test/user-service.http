@@ -1,21 +1,20 @@
 ### Creazione Admin
 POST http://localhost:3004/users/create-admin
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI0OWZjYWYyZi1kNzVmLTQwZmItODcwNy05NDI1ODY2OTdmZDYiLCJlbWFpbCI6ImdpdXNlcHBlQHRlY25vY2FzYS5pdCIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1ODkwNTI4NywiZXhwIjoxNzU4OTA4ODg3fQ.oFfPIM-ftHfFmkVMS2f97zeOTw7GDMI_FotbTHxd8bI
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI0OWZjYWYyZi1kNzVmLTQwZmItODcwNy05NDI1ODY2OTdmZDYiLCJlbWFpbCI6ImdpdXNlcHBlQHRlY25vY2FzYS5pdCIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1OTAwMjQyNiwiZXhwIjoxNzU5MDA2MDI2fQ.zHWWxiTi6lE5o8AtTrnGshDrmF8rElzepiMtvCJ2uV8
 
 {
   "email": "gennaro@tecnocasa.it",
   "firstName": "Gennaro",
   "lastName": "Di Costanzo",
-  "phone": "+393928282828",
-  "shouldChangePassword": true
+  "phone": "+393928282828"
 }
 
 
 ### Creazione Agente
 POST http://localhost:3004/users/create-agent
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI0OWZjYWYyZi1kNzVmLTQwZmItODcwNy05NDI1ODY2OTdmZDYiLCJlbWFpbCI6ImdpdXNlcHBlQHRlY25vY2FzYS5pdCIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1ODkwNTI4NywiZXhwIjoxNzU4OTA4ODg3fQ.oFfPIM-ftHfFmkVMS2f97zeOTw7GDMI_FotbTHxd8bI
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI0OWZjYWYyZi1kNzVmLTQwZmItODcwNy05NDI1ODY2OTdmZDYiLCJlbWFpbCI6ImdpdXNlcHBlQHRlY25vY2FzYS5pdCIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1OTAwNjIyOSwiZXhwIjoxNzU5MDA5ODI5fQ.1YONVY9NjPlH7LA-u4ezbUlQNlsK2y2PNzlzwkb3jus
 
 {
   "email": "fabio@tecnocasa.it",
@@ -27,6 +26,51 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI0OWZjY
   "specializations": [
     "residential",
     "commercial"
-  ],
-  "shouldChangePassword": true
+  ]
+}
+
+### Get profile
+GET http://localhost:3004/users/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI0OWZjYWYyZi1kNzVmLTQwZmItODcwNy05NDI1ODY2OTdmZDYiLCJlbWFpbCI6ImdpdXNlcHBlQHRlY25vY2FzYS5pdCIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1OTAwNjIyOSwiZXhwIjoxNzU5MDA5ODI5fQ.1YONVY9NjPlH7LA-u4ezbUlQNlsK2y2PNzlzwkb3jus
+
+### Update profile
+PUT http://localhost:3004/users/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI0OWZjYWYyZi1kNzVmLTQwZmItODcwNy05NDI1ODY2OTdmZDYiLCJlbWFpbCI6ImdpdXNlcHBlQHRlY25vY2FzYS5pdCIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1OTAwNjIyOSwiZXhwIjoxNzU5MDA5ODI5fQ.1YONVY9NjPlH7LA-u4ezbUlQNlsK2y2PNzlzwkb3jus
+Content-Type: application/json
+
+{
+  "phone": "+393931313131",
+  "biography": "Updated biography"
+}
+
+### Get user (public)
+GET http://localhost:3004/users/49fcaf2f-d75f-40fb-8707-942586697fd6
+
+### Get preferences
+GET http://localhost:3004/users/preferences
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI0OWZjYWYyZi1kNzVmLTQwZmItODcwNy05NDI1ODY2OTdmZDYiLCJlbWFpbCI6ImdpdXNlcHBlQHRlY25vY2FzYS5pdCIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1OTAwNjIyOSwiZXhwIjoxNzU5MDA5ODI5fQ.1YONVY9NjPlH7LA-u4ezbUlQNlsK2y2PNzlzwkb3jus
+
+### Put preferences
+PUT http://localhost:3004/users/preferences
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI0OWZjYWYyZi1kNzVmLTQwZmItODcwNy05NDI1ODY2OTdmZDYiLCJlbWFpbCI6ImdpdXNlcHBlQHRlY25vY2FzYS5pdCIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1OTAwNjIyOSwiZXhwIjoxNzU5MDA5ODI5fQ.1YONVY9NjPlH7LA-u4ezbUlQNlsK2y2PNzlzwkb3jus
+Content-Type: application/json
+
+{
+  "language": "en",
+  "currency": "USD"
+}
+
+### Get notification preferences
+GET http://localhost:3004/users/notification-preferences
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI0OWZjYWYyZi1kNzVmLTQwZmItODcwNy05NDI1ODY2OTdmZDYiLCJlbWFpbCI6ImdpdXNlcHBlQHRlY25vY2FzYS5pdCIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1OTAwNjIyOSwiZXhwIjoxNzU5MDA5ODI5fQ.1YONVY9NjPlH7LA-u4ezbUlQNlsK2y2PNzlzwkb3jus
+
+### Put notification preferences  
+PUT http://localhost:3004/users/notification-preferences
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI0OWZjYWYyZi1kNzVmLTQwZmItODcwNy05NDI1ODY2OTdmZDYiLCJlbWFpbCI6ImdpdXNlcHBlQHRlY25vY2FzYS5pdCIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1OTAwNjIyOSwiZXhwIjoxNzU5MDA5ODI5fQ.1YONVY9NjPlH7LA-u4ezbUlQNlsK2y2PNzlzwkb3jus
+Content-Type: application/json
+
+{
+  "emailNotifications": true,
+  "pushNotifications": false,
+  "smsNotifications": true
 }

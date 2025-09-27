@@ -1,3 +1,5 @@
+### Test dell'API Auth Service
+
 ### Login Admin
 POST http://localhost:3001/login
 Content-Type: application/json
@@ -14,4 +16,67 @@ Content-Type: application/json
 {
   "email": "fabio@tecnocasa.it",
   "password": "sPWIAD&C5ucX"
+}
+
+### Register New User
+POST http://localhost:3001/register
+Content-Type: application/json
+
+{
+  "email": "luca.bianco@example.com",
+  "password": "Password123!",
+  "firstName": "Luca",
+  "lastName": "Bianchi",
+  "phone": "+391234567890",
+  "acceptTerms": true,
+  "acceptPrivacy": true
+}
+
+### Login User
+POST http://localhost:3001/login
+Content-Type: application/json
+
+{
+  "email": "luca.bianco@example.com",
+  "password": "Password123!",
+  "rememberMe": true
+}
+
+### Verify Token
+GET http://localhost:3001/verify-token
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyOWU5MGY5Yi0wNGE0LTQ1ZGItODFhZi00NzhiZTRkOWI5YmIiLCJlbWFpbCI6ImZhYmlvQHRlY25vY2FzYS5pdCIsInJvbGUiOiJhZ2VudCIsImlhdCI6MTc1ODkwNjc0MSwiZXhwIjoxNzU4OTEwMzQxfQ.vhUhT5yCwoim3LfkvwdhOVZxAtNDchh_My2oBqAuHTo
+
+### Refresh Token
+POST http://localhost:3001/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJlYzkwNGUyMS1hNDQwLTRjNDMtYjk1OS01NTIyMWNlYjViMjUiLCJlbWFpbCI6Imx1Y2EuYmlhbmNvQGV4YW1wbGUuY29tIiwicm9sZSI6ImNsaWVudCIsImlhdCI6MTc1ODk5MTA0NiwiZXhwIjoxNzU5NTk1ODQ2fQ.lvrqIRXn3hHabTr-i6ectLAzPyfQrJlAZeqZgs4125I"
+}
+
+### Change Password
+POST http://localhost:3001/change-password
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJlYzkwNGUyMS1hNDQwLTRjNDMtYjk1OS01NTIyMWNlYjViMjUiLCJlbWFpbCI6Imx1Y2EuYmlhbmNvQGV4YW1wbGUuY29tIiwicm9sZSI6ImNsaWVudCIsImlhdCI6MTc1ODk4NzgwNywiZXhwIjoxNzU4OTkxNDA3fQ.4pzXoxq5pcSCZIhMZuM9jas1mQOAba4ybMZGU7dVHBQ
+Content-Type: application/json
+
+{
+  "currentPassword": "Password123!",
+  "newPassword": "NewPassword123!"
+}
+
+### Send Email Verification
+POST http://localhost:3001/send-email-verification
+Content-Type: application/json
+
+{
+  "email": "luca.bianco@example.com"
+}
+
+### Verify Email OTP
+POST http://localhost:3001/verify-email-otp
+Content-Type: application/json
+
+{
+  "email": "luca.bianco@example.com",
+  "otp": "123456"
 }

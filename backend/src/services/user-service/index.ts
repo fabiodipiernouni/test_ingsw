@@ -1,8 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import swaggerUi from 'swagger-ui-express';
-import YAML from 'yamljs';
-import path from 'path';
 import { config } from '../../config/index';
 import { errorHandler, notFoundHandler } from '../../shared/middleware/errorHandler';
 import logger from '../../shared/utils/logger';
@@ -19,16 +16,6 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Load OpenAPI specification
-const openApiPath = path.join(__dirname, 'user-service.yaml');
-const swaggerDocument = YAML.load(openApiPath);
-
-// API Documentation
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'User Service API Documentation'
-}));
 
 // Health check
 app.get('/health', (req, res) => {

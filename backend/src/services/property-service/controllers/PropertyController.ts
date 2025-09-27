@@ -89,25 +89,87 @@ export class PropertyController {
   }
 
   /**
-   * Lista proprietà con paginazione
+   * Lista proprietà con paginazione - logica basata su ruoli
    * GET /properties
    */
-  async getProperties(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getProperties(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
-      const agentId = req.query.agentId as string;
+      const status = req.query.status as string;
+      const requestedAgentId = req.query.agentId as string;
 
-      // TODO: Implementare la logica di listing con paginazione
-      // Per ora restituiamo una lista vuota come placeholder
-      const result = {
-        properties: [],
-        totalCount: 0,
-        currentPage: page,
-        totalPages: 0,
-        hasNextPage: false,
-        hasPreviousPage: false
-      };
+      // Determina filtri basati sul ruolo dell'utente
+      let filters: any = {};
+
+      if (!req.user || req.user.role === 'client') {
+        // UTENTI NON AUTENTICATI e CLIENTI: Solo proprietà pubbliche e attive
+        filters = {
+          status: 'active',
+          isActive: true
+        };
+        logger.info('Properties list request - public access', { 
+          userId: req.user?.id || 'anonymous' 
+        });
+        
+      } else {
+        const userRole = req.user.role;
+        const userId = req.user.id;
+
+        switch (userRole) {
+
+          case 'agent':
+            // AGENTI: Solo le proprie proprietà (tutte) + possibilità di vedere solo attive se specificato
+            filters = {
+              agentId: userId
+            };
+            
+            // Gli agenti possono filtrare per status se vogliono
+            if (status) {
+              filters.status = status;
+            }
+            
+            logger.info('Properties list request - agent (own properties)', { userId, status });
+            break;
+
+          case 'admin':
+            // ADMIN: Solo proprietà della propria agenzia
+            if (!req.user.agencyId) {
+              errorResponse(res, 'FORBIDDEN', 'Admin must be associated with an agency', 403);
+              return;
+            }
+            
+            // Gli admin vedono solo proprietà degli agenti della loro agenzia
+            filters.agencyId = req.user.agencyId;
+            
+            // Possono filtrare per agente specifico (solo della loro agenzia)
+            if (requestedAgentId) {
+              filters.specificAgentId = requestedAgentId;
+            }
+            if (status) {
+              filters.status = status;
+            }
+            
+            logger.info('Properties list request - admin (agency scope)', { 
+              userId, 
+              agencyId: req.user.agencyId,
+              requestedAgentId, 
+              status 
+            });
+            break;
+
+          default:
+            errorResponse(res, 'FORBIDDEN', 'Invalid user role', 403);
+            return;
+        }
+      }
+
+      // Chiama il service per ottenere le proprietà
+      const result = await propertyService.getProperties({
+        page,
+        limit,
+        filters
+      });
 
       successResponse(res, result);
 

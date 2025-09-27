@@ -1,6 +1,6 @@
 import express from 'express';
 import { searchController } from '../controllers/SearchController';
-import { authenticateToken } from '@shared/middleware/auth';
+import { authenticateToken, optionalAuth } from '@shared/middleware/auth';
 import { 
   validateSearchRequest,
   validateSuggestionsRequest,
@@ -16,7 +16,7 @@ const router = express.Router();
  * @desc    Ricerca proprietà con filtri avanzati
  * @access  Public (autenticazione opzionale per salvare nello storico)
  */
-router.post('/', validateSearchRequest, searchController.searchProperties.bind(searchController));
+router.post('/', optionalAuth, validateSearchRequest, searchController.searchProperties.bind(searchController));
 
 /**
  * @route   GET /search/suggestions

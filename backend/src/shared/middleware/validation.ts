@@ -220,6 +220,29 @@ export const authValidations = {
   resetPassword: [
     body('token').notEmpty().withMessage('Reset token is required'),
     commonValidations.password()
+  ],
+
+  changePassword: [
+    body('currentPassword')
+      .notEmpty()
+      .withMessage('Current password is required'),
+    body('newPassword')
+      .isLength({ min: 8 })
+      .withMessage('New password must be at least 8 characters long')
+      .matches(/^(?=.*[A-Za-z])(?=.*\d)/)
+      .withMessage('New password must contain at least one letter and one number')
+  ],
+
+  sendEmailVerification: [
+    commonValidations.email()
+  ],
+
+  verifyEmailOtp: [
+    commonValidations.email(),
+    body('otp')
+      .isLength({ min: 6, max: 6 })
+      .isNumeric()
+      .withMessage('OTP must be a 6-digit number')
   ]
 };
 
@@ -279,11 +302,7 @@ export const userValidations = {
       .optional()
       .isArray()
       .withMessage('Specializations must be an array'),
-      
-    body('shouldChangePassword')
-      .optional()
-      .isBoolean()
-      .withMessage('shouldChangePassword must be boolean')
+
   ],
   
   createAdmin: [
@@ -291,11 +310,6 @@ export const userValidations = {
     commonValidations.name('firstName'),
     commonValidations.name('lastName'),
     commonValidations.phone(),
-    
-    body('shouldChangePassword')
-      .optional()
-      .isBoolean()
-      .withMessage('shouldChangePassword must be boolean')
   ]
 };
 

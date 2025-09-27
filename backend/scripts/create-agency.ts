@@ -72,7 +72,7 @@ async function createAgencyAndAdmin() {
     }
 
     const description = await askQuestion('Descrizione (opzionale): ');
-    const address = await askQuestion('Indirizzo (opzionale): ');
+    const address = await askQuestion('Indirizzo (opzionale): '); //TODO: potremmo integrare un servizio di geocoding per validare l'indirizzo
     const city = await askQuestion('Città (opzionale): ');
     const postalCode = await askQuestion('CAP (opzionale): ');
     const country = await askQuestion('Paese (opzionale): ');

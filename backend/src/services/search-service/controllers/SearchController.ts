@@ -10,12 +10,12 @@ export class SearchController {
    * Ricerca proprietà con filtri avanzati
    * POST /search
    */
-  async searchProperties(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async searchProperties(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const searchRequest: SearchRequest = req.body;
       
       // Estrai l'ID utente se autenticato (opzionale per la ricerca)
-      const userId = (req as any).user?.id;
+      const userId = req.user?.id;
       
       logger.info('Property search request', { 
         filters: searchRequest,
@@ -79,10 +79,7 @@ export class SearchController {
         return;
       }
 
-      // TODO: Implementare la logica per ottenere le ricerche salvate
-      // Per ora restituiamo un array vuoto
-      const savedSearches: any[] = [];
-
+      const savedSearches = await searchService.getUserSavedSearches(req.user.id);
       successResponse(res, savedSearches);
 
     } catch (error: any) {
@@ -110,7 +107,6 @@ export class SearchController {
         return;
       }
 
-      // TODO: Implementare la logica per salvare la ricerca
       logger.info('Save search request', { 
         name, 
         filters, 
@@ -118,18 +114,11 @@ export class SearchController {
         isNotificationEnabled 
       });
 
-      // Per ora restituiamo un placeholder
-      const savedSearch = {
-        id: 'placeholder-id',
-        userId: req.user.id,
+      const savedSearch = await searchService.createSavedSearch(req.user.id, {
         name,
         filters,
-        isNotificationEnabled,
-        lastResultCount: 0,
-        hasNewResults: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+        isNotificationEnabled
+      });
 
       successResponse(res, savedSearch, 'Search saved successfully', 201);
 
@@ -165,21 +154,13 @@ export class SearchController {
         return;
       }
 
-      // TODO: Implementare la logica per aggiornare la ricerca salvata
       logger.info('Update saved search request', { 
         searchId, 
         updateData, 
         userId: req.user.id 
       });
 
-      // Per ora restituiamo un placeholder
-      const updatedSearch = {
-        id: searchId,
-        userId: req.user.id,
-        ...updateData,
-        updatedAt: new Date().toISOString()
-      };
-
+      const updatedSearch = await searchService.updateSavedSearch(req.user.id, searchId, updateData);
       successResponse(res, updatedSearch, 'Search updated successfully');
 
     } catch (error: any) {
@@ -218,12 +199,12 @@ export class SearchController {
         return;
       }
 
-      // TODO: Implementare la logica per eliminare la ricerca salvata
       logger.info('Delete saved search request', { 
         searchId, 
         userId: req.user.id 
       });
 
+      await searchService.deleteSavedSearch(req.user.id, searchId);
       successResponse(res, { message: 'Search deleted successfully' });
 
     } catch (error: any) {
@@ -253,23 +234,13 @@ export class SearchController {
       const page = parseInt(req.query.page as string) || 1;
       const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
 
-      // TODO: Implementare la logica per ottenere lo storico ricerche
       logger.info('Get search history request', { 
         page, 
         limit, 
         userId: req.user.id 
       });
 
-      // Per ora restituiamo un risultato vuoto
-      const historyResponse = {
-        history: [],
-        totalCount: 0,
-        currentPage: page,
-        totalPages: 0,
-        hasNextPage: false,
-        hasPreviousPage: false
-      };
-
+      const historyResponse = await searchService.getUserSearchHistory(req.user.id, page, limit);
       successResponse(res, historyResponse);
 
     } catch (error: any) {

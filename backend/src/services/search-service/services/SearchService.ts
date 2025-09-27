@@ -355,6 +355,38 @@ export class SearchService {
   }
 
   /**
+   * Formatta la risposta di una ricerca salvata
+   */
+  private formatSavedSearchResponse(savedSearch: SavedSearch): SavedSearchType {
+    return {
+      id: savedSearch.id,
+      userId: savedSearch.userId,
+      name: savedSearch.name,
+      filters: savedSearch.filters as SearchFilters,
+      isNotificationEnabled: savedSearch.isNotificationEnabled,
+      lastResultCount: savedSearch.lastResultCount,
+      hasNewResults: savedSearch.hasNewResults,
+      createdAt: savedSearch.createdAt.toISOString(),
+      updatedAt: savedSearch.updatedAt.toISOString()
+    };
+  }
+
+  /**
+   * Formatta la risposta dello storico ricerche
+   */
+  private formatSearchHistoryResponse(searchHistory: SearchHistory): SearchHistoryType {
+    return {
+      id: searchHistory.id,
+      userId: searchHistory.userId,
+      filters: searchHistory.filters as SearchFilters,
+      resultCount: searchHistory.resultCount,
+      searchedAt: searchHistory.searchedAt.toISOString(),
+      source: searchHistory.source,
+      executionTime: searchHistory.executionTime || 0
+    };
+  }
+
+  /**
    * Validazione della richiesta di ricerca
    */
   private validateSearchRequest(request: SearchRequest): void {
@@ -397,6 +429,119 @@ export class SearchService {
 
     if (errors.length > 0) {
       throw new ValidationError('Search validation failed', { errors });
+    }
+  }
+
+  /**
+   * Ottieni le ricerche salvate dell'utente
+   */
+  async getUserSavedSearches(userId: string): Promise<SavedSearchType[]> {
+    try {
+      const savedSearches = await SavedSearch.getUserActiveSavedSearches(userId);
+      return savedSearches.map(search => this.formatSavedSearchResponse(search));
+    } catch (error) {
+      logger.error('Error getting user saved searches:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Salva una nuova ricerca
+   */
+  async createSavedSearch(userId: string, searchData: SavedSearchCreate): Promise<SavedSearchType> {
+    try {
+      const savedSearch = await SavedSearch.create({
+        userId,
+        name: searchData.name,
+        filters: searchData.filters,
+        isNotificationEnabled: searchData.isNotificationEnabled ?? true,
+        lastResultCount: 0,
+        hasNewResults: false
+      });
+
+      return this.formatSavedSearchResponse(savedSearch);
+    } catch (error) {
+      logger.error('Error creating saved search:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Aggiorna una ricerca salvata
+   */
+  async updateSavedSearch(userId: string, searchId: string, updateData: SavedSearchUpdate): Promise<SavedSearchType> {
+    try {
+      const savedSearch = await SavedSearch.findOne({
+        where: {
+          id: searchId,
+          userId,
+          isActive: true
+        }
+      });
+
+      if (!savedSearch) {
+        throw new NotFoundError('Saved search not found or access denied');
+      }
+
+      await savedSearch.update(updateData);
+      return this.formatSavedSearchResponse(savedSearch);
+    } catch (error) {
+      logger.error('Error updating saved search:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Elimina una ricerca salvata (soft delete)
+   */
+  async deleteSavedSearch(userId: string, searchId: string): Promise<void> {
+    try {
+      const savedSearch = await SavedSearch.findOne({
+        where: {
+          id: searchId,
+          userId,
+          isActive: true
+        }
+      });
+
+      if (!savedSearch) {
+        throw new NotFoundError('Saved search not found or access denied');
+      }
+
+      await savedSearch.update({ isActive: false });
+    } catch (error) {
+      logger.error('Error deleting saved search:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Ottieni lo storico ricerche dell'utente con paginazione
+   */
+  async getUserSearchHistory(userId: string, page: number = 1, limit: number = 50): Promise<SearchHistoryResponse> {
+    try {
+      const offset = (page - 1) * limit;
+
+      const { rows: searchHistory, count: totalCount } = await SearchHistory.findAndCountAll({
+        where: { userId },
+        order: [['searchedAt', 'DESC']],
+        limit,
+        offset
+      });
+
+      const totalPages = Math.ceil(totalCount / limit);
+
+      return {
+        history: searchHistory.map(search => this.formatSearchHistoryResponse(search)),
+        totalCount,
+        currentPage: page,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1
+      };
+    } catch (error) {
+      logger.error('Error getting user search history:', error);
+      throw error;
     }
   }
 
@@ -444,11 +589,8 @@ export class SearchService {
 
         case 'feature':
           // Cerca nelle features più comuni
-          const commonFeatures = [
-            'aria condizionata', 'riscaldamento autonomo', 'parquet', 'doppi vetri', 
-            'ristrutturato', 'arredato', 'terrazzo', 'cantina', 'soffitta', 'camino'
-          ];
-          suggestions = commonFeatures.filter(feature => 
+          const validFeatures = ['aria condizionata', 'balcone', 'giardino', 'piscina', 'garage', 'ascensore', 'ristrutturato'];
+          suggestions = validFeatures.filter(feature => 
             feature.toLowerCase().includes(query.toLowerCase())
           );
           break;

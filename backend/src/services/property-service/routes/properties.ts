@@ -1,16 +1,16 @@
 import express from 'express';
 import { propertyController } from '../controllers/PropertyController';
-import { authenticateToken } from '@shared/middleware/auth';
+import { authenticateToken, optionalAuth } from '@shared/middleware/auth';
 import { validatePropertyCreate, validatePropertyId } from '../middleware/validation';
 
 const router = express.Router();
 
 /**
  * @route   GET /properties
- * @desc    Lista proprietà con paginazione
- * @access  Public
+ * @desc    Lista proprietà con paginazione - comportamento basato su ruolo
+ * @access  Public (con autenticazione opzionale)
  */
-router.get('/', propertyController.getProperties.bind(propertyController));
+router.get('/', optionalAuth, propertyController.getProperties.bind(propertyController));
 
 /**
  * @route   POST /properties
@@ -37,5 +37,6 @@ router.get('/:propertyId', validatePropertyId, propertyController.getPropertyByI
  * @access  Public
  */
 router.post('/:propertyId/view', validatePropertyId, propertyController.recordPropertyView.bind(propertyController));
+//TODO: non richiesto, decidere se rimuovere o tenere, nel caso cancellare anche nel db
 
 export default router;

@@ -11,16 +11,15 @@ router.post('/register', validate(authValidations.register), authController.regi
 router.post('/login', validate(authValidations.login), authController.login);
 router.post('/logout', authenticateToken as any, authController.logout);
 
-// Refresh token
-router.post('/refresh', authController.refreshToken);
+// Gestione token
+router.post('/refresh-token', authController.refreshToken);
+router.get('/verify-token', authController.verifyToken);
 
-// OAuth routes
-router.get('/oauth/:provider', authController.oauthRedirect.bind(authController) as any);
-router.get('/oauth/:provider/callback', authController.oauthCallback.bind(authController) as any);
-router.post('/oauth/:provider/link', authenticateToken as any, authController.linkOAuthAccount.bind(authController) as any);
-router.delete('/oauth/:provider/unlink', authenticateToken as any, authController.unlinkOAuthAccount.bind(authController) as any);
+// Gestione password
+router.post('/change-password', authenticateToken as any, validate(authValidations.changePassword), authController.changePassword);
 
-// Verifica token
-router.get('/verify', authController.verifyToken);
+// Verifica email
+router.post('/send-email-verification', validate(authValidations.sendEmailVerification), authController.sendEmailVerification);
+router.post('/verify-email-otp', validate(authValidations.verifyEmailOtp), authController.verifyEmailOtp);
 
 export default router;

@@ -1,8 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import passport from 'passport';
-import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { Strategy as GitHubStrategy } from 'passport-github2';
 import { User } from '@shared/database/models';
 import { AuthenticatedRequest } from '@shared/types/common.types';
 import { unauthorizedResponse, forbiddenResponse } from '@shared/utils/helpers';
@@ -65,15 +62,25 @@ export const optionalAuth = async (
       const decoded = jwt.verify(token, config.auth.jwtSecret) as any;
       const user = await User.findByPk(decoded.userId);
       
-      if (user && user.isVerified) {
+      //TODO: decidere se si vuole che un utente sia verificato (ha confermato la mail) per usare qualsiasi funzionalità dell'applicazione, al momento non è obbligatorio
+      if (user) {
         req.user = user.toJSON();
       }
     }
     
     next();
-  } catch (error) {
-    // Ignore auth errors in optional auth
-    next();
+  } catch (error: any) {
+    // TODO: decidere se in caso di token non valido si vuole bloccare la richiesta o ignorare l'errore
+    // nel caso non si voglia bloccare la richiesta cambiare tutto il codice nel catch in next();
+    if (error instanceof jwt.JsonWebTokenError) {
+      return unauthorizedResponse(res, 'Invalid token');
+    }
+    
+    if (error instanceof jwt.TokenExpiredError) {
+      return unauthorizedResponse(res, 'Token expired');
+    }
+
+    return unauthorizedResponse(res, 'Authentication failed');
   }
 };
 
@@ -177,112 +184,4 @@ export const generateRefreshToken = (payload: any): string => {
  */
 export const verifyRefreshToken = (token: string): any => {
   return jwt.verify(token, config.auth.jwtSecret);
-};
-
-/**
- * Token blacklist (in production, use Redis or database)
- * For now, using in-memory set
- */
-const tokenBlacklist = new Set<string>();
-
-/**
- * Add token to blacklist
- */
-export const blacklistToken = (token: string): void => {
-  tokenBlacklist.add(token);
-};
-
-/**
- * Check if token is blacklisted
- */
-export const isTokenBlacklisted = (token: string): boolean => {
-  return tokenBlacklist.has(token);
-};
-
-/**
- * Middleware to check blacklisted tokens
- */
-export const checkBlacklist = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (token && isTokenBlacklisted(token)) {
-    return unauthorizedResponse(res, 'Token has been revoked');
-  }
-
-  next();
-};
-
-/**
- * Setup Passport strategies for OAuth providers
- */
-export const setupPassportStrategies = () => {
-  // Passport session setup
-  passport.serializeUser((user: any, done) => {
-    done(null, user.id);
-  });
-
-  passport.deserializeUser(async (id: string, done) => {
-    try {
-      const user = await User.findByPk(id);
-      done(null, user as any);
-    } catch (error) {
-      done(error, null);
-    }
-  });
-
-  // Google OAuth Strategy
-  if (config.auth.google.clientId && config.auth.google.clientSecret) {
-    passport.use(new GoogleStrategy({
-      clientID: config.auth.google.clientId,
-      clientSecret: config.auth.google.clientSecret,
-      callbackURL: '/oauth/google/callback'
-    }, async (accessToken: string, refreshToken: string, profile: any, done: any) => {
-      try {
-        return done(null, {
-          provider: 'google',
-          providerId: profile.id,
-          email: profile.emails?.[0]?.value,
-          firstName: profile.name?.givenName,
-          lastName: profile.name?.familyName,
-          avatar: profile.photos?.[0]?.value,
-          accessToken,
-          refreshToken
-        });
-      } catch (error) {
-        return done(error, false);
-      }
-    }));
-  }
-
-  // GitHub OAuth Strategy
-  if (config.auth.github.clientId && config.auth.github.clientSecret) {
-    passport.use(new GitHubStrategy({
-      clientID: config.auth.github.clientId,
-      clientSecret: config.auth.github.clientSecret,
-      callbackURL: '/oauth/github/callback'
-    }, async (accessToken: string, refreshToken: string, profile: any, done: any) => {
-      try {
-        const email = profile.emails?.[0]?.value || `${profile.username}@github.local`;
-        const names = (profile.displayName || profile.username || '').split(' ');
-        
-        return done(null, {
-          provider: 'github',
-          providerId: profile.id,
-          email,
-          firstName: names[0] || profile.username || 'GitHub',
-          lastName: names.slice(1).join(' ') || 'User',
-          avatar: profile.photos?.[0]?.value,
-          accessToken,
-          refreshToken
-        });
-      } catch (error) {
-        return done(error, false);
-      }
-    }));
-  }
 };

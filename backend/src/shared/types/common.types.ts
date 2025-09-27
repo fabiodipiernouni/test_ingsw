@@ -125,6 +125,7 @@ export interface ErrorResponse {
   path: string;
 }
 
+// TODO rivedere bene le categorie di notifiche
 export type NotificationType = 
   | 'new_property_match'
   | 'price_change'

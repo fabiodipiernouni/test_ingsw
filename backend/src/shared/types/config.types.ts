@@ -19,17 +19,6 @@ export interface JWTConfig {
   refreshExpiresIn: string;
 }
 
-export interface OAuthConfig {
-  google: {
-    clientId: string;
-    clientSecret: string;
-  };
-  github: {
-    clientId: string;
-    clientSecret: string;
-  };
-}
-
 export interface EmailConfig {
   host: string;
   port: number;
@@ -55,7 +44,6 @@ export interface AppConfig {
   port: number;
   database: DatabaseConfig;
   jwt: JWTConfig;
-  oauth: OAuthConfig;
   email: EmailConfig;
   redis: RedisConfig;
   upload: UploadConfig;

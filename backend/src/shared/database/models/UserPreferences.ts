@@ -1,3 +1,4 @@
+//TODO: non richiesto, decidere se tenere o rimuovere
 import {
   Table,
   Column,
@@ -39,7 +40,7 @@ export class UserPreferences extends Model {
   emailNotifications!: boolean;
 
   @AllowNull(false)
-  @Default(true)
+  @Default(false)
   @Column(DataType.BOOLEAN)
   pushNotifications!: boolean;
 
@@ -61,7 +62,7 @@ export class UserPreferences extends Model {
   @AllowNull(false)
   @Default(true)
   @Column(DataType.BOOLEAN)
-  marketingEmails!: boolean;
+  marketing!: boolean;
 
   @AllowNull(false)
   @Default(true)

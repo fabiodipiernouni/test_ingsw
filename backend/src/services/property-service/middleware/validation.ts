@@ -77,11 +77,19 @@ export const validatePropertyCreate = (
   }
 
   // Validazione features
+  const validFeatures = ['aria condizionata', 'balcone', 'giardino', 'piscina', 'garage', 'ascensore', 'ristrutturato'];
   if (data.features && data.features.length > 20) {
     errors.push('Maximum 20 features allowed');
+  } else if (data.features) {
+    for (const feature of data.features) {
+      if (!validFeatures.includes(feature)) {
+        errors.push(`Invalid feature: ${feature}`);
+      }
+    }
   }
 
   // Validazione indirizzo
+  //TODO: potremmo integrare un servizio di geocoding per validare l'indirizzo
   if (!data.address) {
     errors.push('Address is required');
   } else {
@@ -111,6 +119,7 @@ export const validatePropertyCreate = (
   }
 
   // Validazione location
+  //TODO: la location potrebbe essere prelevata dall'indirizzo tramite geocoding?
   if (!data.location) {
     errors.push('Location is required');
   } else {

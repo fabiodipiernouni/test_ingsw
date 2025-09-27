@@ -147,15 +147,6 @@ export class User extends Model {
   @Column(DataType.DATE)
   passwordResetExpires?: Date;
 
-  // OAuth fields
-  @AllowNull(true)
-  @Column(DataType.STRING(255))
-  googleId?: string;
-
-  @AllowNull(true)
-  @Column(DataType.STRING(255))
-  githubId?: string;
-
   // Associations
   @BelongsTo(() => Agency, { foreignKey: 'agencyId', as: 'agency' })
   agency?: Agency;

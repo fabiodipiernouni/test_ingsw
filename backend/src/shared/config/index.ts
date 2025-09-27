@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { AppConfig, DatabaseConfig, JWTConfig, OAuthConfig, EmailConfig, RedisConfig, UploadConfig } from '@shared/types/config.types';
+import { AppConfig, DatabaseConfig, JWTConfig, EmailConfig, RedisConfig, UploadConfig } from '@shared/types/config.types';
 
 dotenv.config();
 
@@ -22,17 +22,6 @@ const jwtConfig: JWTConfig = {
   refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
   expiresIn: process.env.JWT_EXPIRES_IN || '1h',
   refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d'
-};
-
-const oauthConfig: OAuthConfig = {
-  google: {
-    clientId: process.env.GOOGLE_CLIENT_ID || '',
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET || ''
-  },
-  github: {
-    clientId: process.env.GITHUB_CLIENT_ID || '',
-    clientSecret: process.env.GITHUB_CLIENT_SECRET || ''
-  }
 };
 
 const emailConfig: EmailConfig = {
@@ -60,7 +49,6 @@ const config: AppConfig = {
   port: parseInt(process.env.PORT || '3000'),
   database: databaseConfig,
   jwt: jwtConfig,
-  oauth: oauthConfig,
   email: emailConfig,
   redis: redisConfig,
   upload: uploadConfig,

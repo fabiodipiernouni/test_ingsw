@@ -1,9 +1,9 @@
 ### Test dell'API Search Service
 
-### 1. Test Health Check
+### Test Health Check
 GET http://localhost:3003/health
 
-### 2. Test Ricerca Base - Tutte le proprietà attive
+### Test Ricerca Base - Tutte le proprietà attive
 POST http://localhost:3003/search
 Content-Type: application/json
 
@@ -13,7 +13,7 @@ Content-Type: application/json
   "sortBy": "relevance"
 }
 
-### 3. Test Ricerca per Città
+### Test Ricerca per Città
 POST http://localhost:3003/search
 Content-Type: application/json
 
@@ -24,7 +24,7 @@ Content-Type: application/json
   "sortBy": "price_asc"
 }
 
-### 4. Test Ricerca per Tipo Proprietà e Range Prezzo
+### Test Ricerca per Tipo Proprietà e Range Prezzo
 POST http://localhost:3003/search
 Content-Type: application/json
 
@@ -38,7 +38,7 @@ Content-Type: application/json
   "limit": 15
 }
 
-### 5. Test Ricerca Geografica (raggio)
+### Test Ricerca Geografica (raggio)
 POST http://localhost:3003/search
 Content-Type: application/json
 
@@ -50,7 +50,7 @@ Content-Type: application/json
   "limit": 20
 }
 
-### 6. Test Ricerca Avanzata con Filtri Multipli
+### Test Ricerca Avanzata con Filtri Multipli
 POST http://localhost:3003/search
 Content-Type: application/json
 
@@ -74,16 +74,16 @@ Content-Type: application/json
   "limit": 10
 }
 
-### 7. Test Suggerimenti di Ricerca - Locations
+### Test Suggerimenti di Ricerca - Locations
 GET http://localhost:3003/search/suggestions?query=Mil&type=location
 
-### 8. Test Suggerimenti di Ricerca - Property Types
+### Test Suggerimenti di Ricerca - Property Types
 GET http://localhost:3003/search/suggestions?query=apart&type=property_type
 
-### 9. Test Suggerimenti di Ricerca - Features
+### Test Suggerimenti di Ricerca - Features
 GET http://localhost:3003/search/suggestions?query=aria&type=feature
 
-### 10. Test Validazione - Parametri Invalidi (dovrebbe fallire)
+### Test Validazione - Parametri Invalidi (dovrebbe fallire)
 POST http://localhost:3003/search
 Content-Type: application/json
 
@@ -94,7 +94,7 @@ Content-Type: application/json
   "limit": 150
 }
 
-### 11. Test Validazione - Ricerca Geografica Incompleta (dovrebbe fallire)
+### Test Validazione - Ricerca Geografica Incompleta (dovrebbe fallire)
 POST http://localhost:3003/search
 Content-Type: application/json
 
@@ -103,17 +103,28 @@ Content-Type: application/json
   "radius": 5
 }
 
-### 12. Test Suggerimenti - Query Troppo Corta (dovrebbe restituire array vuoto)
+### Test Suggerimenti - Query Troppo Corta
 GET http://localhost:3003/search/suggestions?query=M&type=location
 
-### 13. Test Ricerche Salvate - GET (richiede autenticazione, dovrebbe fallire senza token)
-GET http://localhost:3003/search/saved
-
-### 14. Test Storico Ricerche - GET (richiede autenticazione, dovrebbe fallire senza token)
+### Test Storico Ricerche
 GET http://localhost:3003/search/history?page=1&limit=20
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJlYzkwNGUyMS1hNDQwLTRjNDMtYjk1OS01NTIyMWNlYjViMjUiLCJlbWFpbCI6Imx1Y2EuYmlhbmNvQGV4YW1wbGUuY29tIiwicm9sZSI6ImNsaWVudCIsImlhdCI6MTc1ODk5MTA4OSwiZXhwIjoxNzU4OTk0Njg5fQ.Pd8iMwH0Mp3Lmi6ocYiZT2zB5Ys9FMsyMfs6Q4xXC3U
 
-### 15. Test Salvataggio Ricerca (richiede autenticazione, dovrebbe fallire senza token)
+### Test Ricerca con Autenticazione
+POST http://localhost:3003/search
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJlYzkwNGUyMS1hNDQwLTRjNDMtYjk1OS01NTIyMWNlYjViMjUiLCJlbWFpbCI6Imx1Y2EuYmlhbmNvQGV4YW1wbGUuY29tIiwicm9sZSI6ImNsaWVudCIsImlhdCI6MTc1ODk5MTA4OSwiZXhwIjoxNzU4OTk0Njg5fQ.Pd8iMwH0Mp3Lmi6ocYiZT2zB5Ys9FMsyMfs6Q4xXC3U
+Content-Type: application/json
+
+{
+  "city": "Milano",
+  "page": 1,
+  "limit": 10,
+  "sortBy": "price_asc"
+}
+
+### Test Salvataggio Ricerca
 POST http://localhost:3003/search/saved
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJlYzkwNGUyMS1hNDQwLTRjNDMtYjk1OS01NTIyMWNlYjViMjUiLCJlbWFpbCI6Imx1Y2EuYmlhbmNvQGV4YW1wbGUuY29tIiwicm9sZSI6ImNsaWVudCIsImlhdCI6MTc1ODk5MTA4OSwiZXhwIjoxNzU4OTk0Njg5fQ.Pd8iMwH0Mp3Lmi6ocYiZT2zB5Ys9FMsyMfs6Q4xXC3U
 Content-Type: application/json
 
 {
@@ -126,3 +137,29 @@ Content-Type: application/json
   },
   "isNotificationEnabled": true
 }
+
+### Test Ricerche Salvate
+GET http://localhost:3003/search/saved
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJlYzkwNGUyMS1hNDQwLTRjNDMtYjk1OS01NTIyMWNlYjViMjUiLCJlbWFpbCI6Imx1Y2EuYmlhbmNvQGV4YW1wbGUuY29tIiwicm9sZSI6ImNsaWVudCIsImlhdCI6MTc1ODk5MTA4OSwiZXhwIjoxNzU4OTk0Njg5fQ.Pd8iMwH0Mp3Lmi6ocYiZT2zB5Ys9FMsyMfs6Q4xXC3U
+
+### Modifica Ricerca Salvata
+PUT http://localhost:3003/search/saved/40b6d96f-47be-4dbc-9053-cd3112f4a5e4
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJlYzkwNGUyMS1hNDQwLTRjNDMtYjk1OS01NTIyMWNlYjViMjUiLCJlbWFpbCI6Imx1Y2EuYmlhbmNvQGV4YW1wbGUuY29tIiwicm9sZSI6ImNsaWVudCIsImlhdCI6MTc1ODk5MTA4OSwiZXhwIjoxNzU4OTk0Njg5fQ.Pd8iMwH0Mp3Lmi6ocYiZT2zB5Ys9FMsyMfs6Q4xXC3U
+Content-Type: application/json
+
+{
+  "name": "Appartamenti Milano Centro Aggiornati",
+  "filters": {
+    "city": "Milano",
+    "propertyType": "apartment",
+    "priceMin": 350000,
+    "priceMax": 650000,
+    "bedrooms": 2
+  },
+  "isNotificationEnabled": false
+}
+
+### Elimina Ricerca Salvata
+DELETE http://localhost:3003/search/saved/40b6d96f-47be-4dbc-9053-cd3112f4a5e4
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJlYzkwNGUyMS1hNDQwLTRjNDMtYjk1OS01NTIyMWNlYjViMjUiLCJlbWFpbCI6Imx1Y2EuYmlhbmNvQGV4YW1wbGUuY29tIiwicm9sZSI6ImNsaWVudCIsImlhdCI6MTc1ODk5MTA4OSwiZXhwIjoxNzU4OTk0Njg5fQ.Pd8iMwH0Mp3Lmi6ocYiZT2zB5Ys9FMsyMfs6Q4xXC3U
+
