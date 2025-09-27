@@ -3,11 +3,11 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
 import { map, tap, catchError } from 'rxjs/operators';
-import { 
-  User, 
-  AuthResponse, 
-  LoginRequest, 
-  RegisterRequest, 
+import {
+  User,
+  AuthResponse,
+  LoginRequest,
+  RegisterRequest,
   ForgotPasswordRequest,
   ResetPasswordRequest,
   VerifyEmailRequest,
@@ -60,6 +60,7 @@ export class AuthService {
           error: () => this.logout()
         });
       } catch (error) {
+        console.error('Error parsing user from localStorage:', error);
         this.logout();
       }
     }
@@ -120,7 +121,7 @@ export class AuthService {
   logout(): Observable<void> {
     const token = this.getToken();
     if (token) {
-      return this.http.post(`${this.API_URL}/logout`, {}, { 
+      return this.http.post(`${this.API_URL}/logout`, {}, {
         observe: 'response',
         responseType: 'text'
       }).pipe(
@@ -179,7 +180,7 @@ export class AuthService {
       // Simple JWT validation (check expiry)
       const payload = JSON.parse(atob(token.split('.')[1]));
       const isExpired = payload.exp * 1000 < Date.now();
-      
+
       if (isExpired) {
         // Try to refresh token
         return this.refreshToken().pipe(
@@ -187,7 +188,7 @@ export class AuthService {
           catchError(() => of(false))
         );
       }
-      
+
       return of(true);
     } catch (error) {
       return of(false);
@@ -215,7 +216,7 @@ export class AuthService {
   private handleAuthSuccess(response: AuthResponse): void {
     console.log('Auth success - response:', response);
     console.log('Auth success - user data:', response.user);
-    
+
     if (!response.user || !response.token) {
       console.error('Invalid auth response - missing user or token');
       return;
@@ -224,7 +225,7 @@ export class AuthService {
     const user = response.user;
     localStorage.setItem(this.TOKEN_KEY, response.token);
     localStorage.setItem(this.USER_KEY, JSON.stringify(user));
-    
+
     if (response.refreshToken) {
       localStorage.setItem('refresh_token', response.refreshToken);
     }
@@ -294,7 +295,7 @@ export class AuthService {
       isNewUser: isNewUser || false,
       rememberMe: false
     };
-    
+
     this.handleAuthSuccess(authResponse);
   }
 

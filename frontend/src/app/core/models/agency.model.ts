@@ -1,11 +1,10 @@
+import {Address} from '@core/models/address.model';
+
 export interface Agency {
   id: string;
   name: string;
   description?: string;
-  address?: string;
-  city?: string;
-  postalCode?: string;
-  country?: string;
+  address?: Address;
   phone?: string;
   email?: string;
   website?: string;
@@ -19,10 +18,7 @@ export interface Agency {
 export interface CreateAgencyRequest {
   name: string;
   description?: string;
-  address?: string;
-  city?: string;
-  postalCode?: string;
-  country?: string;
+  address?: Address;
   phone?: string;
   email?: string;
   website?: string;

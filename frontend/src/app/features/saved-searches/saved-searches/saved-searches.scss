@@ -1,12 +1,31 @@
+// Variabili principali
+$color-title: #1a202c;
+$color-primary: #3f51b5;
+$color-secondary: #718096;
+$color-success: #10b981;
+$color-success-light: #34d399;
+$color-bg: #f8fafc;
+$color-bg-card: #f1f5f9;
+$color-bg-hover: #e2e8f0;
+$color-chip: #475569;
+$color-border: #e2e8f0;
+$color-empty: #cbd5e0;
+$radius-lg: 16px;
+$radius-md: 8px;
+$gap-lg: 3rem;
+$gap-md: 2rem;
+$gap-sm: 1.5rem;
+$gap-xs: 0.5rem;
+
 .saved-searches-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: $gap-md 1rem;
 }
 
 .page-header {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: $gap-lg;
 
   h1 {
     display: flex;
@@ -15,20 +34,20 @@
     gap: 0.75rem;
     font-size: 2.5rem;
     font-weight: 600;
-    color: #1a202c;
+    color: $color-title;
     margin-bottom: 1rem;
 
     mat-icon {
       font-size: 2.5rem;
       width: 2.5rem;
       height: 2.5rem;
-      color: #3f51b5;
+      color: $color-primary;
     }
   }
 
   .subtitle {
     font-size: 1.1rem;
-    color: #718096;
+    color: $color-secondary;
     max-width: 600px;
     margin: 0 auto;
     line-height: 1.6;
@@ -48,7 +67,7 @@
     font-size: 4rem;
     width: 4rem;
     height: 4rem;
-    color: #cbd5e0;
+    color: $color-empty;
     margin-bottom: 1.5rem;
   }
 
@@ -60,7 +79,7 @@
   }
 
   p {
-    color: #718096;
+    color: $color-secondary;
     font-size: 1rem;
     line-height: 1.6;
     margin-bottom: 2rem;
@@ -80,12 +99,12 @@
 .searches-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 2rem;
-  margin-bottom: 3rem;
+  gap: $gap-md;
+  margin-bottom: $gap-lg;
 }
 
 .search-card {
-  border-radius: 16px;
+  border-radius: $radius-lg;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   position: relative;
@@ -97,7 +116,7 @@
   }
 
   &.has-new-results {
-    border: 2px solid #10b981;
+    border: 2px solid $color-success;
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 
     &::before {
@@ -107,7 +126,7 @@
       left: 0;
       right: 0;
       height: 4px;
-      background: linear-gradient(90deg, #10b981, #34d399);
+      background: linear-gradient(90deg, $color-success, $color-success-light);
     }
   }
 }
@@ -125,12 +144,12 @@
   .mat-mdc-card-title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #1a202c;
+    color: $color-title;
     margin-bottom: 0.5rem;
   }
 
   .mat-mdc-card-subtitle {
-    color: #718096;
+    color: $color-secondary;
     font-size: 0.9rem;
   }
 }
@@ -142,18 +161,18 @@
 .filters-summary {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  gap: $gap-xs;
+  margin-bottom: $gap-sm;
 }
 
 .filter-chip {
-  background: #f1f5f9;
-  color: #475569;
+  background: $color-bg-card;
+  color: $color-chip;
   font-size: 0.875rem;
   height: 28px;
 
   &:hover {
-    background: #e2e8f0;
+    background: $color-bg-hover;
   }
 }
 
@@ -163,20 +182,20 @@
   align-items: center;
   margin-bottom: 1rem;
   padding: 1rem;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  background: $color-bg;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
 }
 
 .results-count {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: $gap-xs;
   font-weight: 500;
-  color: #1a202c;
+  color: $color-title;
 
   mat-icon {
-    color: #3f51b5;
+    color: $color-primary;
     font-size: 1.25rem;
     width: 1.25rem;
     height: 1.25rem;
@@ -186,7 +205,7 @@
 .notification-status {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: $gap-xs;
   font-size: 0.9rem;
 }
 
@@ -196,7 +215,7 @@
   height: 1rem;
 
   &.enabled {
-    color: #10b981;
+    color: $color-success;
   }
 
   &.disabled {
@@ -212,7 +231,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: linear-gradient(45deg, #10b981, #34d399);
+  background: linear-gradient(45deg, $color-success, $color-success-light);
   color: white;
   padding: 0.75rem 1rem;
   border-radius: 8px;
@@ -231,7 +250,7 @@
   display: flex;
   gap: 0.5rem;
   padding: 1rem 1.5rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid $color-border;
 }
 
 .execute-search-btn {
@@ -241,7 +260,7 @@
 }
 
 .notification-toggle-btn {
-  color: #718096;
+  color: $color-secondary;
 
   &:hover {
     background: rgba(113, 128, 150, 0.04);
@@ -257,22 +276,22 @@
 }
 
 .info-section {
-  margin-top: 3rem;
+  margin-top: $gap-lg;
 }
 
 .info-card {
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  border-radius: 16px;
+  background: linear-gradient(135deg, $color-bg 0%, $color-border 100%);
+  border-radius: $radius-lg;
 
   .mat-mdc-card-title {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    color: #1a202c;
+    color: $color-title;
     font-weight: 600;
 
     mat-icon {
-      color: #3f51b5;
+      color: $color-primary;
       font-size: 1.5rem;
       width: 1.5rem;
       height: 1.5rem;
@@ -296,7 +315,7 @@
     }
 
     mat-icon {
-      color: #10b981;
+      color: $color-success;
       font-size: 1.25rem;
       width: 1.25rem;
       height: 1.25rem;
@@ -327,7 +346,7 @@
 
   .searches-grid {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: $gap-sm;
   }
 
   .card-header-content {

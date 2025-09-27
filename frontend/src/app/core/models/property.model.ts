@@ -1,4 +1,5 @@
 import {Agent} from '@core/models/user.model';
+import {Address} from '@core/models/address.model';
 
 export interface Property {
   id: string;
@@ -9,15 +10,15 @@ export interface Property {
   listingType: 'sale' | 'rent';
   bedrooms: number;
   bathrooms: number;
-  area: number;
+  area: number; // in square meters
   floor?: string;
   energyClass?: string;
   hasElevator: boolean;
   hasBalcony: boolean;
   hasGarden: boolean;
   hasParking: boolean;
-  address: PropertyAddress;
-  location: PropertyLocation;
+  address: Address;
+  location: PropertyLocation; // geographical coordinates
   images: PropertyImage[];
   agentId: string;
   agent?: Agent;
@@ -26,14 +27,6 @@ export interface Property {
   favorites: number;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface PropertyAddress {
-  street: string;
-  city: string;
-  province: string;
-  zipCode: string;
-  country: string;
 }
 
 export interface PropertyLocation {

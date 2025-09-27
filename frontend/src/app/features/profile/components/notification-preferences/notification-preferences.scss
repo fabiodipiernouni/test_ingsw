@@ -1,9 +1,33 @@
+// Definizione variabili principali
+$color-primary: #2d3748;
+$color-secondary: #718096;
+$color-accent: #667eea;
+$color-bg-light: #f7fafc;
+$color-bg-info: #e6fffa;
+$color-border-info: #81e6d9;
+$border-radius-lg: 16px;
+$border-radius-md: 12px;
+$border-radius-sm: 8px;
+$padding-lg: 2rem;
+$padding-md: 1.5rem;
+$padding-sm: 1rem;
+
+// Mixin per icone categoria
+@mixin category-icon($color, $bg) {
+  color: $color;
+  background-color: $bg;
+  border-radius: 50%;
+  padding: 12px;
+  width: 48px;
+  height: 48px;
+}
+
 .notification-preferences-container {
-  padding: 2rem 0;
+  padding: $padding-lg 0;
 }
 
 .section-header {
-  margin-bottom: 2rem;
+  margin-bottom: $padding-lg;
 
   h2 {
     display: flex;
@@ -12,10 +36,10 @@
     margin: 0 0 0.5rem 0;
     font-size: 1.5rem;
     font-weight: 600;
-    color: #2d3748;
+    color: $color-primary;
 
     mat-icon {
-      color: #667eea;
+      color: $color-accent;
       font-size: 1.75rem;
       width: 1.75rem;
       height: 1.75rem;
@@ -24,7 +48,7 @@
 
   p {
     margin: 0;
-    color: #718096;
+    color: $color-secondary;
     font-size: 1rem;
     line-height: 1.5;
   }
@@ -34,7 +58,7 @@
   .quick-actions {
     display: flex;
     justify-content: flex-end;
-    margin-bottom: 2rem;
+    margin-bottom: $padding-lg;
 
     button {
       display: flex;
@@ -44,8 +68,8 @@
   }
 
   .category-card {
-    margin-bottom: 2rem;
-    border-radius: 16px;
+    margin-bottom: $padding-lg;
+    border-radius: $border-radius-lg;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     transition: box-shadow 0.3s ease;
 
@@ -54,7 +78,7 @@
     }
 
     .category-header {
-      padding: 1.5rem 1.5rem 1rem 1.5rem;
+      padding: $padding-md $padding-md $padding-sm $padding-md;
 
       .mat-mdc-card-avatar {
         background: none;
@@ -63,77 +87,48 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 12px;
+        border-radius: $border-radius-md;
 
         mat-icon {
           font-size: 24px;
           width: 24px;
           height: 24px;
-          
-          &.category-icon-property_alerts { 
-            color: #2b6cb0; 
-            background-color: #bee3f8;
-            border-radius: 50%;
-            padding: 12px;
-            width: 48px;
-            height: 48px;
-          }
-          &.category-icon-account_security { 
-            color: #2f855a; 
-            background-color: #c6f6d5;
-            border-radius: 50%;
-            padding: 12px;
-            width: 48px;
-            height: 48px;
-          }
-          &.category-icon-communications { 
-            color: #9f7aea; 
-            background-color: #e9d8fd;
-            border-radius: 50%;
-            padding: 12px;
-            width: 48px;
-            height: 48px;
-          }
-          &.category-icon-business_updates { 
-            color: #d69e2e; 
-            background-color: #faf089;
-            border-radius: 50%;
-            padding: 12px;
-            width: 48px;
-            height: 48px;
-          }
+          &.category-icon-property_alerts { @include category-icon(#2b6cb0, #bee3f8); }
+          &.category-icon-account_security { @include category-icon(#2f855a, #c6f6d5); }
+          &.category-icon-communications { @include category-icon(#9f7aea, #e9d8fd); }
+          &.category-icon-business_updates { @include category-icon(#d69e2e, #faf089); }
         }
       }
 
       .mat-mdc-card-title {
         font-size: 1.25rem;
         font-weight: 600;
-        color: #2d3748;
+        color: $color-primary;
         margin-bottom: 0.25rem;
       }
 
       .mat-mdc-card-subtitle {
-        color: #718096;
+        color: $color-secondary;
         font-size: 0.9rem;
         line-height: 1.4;
       }
     }
 
     .category-toggles {
-      padding: 1rem 0;
-      background-color: #f7fafc;
-      border-radius: 8px;
-      margin-bottom: 1rem;
+      padding: $padding-sm 0;
+      background-color: $color-bg-light;
+      border-radius: $border-radius-sm;
+      margin-bottom: $padding-sm;
 
       .toggle-group {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 1rem;
+        padding: 0 $padding-sm;
 
         @media (max-width: 768px) {
           flex-direction: column;
-          gap: 1rem;
+          gap: $padding-sm;
           align-items: flex-start;
         }
 
@@ -149,34 +144,23 @@
           .toggle-btn {
             width: 40px;
             height: 40px;
-            border-radius: 8px;
+            border-radius: $border-radius-sm;
             transition: all 0.3s ease;
 
             &.email-toggle {
               background-color: #fed7e2;
               color: #b83280;
-
-              &:hover {
-                background-color: #fbb6ce;
-              }
+              &:hover { background-color: #fbb6ce; }
             }
-
             &.push-toggle {
               background-color: #bee3f8;
               color: #2b6cb0;
-
-              &:hover {
-                background-color: #90cdf4;
-              }
+              &:hover { background-color: #90cdf4; }
             }
-
             &.sms-toggle {
               background-color: #c6f6d5;
               color: #2f855a;
-
-              &:hover {
-                background-color: #9ae6b4;
-              }
+              &:hover { background-color: #9ae6b4; }
             }
           }
         }
@@ -185,31 +169,29 @@
 
     .preferences-list {
       .preference-item {
-        padding: 1.5rem 0;
+        padding: $padding-md 0;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 2rem;
+        gap: $padding-lg;
 
         @media (max-width: 768px) {
           flex-direction: column;
           align-items: flex-start;
-          gap: 1rem;
+          gap: $padding-sm;
         }
 
         .preference-info {
           flex: 1;
-
           h4 {
             margin: 0 0 0.25rem 0;
             font-size: 1rem;
             font-weight: 600;
-            color: #2d3748;
+            color: $color-primary;
           }
-
           p {
             margin: 0;
-            color: #718096;
+            color: $color-secondary;
             font-size: 0.875rem;
             line-height: 1.4;
           }
@@ -217,11 +199,11 @@
 
         .preference-toggles {
           display: flex;
-          gap: 2rem;
+          gap: $padding-lg;
           align-items: center;
 
           @media (max-width: 768px) {
-            gap: 1rem;
+            gap: $padding-sm;
             width: 100%;
             justify-content: space-between;
           }
@@ -232,17 +214,13 @@
             gap: 0.5rem;
             min-width: 80px;
 
-            mat-slide-toggle {
-              margin-right: 0.5rem;
-            }
-
+            mat-slide-toggle { margin-right: 0.5rem; }
             mat-icon {
               font-size: 18px;
               width: 18px;
               height: 18px;
-              color: #718096;
+              color: $color-secondary;
             }
-
             span {
               font-size: 0.875rem;
               color: #4a5568;
@@ -251,47 +229,38 @@
           }
         }
       }
-
-      .preference-divider {
-        margin: 0;
-      }
+      .preference-divider { margin: 0; }
     }
   }
 
   .info-notice {
     display: flex;
     gap: 1rem;
-    padding: 1.5rem;
-    background-color: #e6fffa;
-    border: 1px solid #81e6d9;
-    border-radius: 12px;
-    margin: 2rem 0;
+    padding: $padding-md;
+    background-color: $color-bg-info;
+    border: 1px solid $color-border-info;
+    border-radius: $border-radius-md;
+    margin: $padding-lg 0;
 
     mat-icon {
       color: #234e52;
       margin-top: 0.25rem;
       flex-shrink: 0;
     }
-
     .notice-content {
       h4 {
         margin: 0 0 1rem 0;
         color: #234e52;
         font-weight: 600;
       }
-
       ul {
         margin: 0;
         padding-left: 1rem;
         color: #285e61;
-
         li {
           margin-bottom: 0.5rem;
           line-height: 1.4;
-
-          strong {
-            font-weight: 600;
-          }
+          strong { font-weight: 600; }
         }
       }
     }
@@ -308,7 +277,7 @@
 
   @media (max-width: 768px) {
     flex-direction: column-reverse;
-    
+
     button {
       width: 100%;
       justify-content: center;
@@ -402,7 +371,7 @@
   &.status-granted {
     background-color: #f0fff4;
     border-left-color: #38a169;
-    
+
     mat-icon {
       color: #38a169;
     }
@@ -411,7 +380,7 @@
   &.status-denied {
     background-color: #fed7d7;
     border-left-color: #e53e3e;
-    
+
     mat-icon {
       color: #e53e3e;
     }
@@ -420,7 +389,7 @@
   &.status-default {
     background-color: #ebf8ff;
     border-left-color: #3182ce;
-    
+
     mat-icon {
       color: #3182ce;
     }
@@ -440,7 +409,7 @@
       margin: 0 0 0.5rem 0;
       font-size: 1.125rem;
       font-weight: 600;
-      color: #2d3748;
+      color: $color-primary;
     }
 
     p {

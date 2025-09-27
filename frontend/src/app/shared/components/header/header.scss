@@ -1,13 +1,38 @@
+// Variabili principali
+$color-primary: #3f51b5;
+$color-secondary: #4a5568;
+$color-border: #e2e8f0;
+$color-gradient: linear-gradient(135deg, #3f51b5, #9c27b0);
+$header-height: 70px;
+$gap-md: 0.75rem;
+$gap-sm: 0.5rem;
+$radius: 8px;
+
+// Mixin per bottoni nav
+@mixin nav-btn($active: false) {
+  font-weight: if($active, 600, 500);
+  color: if($active, $color-primary, $color-secondary);
+  border-radius: $radius;
+  transition: all 0.3s ease;
+  flex: 1;
+  text-align: center;
+  background: if($active, rgba(63, 81, 181, 0.1), none);
+  &:hover {
+    background: rgba(63, 81, 181, 0.08);
+    color: $color-primary;
+  }
+}
+
 .app-header {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid $color-border;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
   z-index: 1000;
   padding: 0;
-  min-height: 70px;
+  min-height: $header-height;
 }
 
 .header-container {
@@ -17,13 +42,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 70px;
+  height: $header-height;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: $gap-md;
   cursor: pointer;
   text-decoration: none;
   color: inherit;
@@ -37,13 +62,13 @@
     font-size: 2rem;
     width: 2rem;
     height: 2rem;
-    color: #3f51b5;
+    color: $color-primary;
   }
 
   .brand-text {
     font-size: 1.5rem;
     font-weight: 700;
-    background: linear-gradient(135deg, #3f51b5, #9c27b0);
+    background: $color-gradient;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -54,30 +79,18 @@
   display: flex;
   flex: 1;
   justify-content: space-evenly;
-  gap: 0.5rem;
+  gap: $gap-sm;
   margin: 0 2rem;
 
   .mat-mdc-button {
-    font-weight: 500;
-    color: #4a5568;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    flex: 1;
-    text-align: center;
-
-    &:hover {
-      background: rgba(63, 81, 181, 0.08);
-      color: #3f51b5;
-    }
+    @include nav-btn(false);
 
     &.active {
-      background: rgba(63, 81, 181, 0.1);
-      color: #3f51b5;
-      font-weight: 600;
+      @include nav-btn(true);
     }
 
     mat-icon {
-      margin-right: 0.5rem;
+      margin-right: $gap-sm;
     }
   }
 }
@@ -85,16 +98,16 @@
 .user-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: $gap-sm;
 }
 
 .notification-button {
-  color: #4a5568;
+  color: $color-secondary;
   transition: all 0.3s ease;
 
   &:hover {
     background: rgba(63, 81, 181, 0.08);
-    color: #3f51b5;
+    color: $color-primary;
   }
 }
 
@@ -126,7 +139,7 @@
 .login-button,
 .register-button {
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: $radius;
 
   mat-icon {
     margin-right: 0.5rem;
@@ -134,11 +147,11 @@
 }
 
 .login-button {
-  color: #4a5568;
+  color: $color-secondary;
 
   &:hover {
     background: rgba(63, 81, 181, 0.08);
-    color: #3f51b5;
+    color: $color-primary;
   }
 }
 
@@ -152,10 +165,10 @@
 
 .mobile-menu-toggle {
   display: none;
-  color: #4a5568;
+  color: $color-secondary;
 
   &.active {
-    color: #3f51b5;
+    color: $color-primary;
   }
 }
 
@@ -170,7 +183,7 @@
 
 .user-info {
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid $color-border;
 
   .user-name {
     font-weight: 600;
@@ -185,7 +198,7 @@
   }
 
   .user-role {
-    color: #3f51b5;
+    color: $color-primary;
     font-size: 0.8rem;
     font-weight: 500;
     padding: 0.25rem 0.5rem;
@@ -229,7 +242,7 @@
   left: 0;
   right: 0;
   background: white;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid $color-border;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 999;
 }
@@ -289,13 +302,13 @@
 .mobile-nav-links {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: $gap-sm;
 
   .mat-mdc-button {
     justify-content: flex-start;
     text-align: left;
     padding: 0.75rem 1rem;
-    border-radius: 8px;
+    border-radius: $radius;
 
     mat-icon {
       margin-right: 1rem;
@@ -318,7 +331,7 @@
     width: 100%;
     padding: 0.75rem;
     font-weight: 600;
-    border-radius: 8px;
+    border-radius: $radius;
 
     mat-icon {
       margin-right: 0.5rem;

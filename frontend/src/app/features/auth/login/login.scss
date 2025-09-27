@@ -1,3 +1,17 @@
+// Variabili principali
+$color-primary: #3f51b5;
+$color-secondary: #718096;
+$color-title: #1a202c;
+$color-bg: #f8fafc;
+$color-bg-card: rgba(255, 255, 255, 0.95);
+$color-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+$color-divider: #e2e8f0;
+$color-google: #db4437;
+$radius-card: 20px;
+$radius-btn: 12px;
+$gap-md: 1.5rem;
+$gap-sm: 0.75rem;
+
 .login-container {
   min-height: 100vh;
   display: flex;
@@ -5,7 +19,7 @@
   align-items: center;
   justify-content: center;
   padding: 2rem 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: $color-gradient;
 
   &::before {
     content: '';
@@ -27,11 +41,11 @@
   margin-bottom: 2rem;
 
   .mat-mdc-card {
-    border-radius: 20px;
+    border-radius: $radius-card;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
     overflow: hidden;
     backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.95);
+    background: $color-bg-card;
   }
 }
 
@@ -43,14 +57,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.75rem;
+    gap: $gap-sm;
     margin-bottom: 2rem;
 
     mat-icon {
       font-size: 2rem;
       width: 2rem;
       height: 2rem;
-      color: #3f51b5;
+      color: $color-primary;
     }
 
     span {
@@ -66,12 +80,12 @@
   h1 {
     font-size: 1.75rem;
     font-weight: 600;
-    color: #1a202c;
+    color: $color-title;
     margin-bottom: 0.5rem;
   }
 
   p {
-    color: #718096;
+    color: $color-secondary;
     font-size: 1rem;
     margin: 0;
   }
@@ -82,7 +96,7 @@
 }
 
 .form-fields {
-  margin-bottom: 1.5rem;
+  margin-bottom: $gap-md;
 }
 
 .full-width {
@@ -97,7 +111,7 @@
   margin-bottom: 2rem;
 
   .forgot-password-link {
-    color: #3f51b5;
+    color: $color-primary;
     text-decoration: none;
     font-size: 0.9rem;
     font-weight: 500;
@@ -113,8 +127,8 @@
   height: 48px;
   font-size: 1rem;
   font-weight: 600;
-  border-radius: 12px;
-  margin-bottom: 1.5rem;
+  border-radius: $radius-btn;
+  margin-bottom: $gap-md;
 
   .spin {
     animation: spin 1s linear infinite;
@@ -130,7 +144,7 @@
 .divider {
   position: relative;
   text-align: center;
-  margin: 1.5rem 0;
+  margin: $gap-md 0;
 
   &::before {
     content: '';
@@ -139,12 +153,12 @@
     left: 0;
     right: 0;
     height: 1px;
-    background: #e2e8f0;
+    background: $color-divider;
   }
 
   span {
     background: white;
-    color: #718096;
+    color: $color-secondary;
     padding: 0 1rem;
     font-size: 0.9rem;
     position: relative;
@@ -155,46 +169,45 @@
 .social-login {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: $gap-sm;
 }
 
 .social-button {
   width: 100%;
   height: 48px;
   font-weight: 500;
-  border-radius: 12px;
+  border-radius: $radius-btn;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
+  gap: $gap-sm;
 
   &.google-button {
-    border-color: #db4437;
-    color: #db4437;
+    border-color: $color-google;
+    color: $color-google;
 
     &:hover {
       background: rgba(219, 68, 55, 0.04);
     }
   }
-
 }
 
 .mat-mdc-card-footer {
-  padding: 1.5rem 2rem 2rem 2rem;
-  background: #f8fafc;
-  border-top: 1px solid #e2e8f0;
+  padding: $gap-md 2rem 2rem 2rem;
+  background: $color-bg;
+  border-top: 1px solid $color-divider;
 }
 
 .register-link {
   text-align: center;
 
   span {
-    color: #718096;
+    color: $color-secondary;
     font-size: 0.95rem;
   }
 
   .register-button {
-    color: #3f51b5;
+    color: $color-primary;
     text-decoration: none;
     font-weight: 600;
     font-size: 0.95rem;
@@ -221,7 +234,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: #1a202c;
+    color: $color-title;
     font-size: 1rem;
 
     mat-icon {
@@ -247,7 +260,7 @@
   background: #f1f5f9;
   border-radius: 8px;
   padding: 1rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid $color-divider;
 }
 
 .credential-item {
