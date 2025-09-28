@@ -4,6 +4,7 @@ import { Observable, of, BehaviorSubject } from 'rxjs';
 import { map, tap, delay } from 'rxjs/operators';
 import { Property, PropertyStats } from '@core/entities/property.model';
 import { SearchFilters, SearchResult } from '@core/entities/search.model';
+import { environment } from '@environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +12,7 @@ import { SearchFilters, SearchResult } from '@core/entities/search.model';
 export class PropertyService {
   private http = inject(HttpClient);
 
-  private readonly API_URL = 'http://localhost:8080/api/properties';
+  private readonly API_URL = `${environment.apiUrl}/properties`;
 
   // Reactive state
   private propertiesSubject = new BehaviorSubject<Property[]>([]);
@@ -119,28 +120,104 @@ export class PropertyService {
   searchProperties(filters: SearchFilters, page: number = 1, limit: number = 20): Observable<SearchResult> {
     this.isLoading.set(true);
 
-    // Simulate API call with filtering
-    return of(this.mockProperties).pipe(
-      map(properties => this.filterProperties(properties, filters)),
-      map(filteredProperties => {
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-        const paginatedProperties = filteredProperties.slice(startIndex, endIndex);
+    // Costruisco i parametri query per l'API
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString());
 
-        return {
-          properties: paginatedProperties,
-          totalCount: filteredProperties.length,
-          currentPage: page,
-          totalPages: Math.ceil(filteredProperties.length / limit),
-          hasNextPage: page < Math.ceil(filteredProperties.length / limit),
-          hasPreviousPage: page > 1
+    // Aggiungo i filtri come parametri query se presenti e validi
+    if (filters.location && filters.location.trim() !== '') {
+      params = params.set('location', filters.location);
+    }
+    if (filters.propertyType && filters.propertyType.trim() !== '') {
+      params = params.set('propertyType', filters.propertyType);
+    }
+    if (filters.listingType && filters.listingType.trim() !== '') {
+      params = params.set('listingType', filters.listingType);
+    }
+    if (filters.priceMin !== undefined && filters.priceMin !== null && !isNaN(filters.priceMin)) {
+      params = params.set('priceMin', filters.priceMin.toString());
+    }
+    if (filters.priceMax !== undefined && filters.priceMax !== null && !isNaN(filters.priceMax)) {
+      params = params.set('priceMax', filters.priceMax.toString());
+    }
+    if (filters.bedrooms !== undefined && filters.bedrooms !== null && !isNaN(filters.bedrooms)) {
+      params = params.set('bedrooms', filters.bedrooms.toString());
+    }
+    if (filters.bathrooms !== undefined && filters.bathrooms !== null && !isNaN(filters.bathrooms)) {
+      params = params.set('bathrooms', filters.bathrooms.toString());
+    }
+    if (filters.areaMin !== undefined && filters.areaMin !== null && !isNaN(filters.areaMin)) {
+      params = params.set('areaMin', filters.areaMin.toString());
+    }
+    if (filters.areaMax !== undefined && filters.areaMax !== null && !isNaN(filters.areaMax)) {
+      params = params.set('areaMax', filters.areaMax.toString());
+    }
+    if (filters.energyClass && filters.energyClass.trim() !== '') {
+      params = params.set('energyClass', filters.energyClass);
+    }
+    if (filters.hasElevator !== undefined && filters.hasElevator !== null) {
+      params = params.set('hasElevator', filters.hasElevator.toString());
+    }
+    if (filters.hasBalcony !== undefined && filters.hasBalcony !== null) {
+      params = params.set('hasBalcony', filters.hasBalcony.toString());
+    }
+    if (filters.hasGarden !== undefined && filters.hasGarden !== null) {
+      params = params.set('hasGarden', filters.hasGarden.toString());
+    }
+    if (filters.hasParking !== undefined && filters.hasParking !== null) {
+      params = params.set('hasParking', filters.hasParking.toString());
+    }
+    if (filters.radius !== undefined && filters.radius !== null && !isNaN(filters.radius)) {
+      params = params.set('radius', filters.radius.toString());
+    }
+    if (filters.centerLat !== undefined && filters.centerLat !== null && !isNaN(filters.centerLat)) {
+      params = params.set('centerLat', filters.centerLat.toString());
+    }
+    if (filters.centerLng !== undefined && filters.centerLng !== null && !isNaN(filters.centerLng)) {
+      params = params.set('centerLng', filters.centerLng.toString());
+    }
+
+    // Chiamata HTTP al backend
+    return this.http.get<any>(`${this.API_URL}`, { params }).pipe(
+      map(response => {
+        // Mappo la risposta del backend al formato SearchResult
+        const searchResult: SearchResult = {
+          properties: response.properties || response.data || [],
+          totalCount: response.totalCount || response.total || 0,
+          currentPage: response.currentPage || response.page || page,
+          totalPages: response.totalPages || Math.ceil((response.totalCount || response.total || 0) / limit),
+          hasNextPage: response.hasNextPage || ((response.currentPage || page) < (response.totalPages || Math.ceil((response.totalCount || response.total || 0) / limit))),
+          hasPreviousPage: response.hasPreviousPage || ((response.currentPage || page) > 1)
         };
+        return searchResult;
       }),
-      delay(500), // Simulate network delay
       tap(result => {
         this.properties.set(result.properties);
         this.totalCount.set(result.totalCount);
+        this.propertiesSubject.next(result.properties);
         this.isLoading.set(false);
+      }),
+      // Gestione errori migliorata
+      tap({
+        error: (error) => {
+          console.error('Errore durante la ricerca delle proprietà:', error);
+          this.isLoading.set(false);
+
+          // Creo un SearchResult mock per il fallback
+          const fallbackResult: SearchResult = {
+            properties: this.mockProperties,
+            totalCount: this.mockProperties.length,
+            currentPage: 1,
+            totalPages: Math.ceil(this.mockProperties.length / limit),
+            hasNextPage: this.mockProperties.length > limit,
+            hasPreviousPage: false
+          };
+
+          this.properties.set(fallbackResult.properties);
+          this.totalCount.set(fallbackResult.totalCount);
+          this.propertiesSubject.next(fallbackResult.properties);
+        }
       })
     );
   }
