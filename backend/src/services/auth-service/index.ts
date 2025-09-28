@@ -1,10 +1,12 @@
 import express from 'express';
 import cors from 'cors';
+import swaggerUi from 'swagger-ui-express';
 import { config } from '../../config/index';
 import { errorHandler, notFoundHandler } from '../../shared/middleware/errorHandler';
 import authRoutes from './routes/auth';
 import logger from '../../shared/utils/logger';
 import { connectToDatabase } from '@shared/database';
+import { specs } from './config/swagger';
 
 const app = express();
 const PORT = config.auth.port || 3001;
@@ -18,10 +20,40 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Swagger Documentation
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Auth Service API Documentation',
+  swaggerOptions: {
+    persistAuthorization: true,
+    displayRequestDuration: true,
+    docExpansion: 'list',
+    filter: true,
+    showExtensions: true,
+    showCommonExtensions: true
+  }
+}));
+
 // Routes
 app.use('/', authRoutes);
 
-// Health check
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: Health check del servizio
+ *     description: Endpoint per verificare lo stato di salute del servizio di autenticazione
+ *     tags:
+ *       - Health
+ *     responses:
+ *       200:
+ *         description: Servizio funzionante correttamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/HealthResponse'
+ */
 app.get('/health', (req, res) => {
   res.json({
     service: 'auth-service',
