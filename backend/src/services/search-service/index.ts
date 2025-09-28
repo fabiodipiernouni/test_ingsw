@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
+import yaml from 'js-yaml';
 import { config } from '../../config/index';
 import { errorHandler, notFoundHandler } from '../../shared/middleware/errorHandler';
 import logger from '../../shared/utils/logger';
@@ -18,6 +19,65 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// OpenAPI file downloads - DEVONO essere prima del middleware Swagger UI
+/**
+ * @swagger
+ * /docs/openapi.json:
+ *   get:
+ *     summary: Download OpenAPI specification in JSON format
+ *     description: Scarica la specifica OpenAPI del servizio di ricerca in formato JSON
+ *     tags:
+ *       - Documentation
+ *     responses:
+ *       200:
+ *         description: Specifica OpenAPI in formato JSON
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ */
+app.get('/docs/openapi.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Content-Disposition', 'attachment; filename="search-service-openapi.json"');
+  res.json(specs);
+});
+
+/**
+ * @swagger
+ * /docs/openapi.yaml:
+ *   get:
+ *     summary: Download OpenAPI specification in YAML format
+ *     description: Scarica la specifica OpenAPI del servizio di ricerca in formato YAML
+ *     tags:
+ *       - Documentation
+ *     responses:
+ *       200:
+ *         description: Specifica OpenAPI in formato YAML
+ *         content:
+ *           application/x-yaml:
+ *             schema:
+ *               type: string
+ */
+app.get('/docs/openapi.yaml', (req, res) => {
+  try {
+    const yamlStr = yaml.dump(specs, {
+      indent: 2,
+      lineWidth: -1,
+      noRefs: true,
+      skipInvalid: true
+    });
+    res.setHeader('Content-Type', 'application/x-yaml');
+    res.setHeader('Content-Disposition', 'attachment; filename="search-service-openapi.yaml"');
+    res.send(yamlStr);
+  } catch (error) {
+    logger.error('Error generating YAML specification:', error);
+    res.status(500).json({
+      error: 'Failed to generate YAML specification',
+      message: 'Internal server error'
+    });
+  }
+});
 
 // Swagger Documentation
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs, {

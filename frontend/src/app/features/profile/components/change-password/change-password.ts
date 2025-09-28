@@ -9,7 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { UserService } from '../../../../core/services/user.service';
-import { ChangePasswordRequest } from '../../../../core/models/user.model';
+import { ChangePasswordRequest } from '@core/entities/user.model';
 
 @Component({
   selector: 'app-change-password',
@@ -37,7 +37,7 @@ export class ChangePassword implements OnInit {
   hideCurrentPassword = signal<boolean>(true);
   hideNewPassword = signal<boolean>(true);
   hideConfirmPassword = signal<boolean>(true);
-  
+
   passwordRequirements = signal<boolean>(false);
   passwordChecks = signal({
     hasLower: false,
@@ -133,7 +133,7 @@ export class ChangePassword implements OnInit {
           this.passwordChanged.emit();
           this.changePasswordForm.reset();
           this.passwordRequirements.set(false);
-          
+
           this.snackBar.open(
             response.message || 'Password cambiata con successo',
             'Chiudi',
@@ -174,7 +174,7 @@ export class ChangePassword implements OnInit {
 
   getErrorMessage(fieldName: string): string {
     const control = this.changePasswordForm.get(fieldName);
-    
+
     if (control?.hasError('required')) {
       return 'Campo obbligatorio';
     }
@@ -188,7 +188,7 @@ export class ChangePassword implements OnInit {
     if (control?.hasError('passwordStrength')) {
       return 'La password non soddisfa i requisiti di sicurezza';
     }
-    
+
     return '';
   }
 }

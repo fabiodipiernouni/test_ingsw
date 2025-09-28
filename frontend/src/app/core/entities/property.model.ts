@@ -1,5 +1,5 @@
-import {Agent} from '@core/models/user.model';
-import {Address} from '@core/models/address.model';
+import {Agent} from '@core/entities/user.model';
+import {Address} from '@core/entities/address.model';
 
 export interface Property {
   id: string;

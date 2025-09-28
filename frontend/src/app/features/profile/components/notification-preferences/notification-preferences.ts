@@ -12,7 +12,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { finalize } from 'rxjs/operators';
 
 import { UserService } from '../../../../core/services/user.service';
-import { User } from '../../../../core/models/user.model';
+import { User } from '@core/entities/user.model';
 
 interface NotificationCategory {
   id: string;
@@ -62,7 +62,7 @@ export class NotificationPreferences implements OnInit, OnChanges {
   constructor() {
     // Initialize form early to prevent undefined errors
     this.notificationForm = this.fb.group({});
-    
+
     // Check initial notification permission status
     this.checkNotificationPermission();
   }
@@ -203,23 +203,23 @@ export class NotificationPreferences implements OnInit, OnChanges {
 
   private initializeForm() {
     const formControls: any = {};
-    
+
     // Check notification permission status first
     this.checkNotificationPermission();
-    
+
     // Initialize form controls for all categories
-    const allCategories = [...this.notificationCategories, 
+    const allCategories = [...this.notificationCategories,
                           ...(this.user.role === 'agent' ? this.agentCategories : [])];
-    
+
     allCategories.forEach(category => {
       category.preferences.forEach(preference => {
         // Email controls - sempre abilitati
         formControls[`${preference.id}_email`] = [preference.email];
-        
+
         // Push controls - gestione dello stato disabled in base ai permessi
         const pushEnabled = preference.push && this.pushPermissionStatus() === 'granted';
         const canEnablePush = this.canEnablePushNotifications();
-        
+
         formControls[`${preference.id}_push`] = [
           { value: pushEnabled, disabled: !canEnablePush }
         ];
@@ -237,16 +237,16 @@ export class NotificationPreferences implements OnInit, OnChanges {
   onSubmit() {
     if (this.notificationForm.valid) {
       this.isLoading.set(true);
-      
+
       const preferences = this.buildPreferencesObject();
-      
+
       this.userService.updateNotificationPreferences(preferences)
         .pipe(finalize(() => this.isLoading.set(false)))
         .subscribe({
           next: () => {
             this.notificationForm.markAsPristine();
             this.hasChanges.set(false);
-            
+
             this.snackBar.open('Preferenze di notifica aggiornate con successo', 'Chiudi', {
               duration: 3000,
               panelClass: 'success-snackbar'
@@ -267,10 +267,10 @@ export class NotificationPreferences implements OnInit, OnChanges {
     // Usa getRawValue() per includere anche i controlli disabilitati
     const formValue = this.notificationForm.getRawValue();
     const preferences: any = {};
-    
-    const allCategories = [...this.notificationCategories, 
+
+    const allCategories = [...this.notificationCategories,
                           ...(this.user.role === 'agent' ? this.agentCategories : [])];
-    
+
     allCategories.forEach(category => {
       preferences[category.id] = {};
       category.preferences.forEach(preference => {
@@ -280,14 +280,14 @@ export class NotificationPreferences implements OnInit, OnChanges {
         };
       });
     });
-    
+
     return preferences;
   }
 
   resetToDefaults() {
-    const allCategories = [...this.notificationCategories, 
+    const allCategories = [...this.notificationCategories,
                           ...(this.user.role === 'agent' ? this.agentCategories : [])];
-    
+
     allCategories.forEach(category => {
       category.preferences.forEach(preference => {
         // Reset email controls
@@ -474,7 +474,7 @@ export class NotificationPreferences implements OnInit, OnChanges {
   }
 
   getDisplayCategories(): NotificationCategory[] {
-    return this.user.role === 'agent' 
+    return this.user.role === 'agent'
       ? [...this.notificationCategories, ...this.agentCategories]
       : this.notificationCategories;
   }
@@ -482,7 +482,7 @@ export class NotificationPreferences implements OnInit, OnChanges {
   private checkNotificationPermission(): void {
     if ('Notification' in window) {
       this.pushPermissionStatus.set(Notification.permission);
-      
+
       // Se il permesso è stato negato o revocato, disabilita tutte le notifiche push
       if (Notification.permission === 'denied') {
         this.disableAllPushNotifications();
@@ -495,9 +495,9 @@ export class NotificationPreferences implements OnInit, OnChanges {
 
   private disableAllPushNotifications(): void {
     if (this.notificationForm) {
-      const allCategories = [...this.notificationCategories, 
+      const allCategories = [...this.notificationCategories,
                             ...(this.user?.role === 'agent' ? this.agentCategories : [])];
-      
+
       allCategories.forEach(category => {
         category.preferences.forEach(preference => {
           const control = this.notificationForm.get(`${preference.id}_push`);
@@ -507,7 +507,7 @@ export class NotificationPreferences implements OnInit, OnChanges {
           }
         });
       });
-      
+
       this.snackBar.open('Le notifiche push sono state disabilitate perché il consenso è stato revocato.', 'Chiudi', {
         duration: 5000,
         panelClass: 'warning-snackbar'
@@ -517,11 +517,11 @@ export class NotificationPreferences implements OnInit, OnChanges {
 
   private updatePushControlsState(): void {
     if (this.notificationForm) {
-      const allCategories = [...this.notificationCategories, 
+      const allCategories = [...this.notificationCategories,
                             ...(this.user?.role === 'agent' ? this.agentCategories : [])];
-      
+
       const canEnablePush = this.canEnablePushNotifications();
-      
+
       allCategories.forEach(category => {
         category.preferences.forEach(preference => {
           const control = this.notificationForm.get(`${preference.id}_push`);
@@ -554,10 +554,10 @@ export class NotificationPreferences implements OnInit, OnChanges {
         const currentPermission = Notification.permission;
         if (currentPermission !== this.pushPermissionStatus()) {
           this.pushPermissionStatus.set(currentPermission);
-          
+
           // Aggiorna lo stato di tutti i controlli push
           this.updatePushControlsState();
-          
+
           if (currentPermission === 'denied') {
             this.snackBar.open('Le notifiche push sono state disabilitate perché il consenso è stato revocato.', 'Chiudi', {
               duration: 5000,

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services/auth.service';
-import { OAuthProvider } from '../../../core/models/user.model';
+import { OAuthProvider } from '@core/entities/user.model';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
@@ -50,7 +50,7 @@ export class OAuthCallback implements OnInit {
     ngOnInit(): void {
         // Get OAuth callback parameters
         const queryParams = this.route.snapshot.queryParams;
-        
+
         console.log('OAuth Callback - Current URL:', window.location.href);
         console.log('OAuth Callback - Query params:', queryParams);
 
@@ -66,10 +66,10 @@ export class OAuthCallback implements OnInit {
         // The backend should have processed the OAuth flow and redirected here with tokens
         // Check if we have token in query params (success case)
         const token = queryParams['token'];
-        const refreshToken = queryParams['refreshToken']; 
+        const refreshToken = queryParams['refreshToken'];
         const isNewUser = queryParams['isNewUser'] === 'true';
         const userJson = queryParams['user']; // User data from backend
-        
+
         if (token) {
             // Handle successful OAuth login
             this.handleOAuthSuccess(token, refreshToken, isNewUser, userJson);
@@ -111,10 +111,10 @@ export class OAuthCallback implements OnInit {
 
     private handleOAuthError(error: string, description?: string): void {
         console.error('OAuth Error:', error, description);
-        
+
         this.snackBar.open(
-            description || 'Errore durante l\'autenticazione OAuth', 
-            'Chiudi', 
+            description || 'Errore durante l\'autenticazione OAuth',
+            'Chiudi',
             {
                 duration: 5000,
                 panelClass: ['error-snackbar']

@@ -4,14 +4,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
-import { OAuthProvider } from '../../../core/models/user.model';
+import { OAuthProvider } from '@core/entities/user.model';
 
 @Component({
   selector: 'app-oauth-providers',
   standalone: true,
   imports: [
-    CommonModule, 
-    MatButtonModule, 
+    CommonModule,
+    MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule
   ],
@@ -20,10 +20,10 @@ import { OAuthProvider } from '../../../core/models/user.model';
       <div class="divider">
         <span>oppure</span>
       </div>
-      
+
       <div class="provider-buttons">
-        <button 
-          mat-stroked-button 
+        <button
+          mat-stroked-button
           class="provider-button google"
           [disabled]="loading()"
           (click)="loginWithProvider('google')">
@@ -42,8 +42,8 @@ import { OAuthProvider } from '../../../core/models/user.model';
           <span>Continua con Google</span>
         </button>
 
-        <button 
-          mat-stroked-button 
+        <button
+          mat-stroked-button
           class="provider-button github"
           [disabled]="loading()"
           (click)="loginWithProvider('github')">
@@ -70,7 +70,7 @@ import { OAuthProvider } from '../../../core/models/user.model';
       text-align: center;
       position: relative;
       margin: 1rem 0;
-      
+
       &::before {
         content: '';
         position: absolute;
@@ -80,7 +80,7 @@ import { OAuthProvider } from '../../../core/models/user.model';
         height: 1px;
         background: #e0e0e0;
       }
-      
+
       span {
         background: white;
         padding: 0 1rem;
@@ -143,15 +143,15 @@ import { OAuthProvider } from '../../../core/models/user.model';
 })
 export class OAuthProviders {
   private authService = inject(AuthService);
-  
+
   loading = signal(false);
   mode = input<'login' | 'register'>('login');
 
   loginWithProvider(provider: OAuthProvider): void {
     if (this.loading()) return;
-    
+
     this.loading.set(true);
-    
+
     try {
       // Don't pass redirectUri - let the backend handle the OAuth flow
       // The backend will redirect to the correct frontend callback URL

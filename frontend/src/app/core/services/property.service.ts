@@ -2,8 +2,8 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, BehaviorSubject } from 'rxjs';
 import { map, tap, delay } from 'rxjs/operators';
-import { Property, PropertyStats } from '../models/property.model';
-import { SearchFilters, SearchResult } from '../models/search.model';
+import { Property, PropertyStats } from '@core/entities/property.model';
+import { SearchFilters, SearchResult } from '@core/entities/search.model';
 
 @Injectable({
   providedIn: 'root'

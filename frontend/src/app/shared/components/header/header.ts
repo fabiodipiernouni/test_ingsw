@@ -9,7 +9,7 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '@core/services/auth.service';
 import { NotificationService } from '@core/services/notification.service';
-import { User } from '@core/models/user.model';
+import { User } from '@core/entities/user.model';
 import {MatDivider} from '@angular/material/divider';
 import {MatChip} from '@angular/material/chips';
 

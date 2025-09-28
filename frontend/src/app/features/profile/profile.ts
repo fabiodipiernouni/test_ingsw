@@ -11,12 +11,12 @@ import { Router, RouterModule } from '@angular/router';
 
 import { AuthService } from '../../core/services/auth.service';
 import { UserService } from '../../core/services/user.service';
-import { User } from '../../core/models/user.model';
-import { 
-  PersonalData, 
-  ContactInfo, 
+import { User } from '@core/entities/user.model';
+import {
+  PersonalData,
+  ContactInfo,
   ChangePassword,
-  NotificationPreferences 
+  NotificationPreferences
 } from './components';
 
 @Component({
@@ -53,7 +53,7 @@ export class Profile implements OnInit {
   isAgent = computed(() => this.currentUser()?.role === 'agent');
   isClient = computed(() => this.currentUser()?.role === 'client');
   isAdmin = computed(() => this.currentUser()?.role === 'admin');
-  
+
   fullName = computed(() => {
     const user = this.currentUser();
     return user ? `${user.firstName} ${user.lastName}` : '';
@@ -75,7 +75,7 @@ export class Profile implements OnInit {
 
   private loadUserProfile(): void {
     this.isLoading.set(true);
-    
+
     // Get user from auth service first
     const user = this.authService.getCurrentUser();
     if (user) {
@@ -136,11 +136,11 @@ export class Profile implements OnInit {
   getJoinDateLabel(): string {
     const user = this.currentUser();
     if (!user?.createdAt) return '';
-    
+
     const date = new Date(user.createdAt);
-    return date.toLocaleDateString('it-IT', { 
-      year: 'numeric', 
-      month: 'long' 
+    return date.toLocaleDateString('it-IT', {
+      year: 'numeric',
+      month: 'long'
     });
   }
 }

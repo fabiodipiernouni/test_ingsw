@@ -10,7 +10,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { finalize } from 'rxjs/operators';
 
 import { UserService } from '../../../../core/services/user.service';
-import { User } from '../../../../core/models/user.model';
+import { User } from '@core/entities/user.model';
 
 @Component({
   selector: 'app-contact-info',
@@ -36,7 +36,7 @@ export class ContactInfo implements OnInit, OnChanges {
 
   contactForm!: FormGroup;
   emailVerificationForm!: FormGroup;
-  
+
   isLoading = signal(false);
   isEmailVerificationLoading = signal(false);
   showEmailVerification = signal(false);
@@ -53,7 +53,7 @@ export class ContactInfo implements OnInit, OnChanges {
       otpCode: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(6)]]
     });
   }
-  
+
   ngOnInit() {
     this.initializeForms();
   }
@@ -86,7 +86,7 @@ export class ContactInfo implements OnInit, OnChanges {
   onSubmit() {
     if (this.contactForm.valid) {
       this.isLoading.set(true);
-      
+
       const formData = this.contactForm.value;
       const updateData = {
         phone: formData.phone,
@@ -99,7 +99,7 @@ export class ContactInfo implements OnInit, OnChanges {
           next: (updatedUser) => {
             // Update the user object
             Object.assign(this.user, updatedUser);
-            
+
             this.snackBar.open('Informazioni di contatto aggiornate con successo', 'Chiudi', {
               duration: 3000,
               panelClass: 'success-snackbar'
@@ -133,7 +133,7 @@ export class ContactInfo implements OnInit, OnChanges {
     }
 
     this.isEmailVerificationLoading.set(true);
-    
+
     this.userService.sendEmailVerificationOtp(this.user.email)
       .pipe(finalize(() => this.isEmailVerificationLoading.set(false)))
       .subscribe({
@@ -158,9 +158,9 @@ export class ContactInfo implements OnInit, OnChanges {
   verifyEmail() {
     if (this.emailVerificationForm.valid) {
       this.isEmailVerificationLoading.set(true);
-      
+
       const otpCode = this.emailVerificationForm.value.otpCode;
-      
+
       this.userService.verifyEmailOtp(this.user.email, otpCode)
         .pipe(finalize(() => this.isEmailVerificationLoading.set(false)))
         .subscribe({
@@ -169,7 +169,7 @@ export class ContactInfo implements OnInit, OnChanges {
             this.showEmailVerification.set(false);
             this.otpSent.set(false);
             this.emailVerificationForm.reset();
-            
+
             this.snackBar.open('Email verificata con successo!', 'Chiudi', {
               duration: 3000,
               panelClass: 'success-snackbar'

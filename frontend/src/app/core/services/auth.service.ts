@@ -18,7 +18,7 @@ import {
   ErrorResponse,
   ChangePasswordRequest,
   ChangePasswordResponse
-} from '../models/user.model';
+} from '@core/entities/user.model';
 
 @Injectable({
   providedIn: 'root'

@@ -10,7 +10,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { UserService } from '../../../../core/services/user.service';
-import { User, UpdateProfileRequest } from '../../../../core/models/user.model';
+import { User, UpdateProfileRequest } from '@core/entities/user.model';
 
 @Component({
   selector: 'app-personal-data',
@@ -65,7 +65,7 @@ export class PersonalData implements OnInit, OnChanges {
 
   private initializeForm(): void {
     const user = this.currentUser;
-    
+
     this.personalDataForm = this.fb.group({
       firstName: [user?.firstName || '', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
       lastName: [user?.lastName || '', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
@@ -86,7 +86,7 @@ export class PersonalData implements OnInit, OnChanges {
   onSubmit(): void {
     if (this.personalDataForm.valid) {
       this.isLoading.set(true);
-      
+
       const updateData: UpdateProfileRequest = {
         firstName: this.personalDataForm.value.firstName,
         lastName: this.personalDataForm.value.lastName
@@ -154,7 +154,7 @@ export class PersonalData implements OnInit, OnChanges {
 
   getErrorMessage(fieldName: string): string {
     const control = this.personalDataForm.get(fieldName);
-    
+
     if (control?.hasError('required')) {
       return 'Campo obbligatorio';
     }
@@ -166,7 +166,7 @@ export class PersonalData implements OnInit, OnChanges {
       const maxLength = control.getError('maxlength').requiredLength;
       return `Massimo ${maxLength} caratteri`;
     }
-    
+
     return '';
   }
 }

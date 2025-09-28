@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 // Variabili principali
 $color-primary: #667eea;
 $color-secondary: #4a5568;
@@ -76,7 +78,7 @@ $font-label: 1.1rem;
           }
 
           &:hover {
-            background: darken($color-primary, 8%);
+            background: color.adjust($color-primary, $lightness: -8%);
           }
         }
       }

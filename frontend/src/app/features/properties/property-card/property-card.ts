@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatRippleModule } from '@angular/material/core';
-import { Property } from '@core/models/property.model';
+import { Property } from '@core/entities/property.model';
 
 @Component({
   selector: 'app-property-card',
