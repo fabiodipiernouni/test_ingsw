@@ -57,10 +57,6 @@ const config = {
     port: parseInt(process.env.NOTIFICATION_SERVICE_PORT || '3005')
   },
 
-  session: {
-    secret: process.env.SESSION_SECRET || 'your-session-secret'
-  },
-
   upload: {
     maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760'), // 10MB
     allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
