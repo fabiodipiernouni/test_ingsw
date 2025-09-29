@@ -15,6 +15,9 @@
     "dev:notification": "cross-env SERVICE=notification nodemon --exec ts-node src/services/notification-service/index.ts",
     "dev:all": "concurrently \"npm run dev:auth\" \"npm run dev:property\" \"npm run dev:search\" \"npm run dev:user\" \"npm run dev:notification\"",
     "create:agency": "ts-node scripts/create-agency.ts",
+    "scrape:immobiliare": "ts-node scripts/scraper-immobiliare.ts",
+    "seed:properties": "ts-node scripts/seed-properties.ts",
+    "seed:agencies": "ts-node scripts/seed-agencies.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint src --ext .ts",
@@ -69,6 +72,7 @@
     "yamljs": "^0.3.0"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.0.0",
     "@openapitools/openapi-generator-cli": "^2.7.0",
     "@types/jest": "^29.5.7",
     "@types/js-yaml": "^4.0.9",
