@@ -96,7 +96,7 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs, {
 
 /**
  * @swagger
- * /health:
+ * /api/health:
  *   get:
  *     summary: Health check del servizio
  *     description: Endpoint per verificare lo stato di salute del servizio di ricerca
@@ -110,7 +110,7 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs, {
  *             schema:
  *               $ref: '#/components/schemas/HealthResponse'
  */
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({
     service: 'search-service',
     status: 'healthy',
@@ -120,7 +120,7 @@ app.get('/health', (req, res) => {
 
 // Routes
 import searchRoutes from './routes/search';
-app.use('/search', searchRoutes);
+app.use('/api/search', searchRoutes);
 
 // 404 handler for undefined routes
 app.use(notFoundHandler);

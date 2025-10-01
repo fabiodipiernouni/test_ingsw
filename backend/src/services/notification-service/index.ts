@@ -96,7 +96,7 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs, {
 
 /**
  * @swagger
- * /health:
+ * /api/health:
  *   get:
  *     summary: Health check del servizio
  *     description: Endpoint per verificare lo stato di salute del servizio notifiche
@@ -110,7 +110,7 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs, {
  *             schema:
  *               $ref: '#/components/schemas/HealthResponse'
  */
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({
     service: 'notification-service',
     status: 'healthy',
@@ -119,7 +119,9 @@ app.get('/health', (req, res) => {
 });
 
 // Routes
-// app.use('/', notificationRoutes);
+// TODO: Implementare le routes per le notifiche
+// import notificationRoutes from './routes/notifications';
+// app.use('/api/notifications', notificationRoutes);
 
 // 404 handler for undefined routes
 app.use(notFoundHandler);

@@ -15,7 +15,7 @@ const options = {
     },
     servers: [
       {
-        url: `http://localhost:${config.auth.port || 3001}`,
+        url: `http://localhost:${config.auth.port || 3001}/api`,
         description: 'Server di sviluppo'
       }
     ],

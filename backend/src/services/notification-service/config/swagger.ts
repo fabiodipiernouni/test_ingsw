@@ -17,7 +17,7 @@ const options = {
     },
     servers: [
       {
-        url: `http://localhost:${config.notification.port || 3005}`,
+        url: `http://localhost:${config.notification.port || 3005}/api`,
         description: 'Server di sviluppo'
       }
     ],
