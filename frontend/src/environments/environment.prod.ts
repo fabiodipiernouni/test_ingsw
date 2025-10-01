@@ -5,5 +5,5 @@ export const environment = {
   apiUrlSearch: 'http://localhost:3003/api',
   apiUrlUser: 'http://localhost:3004/api',
   apiUrlNotifications: 'http://localhost:3005/api',
-  googleMapsApiKey: 'YOUR_API_KEY_HERE'
+  googleMapsApiKey: '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'
 };
