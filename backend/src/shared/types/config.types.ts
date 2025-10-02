@@ -39,6 +39,19 @@ export interface UploadConfig {
   allowedImageTypes: string[];
 }
 
+export interface S3Config {
+  bucketName: string;
+  region: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  signedUrlExpiration: number;
+  imageSizes: {
+    small: { width: number; height: number; quality: number };
+    medium: { width: number; height: number; quality: number };
+    large: { width: number; height: number; quality: number };
+  };
+}
+
 export interface AppConfig {
   nodeEnv: string;
   port: number;
@@ -47,6 +60,7 @@ export interface AppConfig {
   email: EmailConfig;
   redis: RedisConfig;
   upload: UploadConfig;
+  s3: S3Config;
   serviceSecret: string;
   frontendUrl: string;
   rateLimit: {

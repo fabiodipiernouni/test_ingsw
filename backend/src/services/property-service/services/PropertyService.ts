@@ -1,6 +1,8 @@
-import { Property } from '@shared/database/models';
+import { Property, PropertyImage } from '@shared/database/models';
 import { PropertyCreateRequest, PropertyResponse, CreatePropertyResponse } from '../models/types';
 import logger from '@shared/utils/logger';
+import { imageService } from '@shared/services/ImageService';
+import config from '@shared/config';
 
 // Custom error classes for better error handling
 class ValidationError extends Error {
@@ -96,7 +98,9 @@ export class PropertyService {
         },
         {
           association: 'images',
-          attributes: ['id', 'url', 'alt', 'isPrimary', 'order']
+          attributes: ['id', 's3KeyOriginal', 's3KeySmall', 's3KeyMedium', 's3KeyLarge', 
+                      'bucketName', 'fileName', 'contentType', 'fileSize', 'width', 'height',
+                      'caption', 'alt', 'isPrimary', 'order', 'uploadDate']
         }
       ]
     });
@@ -105,13 +109,49 @@ export class PropertyService {
       throw new NotFoundError('Property not found');
     }
 
-    return this.formatPropertyResponse(property);
+    return await this.formatPropertyResponse(property);
   }
 
   /**
    * Formatta la risposta della proprietà per l'API
    */
-  private formatPropertyResponse(property: Property): PropertyResponse {
+  private async formatPropertyResponse(property: Property): Promise<PropertyResponse> {
+    // Generate signed URLs for images
+    const imagesWithUrls = await Promise.all(
+      (property.images || []).map(async (image) => {
+        // If image has S3 keys, generate signed URLs
+        if (image.s3KeyOriginal) {
+          const urls = await imageService.getImageUrls({
+            s3KeyOriginal: image.s3KeyOriginal,
+            s3KeySmall: image.s3KeySmall,
+            s3KeyMedium: image.s3KeyMedium,
+            s3KeyLarge: image.s3KeyLarge
+          });
+
+          return {
+            id: image.id,
+            s3KeyOriginal: image.s3KeyOriginal,
+            s3KeySmall: image.s3KeySmall,
+            s3KeyMedium: image.s3KeyMedium,
+            s3KeyLarge: image.s3KeyLarge,
+            bucketName: image.bucketName,
+            fileName: image.fileName,
+            contentType: image.contentType,
+            fileSize: image.fileSize,
+            width: image.width,
+            height: image.height,
+            caption: image.caption,
+            alt: image.alt,
+            isPrimary: image.isPrimary,
+            order: image.order,
+            uploadDate: image.uploadDate,
+            urls
+          };
+        }
+        return undefined; // Should not happen since all images should have S3 keys
+      })
+    );
+
     return {
       id: property.id,
       title: property.title,
@@ -141,7 +181,7 @@ export class PropertyService {
         latitude: property.latitude,
         longitude: property.longitude
       },
-      images: property.images || [],
+      images: imagesWithUrls as any,
       agentId: property.agentId,
       agent: property.agent ? {
         id: property.agent.id,
@@ -264,7 +304,9 @@ export class PropertyService {
         },
         {
           association: 'images',
-          attributes: ['id', 'url', 'alt', 'isPrimary', 'order'],
+          attributes: ['id', 's3KeyOriginal', 's3KeySmall', 's3KeyMedium', 's3KeyLarge',
+                      'bucketName', 'fileName', 'contentType', 'fileSize', 'width', 'height',
+                      'caption', 'alt', 'isPrimary', 'order', 'uploadDate'],
           where: { isPrimary: true },
           required: false
         }
@@ -303,8 +345,10 @@ export class PropertyService {
 
       const totalPages = Math.ceil(totalCount / limit);
 
-      // Formatta le proprietà per la risposta
-      const formattedProperties = properties.map(property => this.formatPropertyResponse(property));
+      // Formatta le proprietà per la risposta (gestisce Promise.all per gli URL S3)
+      const formattedProperties = await Promise.all(
+        properties.map(property => this.formatPropertyResponse(property))
+      );
 
       return {
         properties: formattedProperties,
@@ -317,6 +361,227 @@ export class PropertyService {
 
     } catch (error) {
       logger.error('Error getting properties:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Add images to a property from S3 upload results
+   */
+  async addPropertyImages(
+    propertyId: string,
+    uploadResults: any[],
+    userId: string
+  ): Promise<PropertyImage[]> {
+    try {
+      // Verify property exists and user has permission
+      const property = await Property.findByPk(propertyId);
+      if (!property) {
+        throw new NotFoundError('Property not found');
+      }
+
+      // Check if user is the agent of this property
+      if (property.agentId !== userId) {
+        throw new Error('You do not have permission to add images to this property');
+      }
+
+      const images: PropertyImage[] = [];
+
+      // Get current max order
+      const maxOrderImage = await PropertyImage.findOne({
+        where: { propertyId },
+        order: [['order', 'DESC']]
+      });
+      let currentOrder = maxOrderImage ? maxOrderImage.order + 1 : 0;
+
+      // Check if this is the first image (make it primary)
+      const existingImages = await PropertyImage.count({ where: { propertyId } });
+      const isFirstImage = existingImages === 0;
+
+      for (const result of uploadResults) {
+        if (result.error) continue;
+
+        const image = await PropertyImage.create({
+          propertyId,
+          s3KeyOriginal: result.originalKey,
+          s3KeySmall: result.smallKey,
+          s3KeyMedium: result.mediumKey,
+          s3KeyLarge: result.largeKey,
+          bucketName: config.s3.bucketName,
+          fileName: result.fileName,
+          contentType: result.contentType,
+          fileSize: result.fileSize,
+          uploadDate: new Date(),
+          width: result.width,
+          height: result.height,
+          isPrimary: isFirstImage && currentOrder === 0,
+          order: currentOrder++
+        });
+
+        images.push(image);
+      }
+
+      logger.info(`Added ${images.length} images to property ${propertyId}`);
+      return images;
+
+    } catch (error) {
+      logger.error('Error adding property images:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all images for a property with signed URLs
+   */
+  async getPropertyImages(propertyId: string): Promise<any[]> {
+    try {
+      const images = await PropertyImage.findAll({
+        where: { propertyId },
+        order: [['order', 'ASC']]
+      });
+
+      // Generate signed URLs for each image
+      const imagesWithUrls = await Promise.all(
+        images.map(async (image) => {
+          const urls = await imageService.getImageUrls({
+            s3KeyOriginal: image.s3KeyOriginal,
+            s3KeySmall: image.s3KeySmall,
+            s3KeyMedium: image.s3KeyMedium,
+            s3KeyLarge: image.s3KeyLarge
+          });
+
+          return {
+            id: image.id,
+            fileName: image.fileName,
+            contentType: image.contentType,
+            fileSize: image.fileSize,
+            width: image.width,
+            height: image.height,
+            caption: image.caption,
+            alt: image.alt,
+            isPrimary: image.isPrimary,
+            order: image.order,
+            uploadDate: image.uploadDate,
+            urls
+          };
+        })
+      );
+
+      return imagesWithUrls;
+
+    } catch (error) {
+      logger.error('Error getting property images:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete an image
+   */
+  async deletePropertyImage(imageId: string, userId: string): Promise<void> {
+    try {
+      const image = await PropertyImage.findByPk(imageId, {
+        include: [{ association: 'property' }]
+      });
+
+      if (!image) {
+        throw new NotFoundError('Image not found');
+      }
+
+      // Check permission
+      if (image.property.agentId !== userId) {
+        throw new Error('You do not have permission to delete this image');
+      }
+
+      // Delete from S3
+      const keysToDelete = [
+        image.s3KeyOriginal,
+        image.s3KeySmall,
+        image.s3KeyMedium,
+        image.s3KeyLarge
+      ].filter(Boolean) as string[];
+
+      await imageService.deleteImage(keysToDelete);
+
+      // Delete from database
+      await image.destroy();
+
+      logger.info(`Deleted image ${imageId}`);
+
+    } catch (error) {
+      logger.error('Error deleting property image:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Set an image as primary
+   */
+  async setPrimaryImage(imageId: string, userId: string): Promise<PropertyImage> {
+    try {
+      const image = await PropertyImage.findByPk(imageId, {
+        include: [{ association: 'property' }]
+      });
+
+      if (!image) {
+        throw new NotFoundError('Image not found');
+      }
+
+      // Check permission
+      if (image.property.agentId !== userId) {
+        throw new Error('You do not have permission to modify this image');
+      }
+
+      // Set as primary (this also unsets other primary images)
+      await image.setPrimary();
+
+      logger.info(`Set image ${imageId} as primary`);
+      return image;
+
+    } catch (error) {
+      logger.error('Error setting primary image:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update image metadata (caption, alt text, order)
+   */
+  async updateImageMetadata(
+    imageId: string,
+    userId: string,
+    updates: {
+      caption?: string;
+      alt?: string;
+      order?: number;
+    }
+  ): Promise<PropertyImage> {
+    try {
+      const image = await PropertyImage.findByPk(imageId, {
+        include: [{ association: 'property' }]
+      });
+
+      if (!image) {
+        throw new NotFoundError('Image not found');
+      }
+
+      // Check permission
+      if (image.property.agentId !== userId) {
+        throw new Error('You do not have permission to modify this image');
+      }
+
+      // Update fields
+      if (updates.caption !== undefined) image.caption = updates.caption;
+      if (updates.alt !== undefined) image.alt = updates.alt;
+      if (updates.order !== undefined) image.order = updates.order;
+
+      await image.save();
+
+      logger.info(`Updated metadata for image ${imageId}`);
+      return image;
+
+    } catch (error) {
+      logger.error('Error updating image metadata:', error);
       throw error;
     }
   }

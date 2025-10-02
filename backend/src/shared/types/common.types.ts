@@ -19,7 +19,7 @@ export interface AuthenticatedRequest extends Request {
   user?: any;
   userAgency?: any;
   file?: any;
-  files?: any[];
+  files?: { [fieldname: string]: Express.Multer.File[]; } | Express.Multer.File[] | undefined;
 }
 
 export interface PropertyAddress {

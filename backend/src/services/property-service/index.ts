@@ -120,7 +120,10 @@ app.get('/health', (req, res) => {
 
 // Routes
 import propertyRoutes from './routes/properties';
+import imageRoutes from './routes/images';
+
 app.use('/properties', propertyRoutes);
+app.use('/properties', imageRoutes); // This handles /properties/:id/images and /images/:id routes
 
 // 404 handler for undefined routes
 app.use(notFoundHandler);

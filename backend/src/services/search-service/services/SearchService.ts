@@ -13,6 +13,7 @@ import {
   SearchSource
 } from '../models/types';
 import logger from '@shared/utils/logger';
+import { imageService } from '@shared/services/ImageService';
 
 // Custom error classes
 class ValidationError extends Error {
@@ -239,21 +240,25 @@ export class SearchService {
    * Calcola le distanze geografiche se è una ricerca per raggio
    */
   private async calculateDistances(properties: Property[], filters: SearchRequest): Promise<PropertyResult[]> {
-    return properties.map(property => {
-      const propertyData = this.formatPropertyResult(property);
-      
-      // Calcola distanza se i parametri geografici sono presenti
-      if (filters.centerLat && filters.centerLng) {
-        propertyData.distance = this.calculateHaversineDistance(
-          filters.centerLat,
-          filters.centerLng,
-          property.latitude,
-          property.longitude
-        );
-      }
+    const formattedProperties = await Promise.all(
+      properties.map(async (property) => {
+        const propertyData = await this.formatPropertyResult(property);
+        
+        // Calcola distanza se i parametri geografici sono presenti
+        if (filters.centerLat && filters.centerLng) {
+          propertyData.distance = this.calculateHaversineDistance(
+            filters.centerLat,
+            filters.centerLng,
+            property.latitude,
+            property.longitude
+          );
+        }
 
-      return propertyData;
-    });
+        return propertyData;
+      })
+    );
+
+    return formattedProperties;
   }
 
   /**
@@ -274,7 +279,46 @@ export class SearchService {
   /**
    * Formatta il risultato della proprietà per l'API
    */
-  private formatPropertyResult(property: Property): PropertyResult {
+  private async formatPropertyResult(property: Property): Promise<PropertyResult> {
+    // Generate signed URLs for images
+    const imagesWithUrls = await Promise.all(
+      (property.images || []).map(async (image) => {
+        // If image has S3 keys, generate signed URLs
+        if (image.s3KeyOriginal) {
+          const urls = await imageService.getImageUrls({
+            s3KeyOriginal: image.s3KeyOriginal,
+            s3KeySmall: image.s3KeySmall,
+            s3KeyMedium: image.s3KeyMedium,
+            s3KeyLarge: image.s3KeyLarge
+          });
+
+          return {
+            id: image.id,
+            s3KeyOriginal: image.s3KeyOriginal,
+            s3KeySmall: image.s3KeySmall,
+            s3KeyMedium: image.s3KeyMedium,
+            s3KeyLarge: image.s3KeyLarge,
+            bucketName: image.bucketName,
+            fileName: image.fileName,
+            contentType: image.contentType,
+            fileSize: image.fileSize,
+            width: image.width,
+            height: image.height,
+            caption: image.caption,
+            alt: image.alt,
+            isPrimary: image.isPrimary,
+            order: image.order,
+            uploadDate: image.uploadDate,
+            urls
+          };
+        }
+        return undefined; // Should not happen since all images should have S3 keys
+      })
+    );
+
+    // Filter out undefined values
+    const validImages = imagesWithUrls.filter(img => img !== undefined);
+
     return {
       id: property.id,
       title: property.title,
@@ -304,7 +348,7 @@ export class SearchService {
         latitude: property.latitude,
         longitude: property.longitude
       },
-      images: property.images || [],
+      images: validImages as any,
       agentId: property.agentId,
       agent: property.agent ? {
         id: property.agent.id,

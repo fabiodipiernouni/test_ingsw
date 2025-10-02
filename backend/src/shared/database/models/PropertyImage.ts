@@ -14,7 +14,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Property } from './Property';
 
 @Table({
-  tableName: 'property_images',
+  tableName: 'property_images', //TODO
   timestamps: true
 })
 export class PropertyImage extends Model {
@@ -31,9 +31,49 @@ export class PropertyImage extends Model {
   @BelongsTo(() => Property)
   property!: Property;
 
+  // S3 Keys for different image sizes
   @AllowNull(false)
-  @Column(DataType.STRING(2000))
-  url!: string;
+  @Column({ type: DataType.STRING(500), field: 's3_key_original' })
+  s3KeyOriginal!: string;
+
+  @AllowNull(true)
+  @Column({ type: DataType.STRING(500), field: 's3_key_small' })
+  s3KeySmall?: string;
+
+  @AllowNull(true)
+  @Column({ type: DataType.STRING(500), field: 's3_key_medium' })
+  s3KeyMedium?: string;
+
+  @AllowNull(true)
+  @Column({ type: DataType.STRING(500), field: 's3_key_large' })
+  s3KeyLarge?: string;
+
+  // S3 Bucket information
+  @AllowNull(false)
+  @Column({ type: DataType.STRING(255), field: 'bucket_name' })
+  bucketName!: string;
+
+  // File metadata
+  @AllowNull(false)
+  @Column({ type: DataType.STRING(255), field: 'file_name' })
+  fileName!: string;
+
+  @AllowNull(false)
+  @Column({ type: DataType.STRING(100), field: 'content_type' })
+  contentType!: string;
+
+  @AllowNull(false)
+  @Column({ type: DataType.DOUBLE, field: 'file_size' })
+  fileSize!: number;
+
+  @AllowNull(false)
+  @Column({ type: DataType.DATE, field: 'upload_date' })
+  uploadDate!: Date;
+
+  // Display and organization
+  @AllowNull(true)
+  @Column(DataType.STRING(500))
+  caption?: string;
 
   @AllowNull(true)
   @Column(DataType.STRING(255))
@@ -46,21 +86,8 @@ export class PropertyImage extends Model {
 
   @AllowNull(false)
   @Default(0)
-
   @Column(DataType.INTEGER)
   order!: number;
-
-  @AllowNull(true)
-  @Column(DataType.STRING(100))
-  filename?: string;
-
-  @AllowNull(true)
-  @Column({ type: DataType.STRING(50), field: 'mime_type' })
-  mimeType?: string;
-
-  @AllowNull(true)
-  @Column({ type: DataType.INTEGER, field: 'file_size' })
-  fileSize?: number;
 
   @AllowNull(true)
   @Column(DataType.INTEGER)
@@ -84,14 +111,13 @@ export class PropertyImage extends Model {
   }
 
   getImageVariants(): object {
-    const baseUrl = this.url.replace(/\.[^/.]+$/, ''); // Remove file extension
-    const extension = this.url.split('.').pop();
-    
+    // Return S3 keys for different sizes
     return {
-      original: this.url,
-      thumbnail: `${baseUrl}_thumb.${extension}`,
-      medium: `${baseUrl}_medium.${extension}`,
-      large: `${baseUrl}_large.${extension}`
+      original: this.s3KeyOriginal,
+      small: this.s3KeySmall || this.s3KeyOriginal,
+      medium: this.s3KeyMedium || this.s3KeyOriginal,
+      large: this.s3KeyLarge || this.s3KeyOriginal,
+      bucketName: this.bucketName
     };
   }
 

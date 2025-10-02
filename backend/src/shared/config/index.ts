@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { AppConfig, DatabaseConfig, JWTConfig, EmailConfig, RedisConfig, UploadConfig } from '@shared/types/config.types';
+import { AppConfig, DatabaseConfig, JWTConfig, EmailConfig, RedisConfig, UploadConfig, S3Config } from '@shared/types/config.types';
 
 dotenv.config();
 
@@ -44,6 +44,19 @@ const uploadConfig: UploadConfig = {
   allowedImageTypes: (process.env.ALLOWED_IMAGE_TYPES || 'image/jpeg,image/png,image/webp').split(',')
 };
 
+const s3Config: S3Config = {
+  bucketName: process.env.AWS_S3_BUCKET_NAME || '',
+  region: process.env.AWS_REGION || 'eu-south-1',
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+  signedUrlExpiration: parseInt(process.env.S3_SIGNED_URL_EXPIRATION || '3600'),
+  imageSizes: {
+    small: { width: 400, height: 300, quality: 80 },
+    medium: { width: 800, height: 600, quality: 85 },
+    large: { width: 1920, height: 1440, quality: 90 }
+  }
+};
+
 const config: AppConfig = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '3000'),
@@ -52,6 +65,7 @@ const config: AppConfig = {
   email: emailConfig,
   redis: redisConfig,
   upload: uploadConfig,
+  s3: s3Config,
   serviceSecret: process.env.SERVICE_SECRET || 'your-internal-service-secret',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
   rateLimit: {
