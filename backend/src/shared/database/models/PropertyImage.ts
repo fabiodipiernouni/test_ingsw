@@ -14,7 +14,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Property } from './Property';
 
 @Table({
-  tableName: 'property_images', //TODO
+  tableName: 'property_images',
   timestamps: true
 })
 export class PropertyImage extends Model {

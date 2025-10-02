@@ -19,6 +19,7 @@ import {
   ChangePasswordRequest,
   ChangePasswordResponse
 } from '@core/entities/user.model';
+import { environment } from "../../../environments/environment";
 
 @Injectable({
   providedIn: 'root'
@@ -27,7 +28,7 @@ export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
 
-  private readonly API_URL = 'http://localhost:3001';
+  private readonly API_URL = environment.apiUrlAuth;
   private readonly TOKEN_KEY = 'auth_token';
   private readonly USER_KEY = 'auth_user';
 

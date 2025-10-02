@@ -96,11 +96,11 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs, {
 }));
 
 // Routes
-app.use('/', authRoutes);
+app.use('/api', authRoutes);
 
 /**
  * @swagger
- * /health:
+ * /api/health:
  *   get:
  *     summary: Health check del servizio
  *     description: Endpoint per verificare lo stato di salute del servizio di autenticazione
@@ -114,7 +114,7 @@ app.use('/', authRoutes);
  *             schema:
  *               $ref: '#/components/schemas/HealthResponse'
  */
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({
     service: 'auth-service',
     status: 'healthy',

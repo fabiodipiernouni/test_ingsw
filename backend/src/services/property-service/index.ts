@@ -96,7 +96,7 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs, {
 
 /**
  * @swagger
- * /health:
+ * /api/health:
  *   get:
  *     summary: Health check del servizio
  *     description: Endpoint per verificare lo stato di salute del servizio proprietà
@@ -110,7 +110,7 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs, {
  *             schema:
  *               $ref: '#/components/schemas/HealthResponse'
  */
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({
     service: 'property-service',
     status: 'healthy',
@@ -122,8 +122,8 @@ app.get('/health', (req, res) => {
 import propertyRoutes from './routes/properties';
 import imageRoutes from './routes/images';
 
-app.use('/properties', propertyRoutes);
-app.use('/properties', imageRoutes); // This handles /properties/:id/images and /images/:id routes
+app.use('/api/properties', propertyRoutes);
+app.use('/api/properties', imageRoutes); // This handles /properties/:id/images and /images/:id routes
 
 // 404 handler for undefined routes
 app.use(notFoundHandler);

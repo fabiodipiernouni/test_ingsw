@@ -4,7 +4,7 @@ import { Observable, of, BehaviorSubject } from 'rxjs';
 import { map, tap, delay } from 'rxjs/operators';
 import { Property, PropertyStats } from '@core/entities/property.model';
 import { SearchFilters, SearchResult } from '@core/entities/search.model';
-import { environment } from '@environments/environment';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +12,7 @@ import { environment } from '@environments/environment';
 export class PropertyService {
   private http = inject(HttpClient);
 
-  private readonly API_URL = `${environment.apiUrl}/properties`;
+  private readonly API_URL = `${environment.apiUrlProperties}/properties`;
 
   // Reactive state
   private propertiesSubject = new BehaviorSubject<Property[]>([]);

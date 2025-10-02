@@ -15,7 +15,7 @@ const options = {
     },
     servers: [
       {
-        url: `http://localhost:${config.property.port || 3002}`,
+        url: `http://localhost:${config.property.port || 3002}/api`,
         description: 'Server di sviluppo'
       }
     ],
