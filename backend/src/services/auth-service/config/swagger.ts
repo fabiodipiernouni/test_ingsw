@@ -29,6 +29,36 @@ const options = {
         }
       },
       schemas: {
+        AgencyAddress: {
+          type: 'object',
+          properties: {
+            street: {
+              type: 'string',
+              description: 'Indirizzo via e numero civico',
+              example: 'Via Roma 123'
+            },
+            city: {
+              type: 'string',
+              description: 'Città',
+              example: 'Milano'
+            },
+            province: {
+              type: 'string',
+              description: 'Provincia',
+              example: 'MI'
+            },
+            zipCode: {
+              type: 'string',
+              description: 'Codice postale',
+              example: '20121'
+            },
+            country: {
+              type: 'string',
+              description: 'Paese',
+              example: 'Italy'
+            }
+          }
+        },
         User: {
           type: 'object',
           properties: {

@@ -58,28 +58,23 @@ export class Property extends Model {
   propertyType!: 'apartment' | 'villa' | 'house' | 'loft' | 'office' | 'commercial' | 'land';
 
   @AllowNull(false)
-
   @Column({ type: DataType.ENUM('sale', 'rent'), field: 'listing_type' })
   listingType!: 'sale' | 'rent';
 
   @AllowNull(false)
   @Default('active')
-
   @Column(DataType.ENUM('active', 'pending', 'sold', 'rented', 'withdrawn'))
   status!: 'active' | 'pending' | 'sold' | 'rented' | 'withdrawn';
 
   @AllowNull(false)
-
   @Column(DataType.INTEGER)
   bedrooms!: number;
 
   @AllowNull(false)
-
   @Column(DataType.INTEGER)
   bathrooms!: number;
 
   @AllowNull(false)
-
   @Column(DataType.DECIMAL(8, 2))
   area!: number;
 
@@ -88,31 +83,26 @@ export class Property extends Model {
   floor?: string;
 
   @AllowNull(true)
-
   @Column({ type: DataType.ENUM('A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G'), field: 'energy_class' })
   energyClass?: 'A+' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
 
   @AllowNull(false)
   @Default(false)
-
   @Column({ type: DataType.BOOLEAN, field: 'has_elevator' })
   hasElevator!: boolean;
 
   @AllowNull(false)
   @Default(false)
-
   @Column({ type: DataType.BOOLEAN, field: 'has_balcony' })
   hasBalcony!: boolean;
 
   @AllowNull(false)
   @Default(false)
-
   @Column({ type: DataType.BOOLEAN, field: 'has_garden' })
   hasGarden!: boolean;
 
   @AllowNull(false)
   @Default(false)
-
   @Column({ type: DataType.BOOLEAN, field: 'has_parking' })
   hasParking!: boolean;
 
@@ -130,12 +120,10 @@ export class Property extends Model {
   city!: string;
 
   @AllowNull(false)
-
   @Column(DataType.STRING(100))
   province!: string;
 
   @AllowNull(false)
-
   @Column({ type: DataType.STRING(10), field: 'zip_code' })
   zipCode!: string;
 
@@ -146,19 +134,16 @@ export class Property extends Model {
 
   // Location fields for geospatial queries
   @AllowNull(false)
-
   @Column(DataType.DECIMAL(10, 8))
   latitude!: number;
 
   @AllowNull(false)
-
   @Column(DataType.DECIMAL(11, 8))
   longitude!: number;
 
   // Agent reference
   @ForeignKey(() => User)
   @AllowNull(false)
-
   @Column({ type: DataType.UUID, field: 'agent_id' })
   agentId!: string;
 

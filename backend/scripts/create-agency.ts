@@ -72,10 +72,11 @@ async function createAgencyAndAdmin() {
     }
 
     const description = await askQuestion('Descrizione (opzionale): ');
-    const address = await askQuestion('Indirizzo (opzionale): '); //TODO: potremmo integrare un servizio di geocoding per validare l'indirizzo
+    const street = await askQuestion('Indirizzo via e numero (opzionale): '); //TODO: potremmo integrare un servizio di geocoding per validare l'indirizzo
     const city = await askQuestion('Città (opzionale): ');
-    const postalCode = await askQuestion('CAP (opzionale): ');
-    const country = await askQuestion('Paese (opzionale): ');
+    const province = await askQuestion('Provincia (opzionale): ');
+    const zipCode = await askQuestion('CAP (opzionale): ');
+    const country = await askQuestion('Paese (opzionale, default: Italy): ');
     const phone = await askQuestion('Telefono (opzionale): ');
     const email = await askQuestion('Email agenzia (opzionale): ');
     const website = await askQuestion('Sito web (opzionale): ');
@@ -161,10 +162,11 @@ async function createAgencyAndAdmin() {
         id: uuidv4(),
         name: agencyName,
         description: description || null,
-        address: address || null,
+        street: street || null,
         city: city || null,
-        postalCode: postalCode || null,
-        country: country || null,
+        province: province || null,
+        zipCode: zipCode || null,
+        country: country || 'Italy',
         phone: phone || null,
         email: email || null,
         website: website || null,

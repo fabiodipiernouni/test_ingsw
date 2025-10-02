@@ -35,7 +35,13 @@ interface UserProfileResponse {
 interface AgencyResponse {
   id: string;
   name: string;
-  address?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    province?: string;
+    zipCode?: string;
+    country?: string;
+  };
   phone?: string;
   email?: string;
   website?: string;
@@ -543,7 +549,13 @@ export class UserService {
     return {
       id: agency.id,
       name: agency.name,
-      address: agency.address,
+      address: {
+        street: agency.street,
+        city: agency.city,
+        province: agency.province,
+        zipCode: agency.zipCode,
+        country: agency.country
+      },
       phone: agency.phone,
       email: agency.email,
       website: agency.website

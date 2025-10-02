@@ -34,20 +34,25 @@ export class Agency extends Model {
   @Column(DataType.STRING(4000))
   description?: string;
 
+  // Address fields (consistent with Property model)
   @AllowNull(true)
-  @Column(DataType.STRING(255))
-  address?: string;
+  @Column(DataType.STRING(200))
+  street?: string;
 
   @AllowNull(true)
   @Column(DataType.STRING(100))
   city?: string;
 
   @AllowNull(true)
-  @Column(DataType.STRING(20))
-  postalCode?: string;
+  @Column(DataType.STRING(100))
+  province?: string;
 
   @AllowNull(true)
-  @Column(DataType.STRING(100))
+  @Column({ type: DataType.STRING(10), field: 'zip_code' })
+  zipCode?: string;
+
+  @AllowNull(true)
+  @Column(DataType.STRING(50))
   country?: string;
 
   @AllowNull(true)

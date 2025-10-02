@@ -69,13 +69,14 @@ async function seedAgencies() {
     for (const agencyData of agenciesData.agencies) {
 
         const capMatch = agencyData.address.match(/\b\d{5}\b/);
-        const cap = capMatch ? capMatch[0] : null;
+        const zipCode = capMatch ? capMatch[0] : null;
         let city = null;
-        if (cap) {
-            const cityMatch = agencyData.address.match(new RegExp(`${cap} - ([^-]+)$`));
+        let province = null; // We don't have province data from the source
+        if (zipCode) {
+            const cityMatch = agencyData.address.match(new RegExp(`${zipCode} - ([^-]+)$`));
             city = cityMatch ? cityMatch[1].trim() : null;
         }
-        const streetAddress = agencyData.address.split(cap)[0].trim();
+        const streetAddress = zipCode ? agencyData.address.split(zipCode)[0].trim() : agencyData.address;
 
         if (!city) {
             console.warn(`Skipping agency "${agencyData.displayName}" due to missing city in address: ${agencyData.address}`);
@@ -93,9 +94,10 @@ async function seedAgencies() {
                 id: agencyData.uuid,
                 name: agencyData.displayName,
                 description: null,
-                address: streetAddress,
+                street: streetAddress,
                 city: city,
-                postalCode: cap,
+                province: province,
+                zipCode: zipCode,
                 country: 'Italy',
                 phone: randomPhoneNumber(),
                 email: `info@${agencyNameFormatted}${agencyCityFormatted}.it`,

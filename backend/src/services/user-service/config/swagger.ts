@@ -29,6 +29,71 @@ const options = {
         }
       },
       schemas: {
+        AgencyAddress: {
+          type: 'object',
+          properties: {
+            street: {
+              type: 'string',
+              description: 'Indirizzo via e numero civico',
+              example: 'Via Roma 123'
+            },
+            city: {
+              type: 'string',
+              description: 'Città',
+              example: 'Milano'
+            },
+            province: {
+              type: 'string',
+              description: 'Provincia',
+              example: 'MI'
+            },
+            zipCode: {
+              type: 'string',
+              description: 'Codice postale',
+              example: '20121'
+            },
+            country: {
+              type: 'string',
+              description: 'Paese',
+              example: 'Italy'
+            }
+          }
+        },
+        Agency: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'ID univoco dell\'agenzia',
+              example: '507f1f77bcf86cd799439011'
+            },
+            name: {
+              type: 'string',
+              description: 'Nome dell\'agenzia',
+              example: 'Immobiliare Milano'
+            },
+            address: {
+              $ref: '#/components/schemas/AgencyAddress'
+            },
+            phone: {
+              type: 'string',
+              description: 'Numero di telefono dell\'agenzia',
+              example: '+39 02 1234567'
+            },
+            email: {
+              type: 'string',
+              format: 'email',
+              description: 'Email dell\'agenzia',
+              example: 'info@immobiliaremilano.it'
+            },
+            website: {
+              type: 'string',
+              format: 'uri',
+              description: 'Sito web dell\'agenzia',
+              example: 'https://www.immobiliaremilano.it'
+            }
+          }
+        },
         UserProfile: {
           type: 'object',
           properties: {
