@@ -11,7 +11,7 @@ import { Router, RouterModule } from '@angular/router';
 
 import { AuthService } from '../../core/services/auth.service';
 import { UserService } from '../../core/services/user.service';
-import { User } from '@core/entities/user.model';
+import { User } from '@core/models/user.model';
 import {
   PersonalData,
   ContactInfo,

@@ -2,8 +2,8 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, BehaviorSubject } from 'rxjs';
 import { map, tap, delay } from 'rxjs/operators';
-import { Property, PropertyStats } from '@core/entities/property.model';
-import { SearchFilters, SearchResult } from '@core/entities/search.model';
+import { Property, PropertyStats } from '@core/models/property.model';
+import { SearchFilters, SearchResult } from '@core/models/search.model';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -22,99 +22,9 @@ export class PropertyService {
   totalCount = signal<number>(0);
   isLoading = signal<boolean>(false);
 
-  // Mock data for development
-  private mockProperties: Property[] = [
-    {
-      id: '1',
-      title: 'Splendido Appartamento Ristrutturato',
-      description: 'Magnifico appartamento completamente ristrutturato nel cuore del Vomero...',
-      price: 285000,
-      propertyType: 'apartment',
-      listingType: 'sale',
-      bedrooms: 3,
-      bathrooms: 2,
-      area: 95,
-      floor: '2° piano',
-      energyClass: 'A',
-      hasElevator: true,
-      hasBalcony: true,
-      hasGarden: false,
-      hasParking: false,
-      address: {
-        street: 'Via Scarlatti 150',
-        city: 'Napoli',
-        province: 'NA',
-        zipCode: '80127',
-        country: 'Italia'
-      },
-      location: {
-        latitude: 40.8359,
-        longitude: 14.2394
-      },
-      images: [
-        {
-          id: '1',
-          url: '/assets/images/property1-1.jpg',
-          alt: 'Soggiorno principale',
-          isPrimary: true,
-          order: 1
-        }
-      ],
-      agentId: 'agent1',
-      isActive: true,
-      views: 245,
-      favorites: 18,
-      createdAt: new Date('2024-01-15'),
-      updatedAt: new Date('2024-01-15')
-    },
-    {
-      id: '2',
-      title: 'Villa con Giardino e Vista Mare',
-      description: 'Esclusiva villa su due livelli con giardino privato e vista mozzafiato sul golfo...',
-      price: 450000,
-      propertyType: 'villa',
-      listingType: 'sale',
-      bedrooms: 4,
-      bathrooms: 3,
-      area: 180,
-      energyClass: 'B',
-      hasElevator: false,
-      hasBalcony: true,
-      hasGarden: true,
-      hasParking: true,
-      address: {
-        street: 'Via Posillipo 45',
-        city: 'Napoli',
-        province: 'NA',
-        zipCode: '80123',
-        country: 'Italia'
-      },
-      location: {
-        latitude: 40.8088,
-        longitude: 14.1972
-      },
-      images: [
-        {
-          id: '2',
-          url: '/assets/images/property2-1.jpg',
-          alt: 'Vista esterna',
-          isPrimary: true,
-          order: 1
-        }
-      ],
-      agentId: 'agent2',
-      isActive: true,
-      views: 189,
-      favorites: 32,
-      createdAt: new Date('2024-01-10'),
-      updatedAt: new Date('2024-01-10')
-    }
-  ];
 
   constructor() {
-    this.properties.set(this.mockProperties);
-    this.propertiesSubject.next(this.mockProperties);
-    this.totalCount.set(this.mockProperties.length);
+
   }
 
   searchProperties(filters: SearchFilters, page: number = 1, limit: number = 20): Observable<SearchResult> {

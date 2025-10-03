@@ -1,6 +1,6 @@
 import { Op, Sequelize } from 'sequelize';
-import { Property, SearchHistory, SavedSearch, User } from '@shared/database/models';
-import { 
+import { Property, SearchHistory, SavedSearch } from '@shared/database/models';
+import {
   SearchFilters, 
   SearchRequest, 
   SearchResult, 
@@ -203,7 +203,7 @@ export class SearchService {
     // Features - contiene almeno una delle feature richieste
     if (filters.features && filters.features.length > 0) {
       whereClause[Op.and] = filters.features.map(feature => {
-        const escapedFeature = feature.replace(/'/g, "''"); // Escape single quotes for SQL
+        const escapedFeature = feature.replace(/'/g, '\'\''); // Escape single quotes for SQL
         // Use Oracle JSON_EXISTS with proper column reference
         return Sequelize.literal(`JSON_EXISTS("Property"."features", '$[*]?(@ == "${escapedFeature}")')`);
       });
@@ -385,6 +385,7 @@ export class SearchService {
    * Rimuove campi di paginazione dai filtri per il salvataggio
    */
   private sanitizeFilters(filters: SearchRequest): SearchFilters {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { page, limit, ...searchFilters } = filters;
     return searchFilters;
   }
@@ -592,7 +593,7 @@ export class SearchService {
       let suggestions: string[] = [];
 
       switch (type) {
-        case 'location':
+        case 'location': {
           // Cerca città e province uniche
           const locations = await Property.findAll({
             attributes: [
@@ -614,21 +615,24 @@ export class SearchService {
             loc.province === loc.city ? loc.city : `${loc.city}, ${loc.province}`
           );
           break;
+        }
 
-        case 'property_type':
+        case 'property_type': {
           const propertyTypes = ['apartment', 'villa', 'house', 'loft', 'office', 'commercial', 'land'];
           suggestions = propertyTypes.filter(type => 
             type.toLowerCase().includes(query.toLowerCase())
           );
           break;
+        }
 
-        case 'feature':
+        case 'feature': {
           // Cerca nelle features più comuni
           const validFeatures = ['aria condizionata', 'balcone', 'giardino', 'piscina', 'garage', 'ascensore', 'ristrutturato'];
           suggestions = validFeatures.filter(feature => 
             feature.toLowerCase().includes(query.toLowerCase())
           );
           break;
+        }
       }
 
       return suggestions;
@@ -640,3 +644,4 @@ export class SearchService {
 }
 
 export const searchService = new SearchService();
+

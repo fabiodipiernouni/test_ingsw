@@ -8,8 +8,7 @@ import {
   Default,
   AllowNull,
   ForeignKey,
-  BelongsTo,
-  Index
+  BelongsTo
 } from 'sequelize-typescript';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from './User';
@@ -159,7 +158,6 @@ export class UserPreferences extends Model {
   }
 
   formatPrice(price: number): string {
-    const symbol = this.getLocalizedCurrency();
     const locale = this.language === 'it' ? 'it-IT' : 'en-US';
     
     return new Intl.NumberFormat(locale, {

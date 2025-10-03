@@ -1,4 +1,4 @@
-import {Property} from '@core/entities/property.model';
+import {Property} from '@core/models/property.model';
 
 export interface SearchFilters {
   location?: string;

@@ -7,8 +7,7 @@ import {
   Default,
   AllowNull,
   ForeignKey,
-  BelongsTo,
-  Index
+  BelongsTo
 } from 'sequelize-typescript';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from './User';
@@ -98,14 +97,16 @@ export class SavedSearch extends Model {
     switch (this.notificationFrequency) {
       case 'immediate':
         return true;
-      case 'daily':
+      case 'daily': {
         if (!lastNotification) return true;
         const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         return lastNotification < oneDayAgo;
-      case 'weekly':
+      }
+      case 'weekly': {
         if (!lastNotification) return true;
         const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         return lastNotification < oneWeekAgo;
+      }
       default:
         return false;
     }

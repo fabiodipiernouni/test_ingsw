@@ -73,7 +73,7 @@ export const processAndUploadToS3 = async (
     // Fetch property to get listingType and verify ownership
     const property = await Property.findByPk(propertyId, {
       include: [{
-        model: require('../database/models/User').User,
+        model: (await import('../database/models/User')).User,
         as: 'agent',
         attributes: ['id', 'agencyId']
       }]

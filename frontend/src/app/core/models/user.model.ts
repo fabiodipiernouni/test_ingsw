@@ -15,17 +15,17 @@ export interface User {
   acceptedTermsAt?: Date;
   acceptedPrivacyAt?: Date;
   shouldChangePassword?: boolean;
-  
+
   // Agent-specific fields
   licenseNumber?: string;
   biography?: string;
   rating?: number;
   reviewsCount?: number;
   specializations?: string[];
-  
+
   // Agency association
   agency?: Agency;
-  
+
   // Timestamps
   createdAt: Date;
   updatedAt: Date;
@@ -34,11 +34,9 @@ export interface User {
 export interface Agent extends User {
   role: 'agent';
   agency?: Agency;
-  licenseNumber: string;
   biography?: string;
   rating: number;
   reviewsCount: number;
-  specializations: string[];
 }
 
 //TODO: interface Admin
@@ -94,7 +92,6 @@ export interface ErrorResponse {
   success: boolean;
   error: string;
   message: string;
-  details?: any;
   timestamp: string;
   path: string;
 }

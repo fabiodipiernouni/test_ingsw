@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { searchService } from '../services/SearchService';
-import { SearchRequest, SearchSuggestionsRequest } from '../models/types';
+import { SearchRequest } from '../models/types';
 import { AuthenticatedRequest } from '@shared/types/common.types';
 import { successResponse, errorResponse, validationErrorResponse, notFoundResponse } from '@shared/utils/helpers';
 import logger from '@shared/utils/logger';
@@ -10,7 +10,7 @@ export class SearchController {
    * Ricerca proprietà con filtri avanzati
    * POST /search
    */
-  async searchProperties(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async searchProperties(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       const searchRequest: SearchRequest = req.body;
       
@@ -43,7 +43,7 @@ export class SearchController {
    * Ottieni suggerimenti di ricerca
    * GET /search/suggestions
    */
-  async getSearchSuggestions(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getSearchSuggestions(req: Request, res: Response, _next: NextFunction): Promise<void> {
     try {
       const { query, type = 'location' } = req.query;
 
@@ -68,23 +68,18 @@ export class SearchController {
   }
 
   /**
-   * Ottieni ricerche salvate dell'utente
-   * GET /search/saved
+   * Ottieni località popolari
+   * GET /search/popular-locations
    */
-  async getSavedSearches(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async getPopularLocations(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
-      // Verifica autenticazione
-      if (!req.user || !req.user.id) {
-        errorResponse(res, 'UNAUTHORIZED', 'User authentication required', 401);
-        return;
-      }
+      const popularLocations = await searchService.getPopularLocations();
 
-      const savedSearches = await searchService.getUserSavedSearches(req.user.id);
-      successResponse(res, savedSearches);
+      successResponse(res, popularLocations);
 
     } catch (error: any) {
-      logger.error('Error in getSavedSearches controller:', error);
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to get saved searches', 500);
+      logger.error('Error in getPopularLocations controller:', error);
+      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to get popular locations', 500);
     }
   }
 
@@ -92,7 +87,7 @@ export class SearchController {
    * Salva una ricerca
    * POST /search/saved
    */
-  async saveSearch(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async saveSearch(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       // Verifica autenticazione
       if (!req.user || !req.user.id) {
@@ -135,10 +130,10 @@ export class SearchController {
   }
 
   /**
-   * Aggiorna una ricerca salvata
-   * PUT /search/saved/:searchId
+   * Ottieni ricerche salvate dell'utente
+   * GET /search/saved
    */
-  async updateSavedSearch(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async getSavedSearches(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       // Verifica autenticazione
       if (!req.user || !req.user.id) {
@@ -146,37 +141,12 @@ export class SearchController {
         return;
       }
 
-      const { searchId } = req.params;
-      const updateData = req.body;
-
-      if (!searchId) {
-        errorResponse(res, 'BAD_REQUEST', 'Search ID is required', 400);
-        return;
-      }
-
-      logger.info('Update saved search request', { 
-        searchId, 
-        updateData, 
-        userId: req.user.id 
-      });
-
-      const updatedSearch = await searchService.updateSavedSearch(req.user.id, searchId, updateData);
-      successResponse(res, updatedSearch, 'Search updated successfully');
+      const savedSearches = await searchService.getUserSavedSearches(req.user.id);
+      successResponse(res, savedSearches);
 
     } catch (error: any) {
-      logger.error('Error in updateSavedSearch controller:', error);
-
-      if (error.name === 'NotFoundError') {
-        notFoundResponse(res, error.message);
-        return;
-      }
-
-      if (error.name === 'ValidationError') {
-        validationErrorResponse(res, error.details?.errors || [error.message]);
-        return;
-      }
-
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to update search', 500);
+      logger.error('Error in getSavedSearches controller:', error);
+      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to get saved searches', 500);
     }
   }
 
@@ -184,7 +154,7 @@ export class SearchController {
    * Elimina una ricerca salvata
    * DELETE /search/saved/:searchId
    */
-  async deleteSavedSearch(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async deleteSavedSearch(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       // Verifica autenticazione
       if (!req.user || !req.user.id) {
@@ -223,7 +193,7 @@ export class SearchController {
    * Ottieni storico ricerche dell'utente
    * GET /search/history
    */
-  async getSearchHistory(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async getSearchHistory(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       // Verifica autenticazione
       if (!req.user || !req.user.id) {

@@ -1,4 +1,4 @@
-import {Address} from '@core/entities/address.model';
+import {Address} from '@core/models/address.model';
 
 export interface Agency {
   id: string;

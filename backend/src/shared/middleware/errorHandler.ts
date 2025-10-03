@@ -6,7 +6,7 @@ import { config } from '../../config/index';
  * Middleware comune per la gestione degli errori in tutti i microservizi
  * Distingue tra diversi tipi di errori e restituisce status code appropriati
  */
-export const errorHandler = (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+export const errorHandler = (err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
   // Log dell'errore per debugging
   logger.error(`${req.method} ${req.path} - Error:`, {
     message: err.message,

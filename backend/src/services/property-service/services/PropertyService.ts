@@ -1,5 +1,5 @@
 import { Property, PropertyImage } from '@shared/database/models';
-import { PropertyCreateRequest, PropertyResponse, CreatePropertyResponse } from '../models/types';
+import { PropertyCreateRequest, PropertyResponse, CreatePropertyResponse, SearchResult } from '../models/types';
 import logger from '@shared/utils/logger';
 import { imageService } from '@shared/services/ImageService';
 import config from '@shared/config';
@@ -67,7 +67,7 @@ export class PropertyService {
       // Carica la proprietà creata con le associazioni
       const createdProperty = await this.getPropertyById(property.id);
 
-      logger.info(`Property created successfully`, { propertyId: property.id });
+      logger.info('Property created successfully', { propertyId: property.id });
 
       return {
         success: true,
@@ -272,14 +272,7 @@ export class PropertyService {
     page: number;
     limit: number;
     filters: any;
-  }): Promise<{
-    properties: PropertyResponse[];
-    totalCount: number;
-    currentPage: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-  }> {
+  }): Promise<SearchResult> {
     try {
       const { page, limit, filters } = options;
       const offset = (page - 1) * limit;

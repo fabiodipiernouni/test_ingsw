@@ -137,3 +137,10 @@ export interface CreatePropertyResponse {
   data: PropertyResponse;
   message?: string;
 }
+
+export interface PropertiesListResponse {
+  success: boolean;
+  data: SearchResult;
+  message?: string;
+  timestamp: Date;
+}

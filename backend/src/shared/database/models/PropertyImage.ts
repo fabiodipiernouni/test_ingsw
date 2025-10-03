@@ -7,8 +7,7 @@ import {
   Default,
   AllowNull,
   ForeignKey,
-  BelongsTo,
-  Index
+  BelongsTo
 } from 'sequelize-typescript';
 import { v4 as uuidv4 } from 'uuid';
 import { Property } from './Property';

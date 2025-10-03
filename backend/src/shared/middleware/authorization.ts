@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { User } from '../database/models/User';
 import { Agency } from '../database/models/Agency';
 import { AuthenticatedRequest } from '../types/common.types';

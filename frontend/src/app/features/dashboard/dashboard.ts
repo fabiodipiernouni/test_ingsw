@@ -6,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
-import { User } from '@core/entities/user.model';
+import { User } from '@core/models/user.model';
 
 @Component({
   selector: 'app-dashboard',

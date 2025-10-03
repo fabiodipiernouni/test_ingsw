@@ -12,7 +12,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { finalize } from 'rxjs/operators';
 
 import { UserService } from '../../../../core/services/user.service';
-import { User } from '@core/entities/user.model';
+import { User } from '@core/models/user.model';
 
 interface NotificationCategory {
   id: string;

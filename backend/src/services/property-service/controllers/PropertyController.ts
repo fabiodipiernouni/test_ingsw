@@ -10,7 +10,7 @@ export class PropertyController {
    * Crea una nuova proprietà
    * POST /properties
    */
-  async createProperty(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async createProperty(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       // Verifica che l'utente sia autenticato
       if (!req.user || !req.user.id) {
@@ -63,7 +63,7 @@ export class PropertyController {
    * Ottiene una proprietà per ID
    * GET /properties/:propertyId
    */
-  async getPropertyById(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getPropertyById(req: Request, res: Response, _next: NextFunction): Promise<void> {
     try {
       const { propertyId } = req.params;
 
@@ -92,7 +92,7 @@ export class PropertyController {
    * Lista proprietà con paginazione - logica basata su ruoli
    * GET /properties
    */
-  async getProperties(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async getProperties(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
@@ -183,7 +183,7 @@ export class PropertyController {
    * Registra visualizzazione proprietà
    * POST /properties/:propertyId/view
    */
-  async recordPropertyView(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async recordPropertyView(req: Request, res: Response, _next: NextFunction): Promise<void> {
     try {
       const { propertyId } = req.params;
       const { source = 'web' } = req.body;
@@ -196,7 +196,7 @@ export class PropertyController {
       // TODO: Implementare la logica per registrare la visualizzazione
       // Per ora restituiamo solo un successo
       
-      logger.info(`Property view recorded`, { propertyId, source });
+      logger.info('Property view recorded', { propertyId, source });
       
       successResponse(res, { message: 'View recorded' });
 

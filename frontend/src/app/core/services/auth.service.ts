@@ -15,10 +15,9 @@ import {
   LinkOAuthRequest,
   OAuthLinkResponse,
   OAuthProvider,
-  ErrorResponse,
   ChangePasswordRequest,
   ChangePasswordResponse
-} from '@core/entities/user.model';
+} from '@core/models/user.model';
 import { environment } from "../../../environments/environment";
 
 @Injectable({

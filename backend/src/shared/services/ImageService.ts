@@ -1,6 +1,5 @@
 import {
   S3Client,
-  PutObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
@@ -500,7 +499,7 @@ export class ImageService {
         ? `agencies/${agencyId}/properties/${listingType}/`
         : `agencies/${agencyId}/properties/`;
       
-      let propertyIds = new Set<string>();
+      const propertyIds = new Set<string>();
       let continuationToken: string | undefined;
 
       do {

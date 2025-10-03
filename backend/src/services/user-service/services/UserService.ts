@@ -111,14 +111,6 @@ interface CreateUserResponse {
 }
 
 // Custom error classes
-class ValidationError extends Error {
-  public details: any;
-  constructor(message: string, details?: any) {
-    super(message);
-    this.name = 'ValidationError';
-    this.details = details;
-  }
-}
 
 class NotFoundError extends Error {
   constructor(message: string) {
