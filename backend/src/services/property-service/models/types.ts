@@ -1,5 +1,7 @@
 // Types per il Property Service basati sullo schema OpenAPI
 
+import { GeoJSONPoint } from '@shared/types/geojson.types';
+
 export interface PropertyAddress {
   street: string;
   city: string;
@@ -8,10 +10,8 @@ export interface PropertyAddress {
   country: string;
 }
 
-export interface PropertyLocation {
-  latitude: number;
-  longitude: number;
-}
+// PropertyLocation usa GeoJSONPoint condiviso
+export type PropertyLocation = GeoJSONPoint;
 
 export interface PropertyImage {
   id?: string;

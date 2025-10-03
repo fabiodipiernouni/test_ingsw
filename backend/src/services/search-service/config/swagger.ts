@@ -29,6 +29,49 @@ const options = {
         }
       },
       schemas: {
+        GeoJSONPoint: {
+          type: 'object',
+          required: ['type', 'coordinates'],
+          properties: {
+            type: {
+              type: 'string',
+              enum: ['Point'],
+              description: 'Tipo di geometria GeoJSON',
+              example: 'Point'
+            },
+            coordinates: {
+              type: 'array',
+              items: {
+                type: 'number',
+                format: 'double'
+              },
+              minItems: 2,
+              maxItems: 2,
+              description: 'Coordinate [longitude, latitude] in formato GeoJSON standard RFC 7946. NOTA: ordine è [lng, lat]',
+              example: [9.1900, 45.4642]
+            }
+          },
+          description: 'Punto geografico in formato GeoJSON standard RFC 7946. Coordinate in ordine [longitude, latitude]'
+        },
+        RadiusSearch: {
+          type: 'object',
+          required: ['center', 'radius'],
+          properties: {
+            center: {
+              $ref: '#/components/schemas/GeoJSONPoint',
+              description: 'Punto centrale della ricerca per raggio'
+            },
+            radius: {
+              type: 'number',
+              format: 'double',
+              minimum: 0.1,
+              maximum: 500,
+              description: 'Raggio di ricerca in chilometri. Trova tutte le proprietà entro questo raggio dal punto centrale.',
+              example: 10
+            }
+          },
+          description: 'Ricerca per raggio: trova proprietà entro un raggio specificato da un punto centrale. Mutuamente esclusiva con polygon.'
+        },
         SearchFilters: {
           type: 'object',
           properties: {
@@ -132,24 +175,24 @@ const options = {
               description: 'Presenza di parcheggio/box',
               example: true
             },
-            radius: {
-              type: 'number',
-              minimum: 0.1,
-              maximum: 100,
-              description: 'Raggio di ricerca in km (per ricerca geografica)',
-              example: 5
+            radiusSearch: {
+              $ref: '#/components/schemas/RadiusSearch',
+              description: 'Ricerca per raggio da un punto centrale. Non può essere usata insieme a polygon.'
             },
-            centerLat: {
-              type: 'number',
-              format: 'float',
-              description: 'Latitudine centro ricerca (per ricerca geografica)',
-              example: 45.4642
-            },
-            centerLng: {
-              type: 'number',
-              format: 'float',
-              description: 'Longitudine centro ricerca (per ricerca geografica)',
-              example: 9.1900
+            polygon: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/GeoJSONPoint'
+              },
+              minItems: 3,
+              maxItems: 100,
+              description: 'Array di punti GeoJSON che formano un poligono per ricerca geografica. Minimo 3 punti richiesti. Il poligono viene chiuso automaticamente. Non può essere usato insieme a radiusSearch.',
+              example: [
+                { type: 'Point', coordinates: [9.1500, 45.5000] },
+                { type: 'Point', coordinates: [9.2500, 45.5000] },
+                { type: 'Point', coordinates: [9.2500, 45.4500] },
+                { type: 'Point', coordinates: [9.1500, 45.4500] }
+              ]
             },
             features: {
               type: 'array',
@@ -285,11 +328,8 @@ const options = {
               }
             },
             location: {
-              type: 'object',
-              properties: {
-                latitude: { type: 'number', example: 45.4642 },
-                longitude: { type: 'number', example: 9.1900 }
-              }
+              $ref: '#/components/schemas/GeoJSONPoint',
+              description: 'Posizione geografica della proprietà in formato GeoJSON'
             },
             images: {
               type: 'array',

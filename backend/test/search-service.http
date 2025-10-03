@@ -4,7 +4,7 @@
 GET http://localhost:3003/health
 
 ### Test Ricerca Base - Tutte le proprietà attive
-POST http://localhost:3003/search
+POST http://localhost:3003/api/search
 Content-Type: application/json
 
 {
@@ -14,7 +14,7 @@ Content-Type: application/json
 }
 
 ### Test Ricerca per Città
-POST http://localhost:3003/search
+POST http://localhost:3003/api/search
 Content-Type: application/json
 
 {
@@ -38,14 +38,50 @@ Content-Type: application/json
   "limit": 15
 }
 
-### Test Ricerca Geografica (raggio)
-POST http://localhost:3003/search
+### Test Ricerca Geografica (raggio) - Milano centro con raggio di 5km
+POST http://localhost:3003/api/search
 Content-Type: application/json
 
 {
-  "centerLat": 45.4642,
-  "centerLng": 9.1900,
-  "radius": 5,
+  "radiusSearch": {
+    "center": {
+      "type": "Point",
+      "coordinates": [9.1900, 45.4642]
+    },
+    "radius": 5
+  },
+  "propertyType": "apartment",
+  "listingType": "sale",
+  "page": 1,
+  "limit": 20,
+  "sortBy": "relevance"
+}
+
+### Test Ricerca Geografica (poligono) - Area specifica di Milano
+POST http://localhost:3003/api/search
+Content-Type: application/json
+
+{
+  "polygon": [
+    {
+      "type": "Point",
+      "coordinates": [9.1500, 45.4500]
+    },
+    {
+      "type": "Point",
+      "coordinates": [9.2500, 45.4500]
+    },
+    {
+      "type": "Point",
+      "coordinates": [9.2500, 45.5000]
+    },
+    {
+      "type": "Point",
+      "coordinates": [9.1500, 45.5000]
+    }
+  ],
+  "propertyType": "apartment",
+  "listingType": "rent",
   "page": 1,
   "limit": 20
 }
@@ -95,12 +131,16 @@ Content-Type: application/json
 }
 
 ### Test Validazione - Ricerca Geografica Incompleta (dovrebbe fallire)
-POST http://localhost:3003/search
+POST http://localhost:3003/api/search
 Content-Type: application/json
 
 {
-  "centerLat": 45.4642,
-  "radius": 5
+  "radiusSearch": {
+    "center": {
+      "type": "Point",
+      "coordinates": [9.1900, 45.4642]
+    }
+  }
 }
 
 ### Test Suggerimenti - Query Troppo Corta

@@ -10,7 +10,7 @@ import { fakerIT } from '@faker-js/faker';
 async function getProvinciaByComune(cityFormatted: string): Promise<string | null> {
     const comuniData = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'comuni.json'), 'utf-8'));
     for (const comune of comuniData) {
-        if (comune.nome.replace(/[^a-z0-9]/g, '') === cityFormatted) {
+        if (comune.nome.toLowerCase().replace(/[^a-z0-9]/g, '') === cityFormatted) {
             return comune.provincia.nome;
         }
     }

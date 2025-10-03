@@ -15,6 +15,7 @@ import { User } from './User';
 import { PropertyImage } from './PropertyImage';
 import { PropertyFavorite } from './PropertyFavorite';
 import { PropertyView } from './PropertyView';
+import { GeoJSONPoint, createGeoJSONPoint } from '@shared/types/geojson.types';
 
 @Table({
   tableName: 'properties',
@@ -131,14 +132,45 @@ export class Property extends Model {
   @Column(DataType.STRING(50))
   country!: string;
 
-  // Location fields for geospatial queries
+  // GeoJSON location field per query geospaziali con Oracle Spatial
+  // Formato: {"type":"Point","coordinates":[longitude,latitude]}
   @AllowNull(false)
-  @Column(DataType.DECIMAL(10, 8))
-  latitude!: number;
-
-  @AllowNull(false)
-  @Column(DataType.DECIMAL(11, 8))
-  longitude!: number;
+  @Column({ 
+    type: DataType.STRING(4000),
+    field: 'geo_location',
+    // Getter: converte stringa JSON → oggetto JavaScript
+    get() {
+      const rawValue = this.getDataValue('location' as any);
+      if (!rawValue) return null;
+      
+      if (typeof rawValue === 'string') {
+        try {
+          return JSON.parse(rawValue);
+        } catch (e) {
+          return null;
+        }
+      }
+      return rawValue;
+    },
+    // Setter: converte oggetto → stringa JSON per Oracle
+    set(value: GeoJSONPoint | { longitude: number; latitude: number } | null) {
+      if (!value) {
+        this.setDataValue('location' as any, null);
+        return;
+      }
+      
+      // Supporta sia formato GeoJSON che oggetto semplice
+      if ('type' in value && value.type === 'Point') {
+        // È già GeoJSON
+        this.setDataValue('location' as any, JSON.stringify(value));
+      } else if ('longitude' in value && 'latitude' in value) {
+        // Converte da formato semplice a GeoJSON
+        const geoJson = createGeoJSONPoint(value.longitude, value.latitude);
+        this.setDataValue('location' as any, JSON.stringify(geoJson));
+      }
+    }
+  })
+  location!: GeoJSONPoint;
 
   // Agent reference
   @ForeignKey(() => User)
@@ -176,6 +208,21 @@ export class Property extends Model {
   @HasMany(() => PropertyView)
   propertyViews!: PropertyView[];
 
+  // Helper getters per accesso semplificato alle coordinate
+  // Estraggono lat/lng dal formato GeoJSON
+  get latitude(): number {
+    return this.location?.coordinates?.[1] || 0;
+  }
+
+  get longitude(): number {
+    return this.location?.coordinates?.[0] || 0;
+  }
+
+  // Helper method per settare coordinate facilmente
+  setCoordinates(longitude: number, latitude: number): void {
+    this.location = createGeoJSONPoint(longitude, latitude);
+  }
+
   // Computed properties
   get address(): object {
     return {
@@ -184,13 +231,6 @@ export class Property extends Model {
       province: this.province,
       zipCode: this.zipCode,
       country: this.country
-    };
-  }
-
-  get location(): object {
-    return {
-      latitude: this.latitude,
-      longitude: this.longitude
     };
   }
 
@@ -223,7 +263,6 @@ export class Property extends Model {
     
     // Add computed fields
     values.address = this.address;
-    values.location = this.location;
     values.primaryImage = this.primaryImage;
     
     return values;

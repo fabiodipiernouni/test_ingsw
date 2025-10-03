@@ -1,5 +1,7 @@
 // Types per il Search Service basati sullo schema OpenAPI
 
+import { GeoJSONPoint } from '@shared/types/geojson.types';
+
 export type PropertyType = 'apartment' | 'villa' | 'house' | 'loft' | 'office' | 'commercial' | 'land';
 export type ListingType = 'sale' | 'rent';
 export type PropertyStatus = 'active' | 'pending' | 'sold' | 'rented' | 'withdrawn';
@@ -39,10 +41,19 @@ export interface SearchFilters {
   hasGarden?: boolean;
   hasParking?: boolean;
   
-  // Geographic search
-  radius?: number; // in kilometers
-  centerLat?: number;
-  centerLng?: number;
+  // Geographic search - radius search (ricerca per raggio da punto centrale)
+  // Cerca tutte le proprietà entro un raggio specificato da un punto centrale.
+  // Non può essere usato insieme a polygon search (sono mutuamente esclusivi).
+  radiusSearch?: {
+    center: GeoJSONPoint;     // punto centrale della ricerca in formato GeoJSON
+    radius: number;           // raggio in kilometers (max 500km)
+  };
+  
+  // Geographic search - polygon search (ricerca per area poligonale)
+  // Cerca tutte le proprietà all'interno di un'area poligonale definita da punti GeoJSON.
+  // Il poligono viene chiuso automaticamente se necessario.
+  // Minimo 3 punti richiesti. Non può essere usato insieme a radius search.
+  polygon?: GeoJSONPoint[];
   
   // Additional filters
   features?: string[];
@@ -62,10 +73,8 @@ export interface PropertyAddress {
   country: string;
 }
 
-export interface PropertyLocation {
-  latitude: number;
-  longitude: number;
-}
+// PropertyLocation usa GeoJSONPoint condiviso
+export type PropertyLocation = GeoJSONPoint;
 
 export interface PropertyImage {
   id: string;

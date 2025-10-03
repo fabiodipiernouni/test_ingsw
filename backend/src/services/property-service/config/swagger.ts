@@ -62,21 +62,27 @@ const options = {
         },
         PropertyLocation: {
           type: 'object',
-          required: ['latitude', 'longitude'],
+          required: ['type', 'coordinates'],
           properties: {
-            latitude: {
-              type: 'number',
-              format: 'float',
-              description: 'Latitudine GPS',
-              example: 45.4642
+            type: {
+              type: 'string',
+              enum: ['Point'],
+              description: 'Tipo di geometria GeoJSON',
+              example: 'Point'
             },
-            longitude: {
-              type: 'number',
-              format: 'float',
-              description: 'Longitudine GPS',
-              example: 9.1900
+            coordinates: {
+              type: 'array',
+              items: {
+                type: 'number',
+                format: 'double'
+              },
+              minItems: 2,
+              maxItems: 2,
+              description: 'Coordinate [longitude, latitude] in formato GeoJSON standard RFC 7946',
+              example: [9.1900, 45.4642]
             }
-          }
+          },
+          description: 'Posizione geografica in formato GeoJSON Point'
         },
         PropertyImage: {
           type: 'object',
@@ -418,7 +424,8 @@ const options = {
               $ref: '#/components/schemas/PropertyAddress'
             },
             location: {
-              $ref: '#/components/schemas/PropertyLocation'
+              $ref: '#/components/schemas/PropertyLocation',
+              description: 'Posizione geografica in formato GeoJSON Point'
             },
             images: {
               type: 'array',

@@ -1,5 +1,6 @@
 import { Property, PropertyImage } from '@shared/database/models';
 import { PropertyCreateRequest, PropertyResponse, CreatePropertyResponse, SearchResult } from '../models/types';
+import { isValidGeoJSONPoint } from '@shared/types/geojson.types';
 import logger from '@shared/utils/logger';
 import { imageService } from '@shared/services/ImageService';
 import config from '@shared/config';
@@ -39,6 +40,11 @@ export class PropertyService {
       // Validazione base dei dati
       this.validatePropertyData(propertyData);
 
+      // Normalizza features: lowercase e trim
+      const normalizedFeatures = propertyData.features 
+        ? propertyData.features.map(f => f.trim().toLowerCase())
+        : undefined;
+
       // Crea la proprietà nel database
       const property = await Property.create({
         ...propertyData,
@@ -48,9 +54,10 @@ export class PropertyService {
         province: propertyData.address.province,
         zipCode: propertyData.address.zipCode,
         country: propertyData.address.country || 'Italy',
-        // Location fields
-        latitude: propertyData.location.latitude,
-        longitude: propertyData.location.longitude,
+        // Location field (GeoJSON)
+        location: propertyData.location,
+        // Normalized features
+        features: normalizedFeatures,
         // Agent
         agentId: agentId,
         // Defaults
@@ -168,10 +175,7 @@ export class PropertyService {
         zipCode: property.zipCode,
         country: property.country
       },
-      location: {
-        latitude: property.latitude,
-        longitude: property.longitude
-      },
+      location: property.location,  // GeoJSON Point format
       images: imagesWithUrls as any,
       agentId: property.agentId,
       agent: property.agent ? {
@@ -243,16 +247,9 @@ export class PropertyService {
       }
     }
 
-    // Validazione location
-    if (!data.location) {
-      errors.push('Location is required');
-    } else {
-      if (data.location.latitude < -90 || data.location.latitude > 90) {
-        errors.push('Latitude must be between -90 and 90');
-      }
-      if (data.location.longitude < -180 || data.location.longitude > 180) {
-        errors.push('Longitude must be between -180 and 180');
-      }
+    // Validazione location (GeoJSON Point)
+    if (!isValidGeoJSONPoint(data.location)) {
+      errors.push('Location must be a valid GeoJSON Point with coordinates [longitude, latitude]');
     }
 
     // Validazione features

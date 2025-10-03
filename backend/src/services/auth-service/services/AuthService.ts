@@ -172,7 +172,7 @@ export class AuthService {
           {
             model: Agency,
             as: 'agency',
-            attributes: ['id', 'name', 'address', 'phone', 'email', 'website']
+            attributes: ['id', 'name', 'street', 'city', 'province', 'zipCode', 'country', 'phone', 'email', 'website']
           }
         ]
       });
@@ -243,7 +243,7 @@ export class AuthService {
           {
             model: Agency,
             as: 'agency',
-            attributes: ['id', 'name', 'address', 'phone', 'email', 'website']
+            attributes: ['id', 'name', 'street', 'city', 'province', 'zipCode', 'country', 'phone', 'email', 'website']
           }
         ]
       });

@@ -1,7 +1,7 @@
 ### Creazione Proprietà
-POST http://localhost:3002/properties
+POST http://localhost:3002/api/properties
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyOWU5MGY5Yi0wNGE0LTQ1ZGItODFhZi00NzhiZTRkOWI5YmIiLCJlbWFpbCI6ImZhYmlvQHRlY25vY2FzYS5pdCIsInJvbGUiOiJhZ2VudCIsImlhdCI6MTc1ODkwNjc0MSwiZXhwIjoxNzU4OTEwMzQxfQ.vhUhT5yCwoim3LfkvwdhOVZxAtNDchh_My2oBqAuHTo
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5MGI3ZGIxYy1hYTJhLTQwNmMtYTBjOC00NTA5ZmI0OGUzOTUiLCJlbWFpbCI6ImFnZW50QGxhcnRlZGlhYml0YXJlYm9sb2duYW5hdmlsZWJvbG9nbmEuaXQiLCJyb2xlIjoiYWdlbnQiLCJpYXQiOjE3NTk1MzEyNDQsImV4cCI6MTc1OTUzNDg0NH0.uV8sAZG1WTgLCzzGxdOt5TvIK9WR7rAUYP6rnwB4xi8
 
 {
   "title": "Bellissimo Appartamento nel Centro Storico di Milano",
@@ -24,11 +24,14 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyOWU5M
     "city": "Milano",
     "province": "Milano",
     "zipCode": "20121",
-    "country": "Italy"
+    "country": "Italia"
   },
   "location": {
-    "latitude": 45.4654219,
-    "longitude": 9.1859243
+    "type": "Point",
+    "coordinates": [
+      9.1859243,
+      45.4654219
+    ]
   }
 }
 

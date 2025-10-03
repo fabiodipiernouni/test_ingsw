@@ -1,5 +1,6 @@
 import { database } from '../src/shared/database';
 import { Property, PropertyImage, Agency, User } from '../src/shared/database/models';
+import { createGeoJSONPoint } from '../src/shared/types/geojson.types';
 import fs from 'fs';
 import path from 'path';
 import { URL } from 'url';
@@ -209,8 +210,10 @@ async function processProperty(property: any) {
         province: String(mainProperty.location?.province),
         zipCode: String(cap || ''),
         country: 'Italia',
-        latitude: Number(mainProperty.location?.latitude || 0),
-        longitude: Number(mainProperty.location?.longitude || 0),
+        location: createGeoJSONPoint(
+            Number(mainProperty.location?.longitude || 0),
+            Number(mainProperty.location?.latitude || 0)
+        ),
         agentId: agent.id,
         isActive: true,
         views: 0,
