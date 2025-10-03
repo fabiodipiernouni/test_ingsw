@@ -487,7 +487,6 @@ router.get(
   authenticateToken as any,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req as any).user.id;
       const agencyId = (req as any).user.agencyId;
 
       if (!agencyId) {

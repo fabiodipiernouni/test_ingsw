@@ -10,7 +10,6 @@ import { Upload } from '@aws-sdk/lib-storage';
 import config from '@shared/config';
 import { v4 as uuidv4 } from 'uuid';
 import sharp from 'sharp';
-import { or } from 'sequelize';
 
 export interface ImageVariant {
   key: string;
