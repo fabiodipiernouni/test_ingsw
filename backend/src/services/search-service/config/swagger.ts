@@ -293,14 +293,97 @@ const options = {
             },
             images: {
               type: 'array',
+              description: 'Array di immagini della proprietà',
               items: {
                 type: 'object',
                 properties: {
-                  id: { type: 'string' },
-                  url: { type: 'string' },
-                  alt: { type: 'string' },
-                  isPrimary: { type: 'boolean' },
-                  order: { type: 'integer' }
+                  id: {
+                    type: 'string',
+                    format: 'uuid',
+                    description: 'ID univoco dell\'immagine',
+                    example: '507f1f77-bcf8-6cd7-9943-9011abcd1234'
+                  },
+                  fileName: {
+                    type: 'string',
+                    description: 'Nome del file',
+                    example: 'property-123-0.jpg'
+                  },
+                  contentType: {
+                    type: 'string',
+                    description: 'Tipo MIME',
+                    example: 'image/webp'
+                  },
+                  fileSize: {
+                    type: 'integer',
+                    description: 'Dimensione in bytes',
+                    example: 245678
+                  },
+                  width: {
+                    type: 'integer',
+                    description: 'Larghezza in pixel',
+                    example: 1920
+                  },
+                  height: {
+                    type: 'integer',
+                    description: 'Altezza in pixel',
+                    example: 1080
+                  },
+                  uploadDate: {
+                    type: 'string',
+                    format: 'date-time',
+                    description: 'Data di caricamento',
+                    example: '2025-10-03T10:30:00Z'
+                  },
+                  caption: {
+                    type: 'string',
+                    description: 'Didascalia',
+                    example: 'Vista del soggiorno'
+                  },
+                  alt: {
+                    type: 'string',
+                    description: 'Testo alternativo',
+                    example: 'Soggiorno con finestre panoramiche'
+                  },
+                  isPrimary: {
+                    type: 'boolean',
+                    description: 'Immagine principale',
+                    example: true
+                  },
+                  order: {
+                    type: 'integer',
+                    description: 'Ordine di visualizzazione',
+                    example: 0
+                  },
+                  urls: {
+                    type: 'object',
+                    description: 'URL firmati temporanei per diverse dimensioni',
+                    properties: {
+                      original: {
+                        type: 'string',
+                        format: 'uri',
+                        description: 'URL originale',
+                        example: 'https://s3.amazonaws.com/bucket/image-original.webp?signature=...'
+                      },
+                      small: {
+                        type: 'string',
+                        format: 'uri',
+                        description: 'URL thumbnail (400x300)',
+                        example: 'https://s3.amazonaws.com/bucket/image-small.webp?signature=...'
+                      },
+                      medium: {
+                        type: 'string',
+                        format: 'uri',
+                        description: 'URL media (800x600)',
+                        example: 'https://s3.amazonaws.com/bucket/image-medium.webp?signature=...'
+                      },
+                      large: {
+                        type: 'string',
+                        format: 'uri',
+                        description: 'URL grande (1200x900)',
+                        example: 'https://s3.amazonaws.com/bucket/image-large.webp?signature=...'
+                      }
+                    }
+                  }
                 }
               }
             },

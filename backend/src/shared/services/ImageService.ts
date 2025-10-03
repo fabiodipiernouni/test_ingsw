@@ -11,6 +11,7 @@ import { Upload } from '@aws-sdk/lib-storage';
 import config from '@shared/config';
 import { v4 as uuidv4 } from 'uuid';
 import sharp from 'sharp';
+import { or } from 'sequelize';
 
 export interface ImageVariant {
   key: string;
@@ -67,9 +68,10 @@ export class ImageService {
         throw new Error('Invalid image file');
       }
 
-      // Generate unique file key with agency hierarchy
+      // Generate unique file key with agency hierarchy using folder structure
       const fileExtension = 'webp'; // Convert all to WebP
-      const baseKey = `agencies/${agencyId}/properties/${listingType}/${propertyId}/${uuidv4()}`;
+      const imageId = uuidv4();
+      const baseKey = `agencies/${agencyId}/properties/${listingType}/${propertyId}/${imageId}`;
 
       const variants: ImageVariant[] = [];
 
@@ -78,7 +80,7 @@ export class ImageService {
         .webp({ quality: 95 })
         .toBuffer();
 
-      const originalKey = `${baseKey}-original.${fileExtension}`;
+      const originalKey = `${baseKey}/original.${fileExtension}`;
       await this.uploadToS3(originalKey, originalBuffer, 'image/webp');
       
       variants.push({
@@ -101,7 +103,7 @@ export class ImageService {
           .webp({ quality: config.s3.imageSizes.small.quality })
           .toBuffer();
 
-        smallKey = `${baseKey}-small.${fileExtension}`;
+        smallKey = `${baseKey}/small.${fileExtension}`;
         await this.uploadToS3(smallKey, smallBuffer, 'image/webp');
 
         const smallMetadata = await sharp(smallBuffer).metadata();
@@ -126,7 +128,7 @@ export class ImageService {
           .webp({ quality: config.s3.imageSizes.medium.quality })
           .toBuffer();
 
-        mediumKey = `${baseKey}-medium.${fileExtension}`;
+        mediumKey = `${baseKey}/medium.${fileExtension}`;
         await this.uploadToS3(mediumKey, mediumBuffer, 'image/webp');
 
         const mediumMetadata = await sharp(mediumBuffer).metadata();
@@ -151,7 +153,7 @@ export class ImageService {
           .webp({ quality: config.s3.imageSizes.large.quality })
           .toBuffer();
 
-        largeKey = `${baseKey}-large.${fileExtension}`;
+        largeKey = `${baseKey}/large.${fileExtension}`;
         await this.uploadToS3(largeKey, largeBuffer, 'image/webp');
 
         const largeMetadata = await sharp(largeBuffer).metadata();
@@ -256,34 +258,27 @@ export class ImageService {
   /**
    * Generate signed URLs for all image variants
    */
-  async getImageUrls(image: {
-    s3KeyOriginal: string;
-    s3KeySmall?: string;
-    s3KeyMedium?: string;
-    s3KeyLarge?: string;
+  async getImageUrls(variants: {
+    small: string;
+    medium: string;
+    large: string;
   }): Promise<{
-    original: string;
-    small?: string;
-    medium?: string;
-    large?: string;
+    small: string;
+    medium: string;
+    large: string;
   }> {
-    const urls: any = {
-      original: await this.getSignedUrl(image.s3KeyOriginal)
+    // Generate signed URLs for all variants (original not exposed to clients)
+    const [smallUrl, mediumUrl, largeUrl] = await Promise.all([
+      this.getSignedUrl(variants.small),
+      this.getSignedUrl(variants.medium),
+      this.getSignedUrl(variants.large)
+    ]);
+
+    return {
+      small: smallUrl,
+      medium: mediumUrl,
+      large: largeUrl
     };
-
-    if (image.s3KeySmall) {
-      urls.small = await this.getSignedUrl(image.s3KeySmall);
-    }
-
-    if (image.s3KeyMedium) {
-      urls.medium = await this.getSignedUrl(image.s3KeyMedium);
-    }
-
-    if (image.s3KeyLarge) {
-      urls.large = await this.getSignedUrl(image.s3KeyLarge);
-    }
-
-    return urls;
   }
 
   /**

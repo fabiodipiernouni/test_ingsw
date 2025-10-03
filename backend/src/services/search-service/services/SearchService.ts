@@ -283,22 +283,13 @@ export class SearchService {
     // Generate signed URLs for images
     const imagesWithUrls = await Promise.all(
       (property.images || []).map(async (image) => {
-        // If image has S3 keys, generate signed URLs
+        // If image has S3 keys, generate signed URLs using getImageVariants()
         if (image.s3KeyOriginal) {
-          const urls = await imageService.getImageUrls({
-            s3KeyOriginal: image.s3KeyOriginal,
-            s3KeySmall: image.s3KeySmall,
-            s3KeyMedium: image.s3KeyMedium,
-            s3KeyLarge: image.s3KeyLarge
-          });
+          const variants = image.getImageVariants();
+          const urls = await imageService.getImageUrls(variants);
 
           return {
             id: image.id,
-            s3KeyOriginal: image.s3KeyOriginal,
-            s3KeySmall: image.s3KeySmall,
-            s3KeyMedium: image.s3KeyMedium,
-            s3KeyLarge: image.s3KeyLarge,
-            bucketName: image.bucketName,
             fileName: image.fileName,
             contentType: image.contentType,
             fileSize: image.fileSize,

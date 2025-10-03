@@ -1,4 +1,5 @@
 // https://www.immobiliare.it/api-next/agencies/local-expert/?sort-by=bundle&limit=10000&output=json&__lang=it
+// https://raw.githubusercontent.com/matteocontrini/comuni-json/master/comuni.json
 
 import { database } from '../src/shared/database';
 import { Agency, User } from '../src/shared/database/models';
@@ -6,6 +7,15 @@ import fs from 'fs';
 import path from 'path';
 import { fakerIT } from '@faker-js/faker';
 
+async function getProvinciaByComune(cityFormatted: string): Promise<string | null> {
+    const comuniData = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'comuni.json'), 'utf-8'));
+    for (const comune of comuniData) {
+        if (comune.nome.replace(/[^a-z0-9]/g, '') === cityFormatted) {
+            return comune.provincia.nome;
+        }
+    }
+    return null;
+}
 
 function ucFirst(str: string): string {
     return str.charAt(0).toUpperCase() + str.slice(1);
@@ -55,7 +65,7 @@ async function createAgentUser(agencyNameFormatted: string, agencyCityFormatted:
     return user;
 }
 
-async function seedAgencies() {
+async function insertAgency(id: number) {
 
     await database.connect();
     
@@ -67,65 +77,62 @@ async function seedAgencies() {
     const agenciesData = JSON.parse(agenciesDataRaw);
 
     for (const agencyData of agenciesData.agencies) {
+        if (agencyData.id === id) {
+            const capMatch = agencyData.address.match(/\b\d{5}\b/);
+            const zipCode = capMatch ? capMatch[0] : null;
+            let city = null;
+            if (zipCode) {
+                const cityMatch = agencyData.address.match(new RegExp(`${zipCode} - ([^-]+)$`));
+                city = cityMatch ? cityMatch[1].trim() : null;
+            }
+            const streetAddress = zipCode ? agencyData.address.split(zipCode)[0].trim() : agencyData.address;
 
-        const capMatch = agencyData.address.match(/\b\d{5}\b/);
-        const zipCode = capMatch ? capMatch[0] : null;
-        let city = null;
-        let province = null; // We don't have province data from the source
-        if (zipCode) {
-            const cityMatch = agencyData.address.match(new RegExp(`${zipCode} - ([^-]+)$`));
-            city = cityMatch ? cityMatch[1].trim() : null;
+            if (!city) {
+                console.warn(`Skipping agency "${agencyData.displayName}" due to missing city in address: ${agencyData.address}`);
+                continue;
+            }
+
+            const agencyNameFormatted = agencyData.displayName.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const agencyCityFormatted = city.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const province = await getProvinciaByComune(agencyCityFormatted);
+
+            try {
+                const creatorUser = await createCreatorUser(agencyNameFormatted, agencyCityFormatted);
+                const agentUser = await createAgentUser(agencyNameFormatted, agencyCityFormatted);
+
+                const agency = await Agency.create({
+                    id: agencyData.uuid,
+                    name: agencyData.displayName,
+                    description: null,
+                    street: streetAddress,
+                    city: city,
+                    province: province,
+                    zipCode: zipCode,
+                    country: 'Italy',
+                    phone: randomPhoneNumber(),
+                    email: `info@${agencyNameFormatted}${agencyCityFormatted}.it`,
+                    logo: agencyData?.imageUrls?.large || null,
+                    licenseNumber: `AGENCY${fakerIT.string.numeric(6)}`,
+                    isActive: true,
+                    website: `https://www.${agencyNameFormatted}${agencyCityFormatted}.it`,
+                    createdBy: creatorUser.id,
+                });
+
+                // Update users with agencyId
+                [creatorUser, agentUser].forEach(async (user) => {
+                    user.agencyId = agencyData.uuid;
+                    await user.save();
+                });
+
+                return agency;
+
+            } catch (error) {
+                console.warn(`Error processing agency "${agencyData.displayName}":`, error);
+                continue;
+            }
         }
-        const streetAddress = zipCode ? agencyData.address.split(zipCode)[0].trim() : agencyData.address;
-
-        if (!city) {
-            console.warn(`Skipping agency "${agencyData.displayName}" due to missing city in address: ${agencyData.address}`);
-            continue;
-        }
-
-        const agencyNameFormatted = agencyData.displayName.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const agencyCityFormatted = city.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-        try {
-            const creatorUser = await createCreatorUser(agencyNameFormatted, agencyCityFormatted);
-            const agentUser = await createAgentUser(agencyNameFormatted, agencyCityFormatted);
-
-            await Agency.create({
-                id: agencyData.uuid,
-                name: agencyData.displayName,
-                description: null,
-                street: streetAddress,
-                city: city,
-                province: province,
-                zipCode: zipCode,
-                country: 'Italy',
-                phone: randomPhoneNumber(),
-                email: `info@${agencyNameFormatted}${agencyCityFormatted}.it`,
-                logo: agencyData?.imageUrls?.large || null,
-                licenseNumber: `AGENCY${fakerIT.string.numeric(6)}`,
-                isActive: true,
-                website: `https://www.${agencyNameFormatted}${agencyCityFormatted}.it`,
-                createdBy: creatorUser.id,
-            });
-
-            // Update users with agencyId
-            [creatorUser, agentUser].forEach(async (user) => {
-                user.agencyId = agencyData.uuid;
-                await user.save();
-            });
-        } catch (error) {
-            console.warn(`Error processing agency "${agencyData.displayName}":`, error);
-            continue;
-        }
-
     }
-    
+    return null;
 }
 
-
-if (require.main === module) {
-  seedAgencies().catch((error) => {
-    console.error('Errore fatale:', error);
-    process.exit(1);
-  });
-}
+export { insertAgency };

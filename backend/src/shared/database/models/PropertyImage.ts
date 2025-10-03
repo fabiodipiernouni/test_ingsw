@@ -13,6 +13,12 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { Property } from './Property';
 
+export interface ImageVariants {
+  small: string;
+  medium: string;
+  large: string;
+}
+
 @Table({
   tableName: 'property_images',
   timestamps: true
@@ -110,14 +116,13 @@ export class PropertyImage extends Model {
     await this.save();
   }
 
-  getImageVariants(): object {
-    // Return S3 keys for different sizes
+  getImageVariants(): ImageVariants {
+    // Return S3 keys for different sizes with fallback to original
+    // Note: original is kept internally for backup, not exposed to clients
     return {
-      original: this.s3KeyOriginal,
       small: this.s3KeySmall || this.s3KeyOriginal,
       medium: this.s3KeyMedium || this.s3KeyOriginal,
-      large: this.s3KeyLarge || this.s3KeyOriginal,
-      bucketName: this.bucketName
+      large: this.s3KeyLarge || this.s3KeyOriginal
     };
   }
 
