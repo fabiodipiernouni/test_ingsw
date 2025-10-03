@@ -69,12 +69,6 @@ export interface PropertyLocation {
 
 export interface PropertyImage {
   id: string;
-  // S3 keys for different sizes
-  s3KeyOriginal?: string;
-  s3KeySmall?: string;
-  s3KeyMedium?: string;
-  s3KeyLarge?: string;
-  bucketName?: string;
   // File metadata
   fileName?: string;
   contentType?: string;

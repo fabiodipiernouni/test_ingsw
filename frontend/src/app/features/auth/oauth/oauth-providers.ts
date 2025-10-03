@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
-import { OAuthProvider } from '@core/entities/user.model';
+import { OAuthProvider } from '@core/models/user.model';
 
 @Component({
   selector: 'app-oauth-providers',

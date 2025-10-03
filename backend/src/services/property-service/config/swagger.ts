@@ -83,29 +83,90 @@ const options = {
           properties: {
             id: {
               type: 'string',
+              format: 'uuid',
               description: 'ID univoco dell\'immagine',
-              example: '507f1f77bcf86cd799439011'
+              example: '507f1f77-bcf8-6cd7-9943-9011abcd1234'
             },
-            url: {
+            fileName: {
               type: 'string',
-              format: 'uri',
-              description: 'URL dell\'immagine',
-              example: 'https://example.com/images/property1.jpg'
+              description: 'Nome del file',
+              example: 'property-123-0.jpg'
+            },
+            contentType: {
+              type: 'string',
+              description: 'Tipo MIME dell\'immagine',
+              example: 'image/webp'
+            },
+            fileSize: {
+              type: 'integer',
+              description: 'Dimensione del file in bytes',
+              example: 245678
+            },
+            width: {
+              type: 'integer',
+              description: 'Larghezza in pixel',
+              example: 1920
+            },
+            height: {
+              type: 'integer',
+              description: 'Altezza in pixel',
+              example: 1080
+            },
+            uploadDate: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Data di caricamento',
+              example: '2025-10-03T10:30:00Z'
+            },
+            caption: {
+              type: 'string',
+              description: 'Didascalia dell\'immagine',
+              example: 'Vista del soggiorno'
             },
             alt: {
               type: 'string',
-              description: 'Testo alternativo per l\'immagine',
-              example: 'Vista principale dell\'appartamento'
+              description: 'Testo alternativo per accessibilità',
+              example: 'Soggiorno con finestre panoramiche'
             },
             isPrimary: {
               type: 'boolean',
-              description: 'Indica se è l\'immagine principale',
+              description: 'Indica se è l\'immagine principale della proprietà',
               example: true
             },
             order: {
               type: 'integer',
-              description: 'Ordine di visualizzazione',
-              example: 1
+              description: 'Ordine di visualizzazione nella galleria',
+              example: 0
+            },
+            urls: {
+              type: 'object',
+              description: 'URL firmati temporanei per accedere all\'immagine in diverse dimensioni',
+              properties: {
+                original: {
+                  type: 'string',
+                  format: 'uri',
+                  description: 'URL dell\'immagine originale (WebP 95% quality)',
+                  example: 'https://s3.amazonaws.com/bucket/image-original.webp?signature=...'
+                },
+                small: {
+                  type: 'string',
+                  format: 'uri',
+                  description: 'URL thumbnail (400x300)',
+                  example: 'https://s3.amazonaws.com/bucket/image-small.webp?signature=...'
+                },
+                medium: {
+                  type: 'string',
+                  format: 'uri',
+                  description: 'URL media (800x600)',
+                  example: 'https://s3.amazonaws.com/bucket/image-medium.webp?signature=...'
+                },
+                large: {
+                  type: 'string',
+                  format: 'uri',
+                  description: 'URL grande (1920x1440)',
+                  example: 'https://s3.amazonaws.com/bucket/image-large.webp?signature=...'
+                }
+              }
             }
           }
         },

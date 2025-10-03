@@ -53,7 +53,7 @@ const s3Config: S3Config = {
   imageSizes: {
     small: { width: 400, height: 300, quality: 80 },
     medium: { width: 800, height: 600, quality: 85 },
-    large: { width: 1920, height: 1440, quality: 90 }
+    large: { width: 1200, height: 900, quality: 90 }
   }
 };
 

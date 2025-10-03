@@ -10,7 +10,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { UserService } from '../../../../core/services/user.service';
-import { User, UpdateProfileRequest } from '@core/entities/user.model';
+import { User, UpdateProfileRequest } from '@core/models/user.model';
 
 @Component({
   selector: 'app-personal-data',

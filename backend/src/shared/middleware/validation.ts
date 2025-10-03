@@ -301,7 +301,7 @@ export const userValidations = {
     body('specializations')
       .optional()
       .isArray()
-      .withMessage('Specializations must be an array'),
+      .withMessage('Specializations must be an array')
 
   ],
   
@@ -309,7 +309,7 @@ export const userValidations = {
     commonValidations.email(),
     commonValidations.name('firstName'),
     commonValidations.name('lastName'),
-    commonValidations.phone(),
+    commonValidations.phone()
   ]
 };
 

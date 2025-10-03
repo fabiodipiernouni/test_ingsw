@@ -33,11 +33,11 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyOWU5M
 }
 
 ### Ottenere Lista Proprietà (non autenticato)
-GET http://localhost:3002/properties/
+GET http://localhost:3002/api/properties/
 
 ### Ottenere Lista Proprietà (autenticato come agente)
-GET http://localhost:3002/properties/
+GET http://localhost:3002/api/properties/
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyOWU5MGY5Yi0wNGE0LTQ1ZGItODFhZi00NzhiZTRkOWI5YmIiLCJlbWFpbCI6ImZhYmlvQHRlY25vY2FzYS5pdCIsInJvbGUiOiJhZ2VudCIsImlhdCI6MTc1ODk5NDg0MiwiZXhwIjoxNzU4OTk4NDQyfQ.k6RBlD8DCDVcSv7GLf-P8tOMdWQo8V3DAKzU7qzY3OQ
 
 ### Ottenere Dettagli di una Proprietà
-GET http://localhost:3002/properties/e748c460-28c4-4dc8-bf7f-841bdfdec308
+GET http://localhost:3002/api/properties/ca06467f-4bc2-5ba2-865d-3f584d01dd9e

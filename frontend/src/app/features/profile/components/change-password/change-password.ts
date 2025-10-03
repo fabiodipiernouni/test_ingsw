@@ -9,7 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { UserService } from '../../../../core/services/user.service';
-import { ChangePasswordRequest } from '@core/entities/user.model';
+import { ChangePasswordRequest } from '@core/models/user.model';
 
 @Component({
   selector: 'app-change-password',

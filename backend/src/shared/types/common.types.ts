@@ -19,7 +19,17 @@ export interface AuthenticatedRequest extends Request {
   user?: any;
   userAgency?: any;
   file?: any;
-  files?: { [fieldname: string]: Express.Multer.File[]; } | Express.Multer.File[] | undefined;
+  files?: { [fieldname: string]: UploadedFile[]; } | UploadedFile[] | undefined;
+}
+
+export interface UploadedFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  buffer?: Buffer;
+  path?: string;
 }
 
 export interface PropertyAddress {
@@ -112,7 +122,6 @@ export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   message?: string;
-  error?: string;
   timestamp: Date;
 }
 

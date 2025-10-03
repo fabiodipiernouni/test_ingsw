@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services/auth.service';
-import { OAuthProvider } from '@core/entities/user.model';
+import { OAuthProvider } from '@core/models/user.model';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({

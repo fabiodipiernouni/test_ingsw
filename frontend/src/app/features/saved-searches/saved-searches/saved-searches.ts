@@ -8,7 +8,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { PropertyService } from '@core/services/property.service';
-import { SearchFilters } from '@core/entities/search.model';
+import { SearchFilters } from '@core/models/search.model';
 
 interface SavedSearch {
   id: string;

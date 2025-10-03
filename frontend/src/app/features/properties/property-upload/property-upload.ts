@@ -12,7 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { PropertyService } from '../../../core/services/property.service';
-import { Property } from '@core/entities/property.model';
+import { Property } from '@core/models/property.model';
 
 @Component({
   selector: 'app-property-upload',

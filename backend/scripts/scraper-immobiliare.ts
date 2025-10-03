@@ -79,9 +79,6 @@ async function scrapeRegione(regione: string, tipoContratto: keyof typeof tipiCo
 if (require.main === module) {
     const jobs = regioni.flatMap(regione => {
         let numPagine = 1;
-        
-        if(regione === 'campania')
-            numPagine = 5;
 
         return [
             scrapeRegione(regione, 'vendita', numPagine),

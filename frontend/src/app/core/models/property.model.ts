@@ -1,18 +1,19 @@
-import {Agent} from '@core/entities/user.model';
-import {Address} from '@core/entities/address.model';
+import {Agent} from '@core/models/user.model';
+import {Address} from '@core/models/address.model';
 
 export interface Property {
   id: string;
   title: string;
   description: string;
   price: number;
-  propertyType: 'apartment' | 'villa' | 'house' | 'loft' | 'office';
+  propertyType: 'apartment' | 'villa' | 'house' | 'loft' | 'office' | 'commercial' | 'land';
   listingType: 'sale' | 'rent';
+  status: 'active' | 'pending' | 'sold' | 'rented' | 'withdrawn';
   bedrooms: number;
   bathrooms: number;
   area: number; // in square meters
   floor?: string;
-  energyClass?: string;
+  energyClass?: 'A+' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
   hasElevator: boolean;
   hasBalcony: boolean;
   hasGarden: boolean;

@@ -8,8 +8,7 @@ import {
   AllowNull,
   ForeignKey,
   BelongsTo,
-  HasMany,
-  Index
+  HasMany
 } from 'sequelize-typescript';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from './User';

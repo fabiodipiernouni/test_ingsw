@@ -45,7 +45,7 @@ class Database {
         // Oracle naming conventions
         freezeTableName: true,
         underscored: true,
-        timestamps: true,
+        timestamps: true
         // createdAt: 'created_at',
         // updatedAt: 'updated_at'
       }
