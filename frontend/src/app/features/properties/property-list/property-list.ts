@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { PropertyCard } from '@features/properties/property-card/property-card';
-import { Property } from '@core/models/property.model';
+import { Property } from '@features/properties/models/property';
 
 @Component({
   selector: 'app-property-list',

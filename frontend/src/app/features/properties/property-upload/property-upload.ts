@@ -11,8 +11,8 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { PropertyService } from '../../../core/services/property.service';
-import { Property } from '@core/models/property.model';
+import { PropertyService } from '@core/services/property/property.service';
+import { Property } from '@features/properties/models/property';
 
 @Component({
   selector: 'app-property-upload',

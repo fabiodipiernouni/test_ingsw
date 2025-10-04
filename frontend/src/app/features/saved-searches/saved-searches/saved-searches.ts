@@ -7,7 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { PropertyService } from '@core/services/property.service';
+import { PropertyService } from '@core/services/property/property.service';
 import { SearchFilters } from '@core/models/search.model';
 
 interface SavedSearch {

@@ -25,7 +25,7 @@ export interface Property {
   agent?: Agent;
   isActive: boolean;
   views: number;
-  favorites: number;
+  //favorites: number;
   createdAt: Date;
   updatedAt: Date;
 }

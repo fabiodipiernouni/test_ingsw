@@ -18,7 +18,7 @@
           <mat-icon>dashboard</mat-icon>
           Dashboard
         </a>
-        
+
         <a mat-button routerLink="/saved-searches" routerLinkActive="active">
           <mat-icon>bookmark</mat-icon>
           Ricerche Salvate
@@ -98,10 +98,10 @@
               <span>Dashboard</span>
             </button>
           } @else {
-            <button mat-menu-item routerLink="/favorites">
+            <!--<button mat-menu-item routerLink="/favorites">
               <mat-icon>favorite</mat-icon>
               <span>I Miei Preferiti</span>
-            </button>
+            </button> -->
           }
 
           <button mat-menu-item routerLink="/saved-searches">
@@ -211,13 +211,13 @@
                 <span>Dashboard</span>
               </a>
             } @else {
-              <a mat-button routerLink="/favorites" (click)="toggleMobileMenu()">
+              <!-- <a mat-button routerLink="/favorites" (click)="toggleMobileMenu()">
                 <mat-icon>favorite</mat-icon>
                 <span>I Miei Preferiti</span>
-              </a>
+              </a> -->
             }
 
-            <a mat-button (click)="onProfileClick()">
+            <a mat-button routerLink="/profile" (click)="toggleMobileMenu()">
               <mat-icon>person</mat-icon>
               <span>Il Mio Profilo</span>
             </a>

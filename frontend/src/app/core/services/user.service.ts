@@ -20,7 +20,7 @@ export interface ChangePasswordRequest {
 export interface UserActivity {
   views: any[];
   searches: number;
-  favorites: number;
+  //favorites: number;
   totalActivity: number;
 }
 
@@ -83,23 +83,23 @@ export class UserService {
   /**
    * Add property to favorites
    */
-  addToFavorites(propertyId: string): Observable<{ favoriteId: string }> {
-    return this.http.post<{ favoriteId: string }>(`${this.API_URL}/users/favorites`, { propertyId });
-  }
+  //addToFavorites(propertyId: string): Observable<{ favoriteId: string }> {
+    //return this.http.post<{ favoriteId: string }>(`${this.API_URL}/users/favorites`, { propertyId });
+  //}
 
   /**
    * Remove property from favorites
    */
-  removeFromFavorites(favoriteId: string): Observable<void> {
-    return this.http.delete<void>(`${this.API_URL}/users/favorites/${favoriteId}`);
-  }
+  //removeFromFavorites(favoriteId: string): Observable<void> {
+   // return this.http.delete<void>(`${this.API_URL}/users/favorites/${favoriteId}`);
+  //}
 
   /**
    * Check if property is in favorites
    */
-  checkFavoriteStatus(propertyId: string): Observable<{ isFavorite: boolean; favoriteId?: string }> {
-    return this.http.get<{ isFavorite: boolean; favoriteId?: string }>(`${this.API_URL}/users/favorites/${propertyId}`);
-  }
+  //checkFavoriteStatus(propertyId: string): Observable<{ isFavorite: boolean; favoriteId?: string }> {
+    //return this.http.get<{ isFavorite: boolean; favoriteId?: string }>(`${this.API_URL}/users/favorites/${propertyId}`);
+  //}
 
   /**
    * Send email verification OTP

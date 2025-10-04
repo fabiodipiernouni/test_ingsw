@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatRippleModule } from '@angular/material/core';
-import { Property } from '@core/models/property.model';
+import {PropertyCard} from '@features/properties/models/property-card';
 
 @Component({
   selector: 'app-property-card',
@@ -21,31 +21,31 @@ import { Property } from '@core/models/property.model';
   templateUrl: './property-card.html',
   styleUrl: './property-card.scss'
 })
-export class PropertyCard {
-  @Input() property = signal<Property>({} as Property);
-  @Output() propertyClick = new EventEmitter<Property>();
-  @Output() favoriteToggle = new EventEmitter<Property>();
+export class PropertyCardComponent {
+  @Input() property = signal<PropertyCard>({} as PropertyCard);
+  @Output() propertyClick = new EventEmitter<PropertyCard>();
+  //@Output() favoriteToggle = new EventEmitter<Property>();
 
-  isFavorite = signal(false);
+  //isFavorite = signal(false);
   imageLoaded = signal(false);
 
   onCardClick(): void {
     this.propertyClick.emit(this.property());
   }
 
-  onFavoriteClick(event: Event): void {
+  /*onFavoriteClick(event: Event): void {
     event.stopPropagation();
     this.isFavorite.update(current => !current);
     this.favoriteToggle.emit(this.property());
-  }
+  }*/
 
   onImageLoad(): void {
     this.imageLoaded.set(true);
   }
 
   getImageUrl(): string {
-    const images = this.property().images;
-    return images?.length > 0 ? images[0].url : '/assets/images/no-image.jpg';
+    const images = this.property().primaryImage;
+    return images?.url ?? '/assets/images/no-image.jpg';
   }
 
   getListingTypeLabel(): string {

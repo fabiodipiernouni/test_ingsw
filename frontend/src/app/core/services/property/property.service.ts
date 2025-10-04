@@ -2,9 +2,11 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, BehaviorSubject } from 'rxjs';
 import { map, tap, delay } from 'rxjs/operators';
-import { Property, PropertyStats } from '@core/models/property.model';
+import { Property, PropertyStats } from '@features/properties/models/property';
 import { SearchFilters, SearchResult } from '@core/models/search.model';
-import { environment } from '../../../environments/environment';
+import { environment } from '../../../../environments/environment';
+import {ApiResponse} from '@core/services/dto/ApiResponse';
+import {PropertyCard} from '@features/properties/models/property-card';
 
 @Injectable({
   providedIn: 'root'
@@ -89,11 +91,11 @@ export class PropertyService {
     }
 
     // Chiamata HTTP al backend
-    return this.http.get<any>(`${this.API_URL}`, { params }).pipe(
+    return this.http.get<ApiResponse<PropertyCard[]>>(`${this.API_URL}/cards`, { params }).pipe(
       map(response => {
         // Mappo la risposta del backend al formato SearchResult
         const searchResult: SearchResult = {
-          properties: response.properties || response.data || [],
+          properties: response.data || [],
           totalCount: response.totalCount || response.total || 0,
           currentPage: response.currentPage || response.page || page,
           totalPages: response.totalPages || Math.ceil((response.totalCount || response.total || 0) / limit),
@@ -166,7 +168,7 @@ export class PropertyService {
       agentId: 'current-agent-id',
       isActive: true,
       views: 0,
-      favorites: 0,
+      //favorites: 0,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -229,10 +231,10 @@ export class PropertyService {
     return of(stats).pipe(delay(300));
   }
 
-  toggleFavorite(propertyId: string): Observable<boolean> {
+  //toggleFavorite(propertyId: string): Observable<boolean> {
     // Simulate API call to toggle favorite
-    return of(true).pipe(delay(200));
-  }
+    //return of(true).pipe(delay(200));
+  //}
 
   private filterProperties(properties: Property[], filters: SearchFilters): Property[] {
     return properties.filter(property => {
