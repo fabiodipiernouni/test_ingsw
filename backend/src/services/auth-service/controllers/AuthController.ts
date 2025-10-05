@@ -3,6 +3,7 @@ import { authService } from '../services/AuthService';
 import logger from '@shared/utils/logger';
 import { AuthenticatedRequest } from '@shared/types/common.types';
 import { successResponse, errorResponse, validationErrorResponse, notFoundResponse } from '@shared/utils/helpers';
+import config from '@shared/config';
 
 export class AuthController {
   /**
@@ -413,6 +414,87 @@ export class AuthController {
       }
 
       errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to change password', 500);
+    }
+  }
+
+  /**
+   * Inizia il flusso OAuth con redirect diretto al provider
+   */
+  async getOAuthUrl(req: Request, res: Response) {
+    try {
+      const { provider, state } = req.query;
+
+      logger.info('OAuth authorization request', { provider });
+
+      // Valida provider
+      if (!provider || provider !== 'google') {
+        // Redirect al frontend con errore
+        const errorUrl = `${config.frontendUrl}/auth/error?message=${encodeURIComponent('Invalid OAuth provider. Only Google is currently supported')}`;
+        return res.redirect(errorUrl);
+      }
+
+      const authUrl = authService.getOAuthUrl({
+        provider: 'google',
+        state: state as string
+      });
+
+      logger.info('Redirecting to OAuth provider', { provider });
+      
+      // Redirect diretto al Cognito Hosted UI
+      res.redirect(authUrl);
+
+    } catch (error: any) {
+      logger.error('Error in getOAuthUrl controller:', error);
+      const errorUrl = `${config.frontendUrl}/auth/error?message=${encodeURIComponent('Failed to start OAuth authentication')}`;
+      res.redirect(errorUrl);
+    }
+  }
+
+  /**
+   * Gestisci il callback OAuth e completa l'autenticazione
+   */
+  async handleOAuthCallback(req: Request, res: Response) {
+    try {
+      const { code, state, error, error_description } = req.query;
+
+      // Gestisci errori dal provider OAuth
+      if (error) {
+        logger.error('OAuth error from provider:', { error, error_description });
+        // Redirect al frontend con errore
+        const errorUrl = `${config.frontendUrl}/auth/error?message=${encodeURIComponent(error_description as string || 'OAuth authentication failed')}`;
+        return res.redirect(errorUrl);
+      }
+
+      if (!code) {
+        const errorUrl = `${config.frontendUrl}/auth/error?message=${encodeURIComponent('Authorization code is required')}`;
+        return res.redirect(errorUrl);
+      }
+
+      logger.info('OAuth callback received', { state });
+
+      const result = await authService.handleOAuthCallback({
+        code: code as string,
+        state: state as string
+      });
+
+      // Redirect al frontend con token nei query params
+      const callbackUrl = new URL(`${config.frontendUrl}/auth/callback`);
+      callbackUrl.searchParams.append('access_token', result.accessToken);
+      callbackUrl.searchParams.append('id_token', result.idToken);
+      callbackUrl.searchParams.append('refresh_token', result.refreshToken);
+      callbackUrl.searchParams.append('token_type', result.tokenType);
+      callbackUrl.searchParams.append('email', result.user.email);
+      callbackUrl.searchParams.append('is_new_user', (!result.user.emailVerified).toString());
+
+      logger.info('OAuth login successful, redirecting to frontend', { email: result.user.email });
+      
+      res.redirect(callbackUrl.toString());
+
+    } catch (error: any) {
+      logger.error('Error in handleOAuthCallback controller:', error);
+
+      const errorUrl = `${config.frontendUrl}/auth/error?message=${encodeURIComponent(error.message || 'OAuth authentication failed')}`;
+      res.redirect(errorUrl);
     }
   }
 }

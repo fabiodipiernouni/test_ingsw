@@ -323,4 +323,115 @@ router.post('/confirm-forgot-password', authController.confirmForgotPassword);
  */
 router.post('/change-password', authenticateToken as any, validate(authValidations.changePassword), authController.changePassword);
 
+/**
+ * @swagger
+ * /oauth/authorize:
+ *   get:
+ *     summary: Inizia autenticazione OAuth
+ *     description: |
+ *       Reindirizza l'utente direttamente al Cognito Hosted UI per l'autenticazione con Google.
+ *       
+ *       **Questo endpoint NON restituisce JSON**, ma effettua un redirect HTTP 302.
+ *       
+ *       Il frontend può semplicemente usare un link diretto:
+ *       ```html
+ *       <a href="http://localhost:3001/api/oauth/authorize?provider=google">Login con Google</a>
+ *       ```
+ *       
+ *       O programmaticamente:
+ *       ```typescript
+ *       window.location.href = 'http://localhost:3001/api/oauth/authorize?provider=google';
+ *       ```
+ *     tags:
+ *       - Authentication
+ *       - OAuth
+ *     parameters:
+ *       - in: query
+ *         name: provider
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [google]
+ *         description: Provider OAuth da utilizzare (attualmente solo "google")
+ *       - in: query
+ *         name: state
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: State parameter opzionale per prevenire CSRF attacks
+ *     responses:
+ *       302:
+ *         description: |
+ *           Redirect al Cognito Hosted UI per l'autenticazione.
+ *           
+ *           L'utente verrà reindirizzato a:
+ *           `https://dietiestates25.auth.eu-central-1.amazoncognito.com/oauth2/authorize?...`
+ *           
+ *           Dopo il login, Cognito reindirizza a `/api/oauth/callback?code=...`
+ *         headers:
+ *           Location:
+ *             description: URL del Cognito Hosted UI
+ *             schema:
+ *               type: string
+ *               example: https://dietiestates25.auth.eu-central-1.amazoncognito.com/oauth2/authorize?client_id=xxx&response_type=code&scope=openid+email+profile&redirect_uri=http://localhost:3001/api/oauth/callback&identity_provider=Google
+ */
+router.get('/oauth/authorize', authController.getOAuthUrl);
+
+/**
+ * @swagger
+ * /oauth/callback:
+ *   get:
+ *     summary: Gestisci callback OAuth
+ *     description: |
+ *       Endpoint di callback per completare l'autenticazione OAuth. 
+ *       Cognito reindirizza qui dopo il login social.
+ *       
+ *       **Questo endpoint NON restituisce JSON**, ma effettua un redirect al frontend con i token nei query params.
+ *       
+ *       Il frontend deve gestire il redirect alla pagina `/auth/callback` per estrarre i token dall'URL e salvarli in localStorage.
+ *     tags:
+ *       - Authentication
+ *       - OAuth
+ *     parameters:
+ *       - in: query
+ *         name: code
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Authorization code ricevuto da Cognito
+ *       - in: query
+ *         name: state
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: State parameter per verifica CSRF
+ *       - in: query
+ *         name: error
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Codice errore se l'autenticazione OAuth è fallita
+ *       - in: query
+ *         name: error_description
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Descrizione dell'errore OAuth
+ *     responses:
+ *       302:
+ *         description: |
+ *           Redirect al frontend con i token nei query params.
+ *           
+ *           **Successo**: Redirect a `{FRONTEND_URL}/auth/callback?access_token=xxx&id_token=xxx&refresh_token=xxx&token_type=Bearer&email=user@example.com&is_new_user=false`
+ *           
+ *           **Errore**: Redirect a `{FRONTEND_URL}/auth/error?message=Error+description`
+ *         headers:
+ *           Location:
+ *             description: URL del frontend con token o messaggio di errore
+ *             schema:
+ *               type: string
+ *               example: http://localhost:3000/auth/callback?access_token=eyJra...&refresh_token=eyJra...
+ */
+router.get('/oauth/callback', authController.handleOAuthCallback);
+
 export default router;

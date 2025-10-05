@@ -3,7 +3,6 @@ import {
   SignUpCommand,
   InitiateAuthCommand,
   RespondToAuthChallengeCommand,
-  AdminGetUserCommand,
   AdminAddUserToGroupCommand,
   ChangePasswordCommand,
   ForgotPasswordCommand,
@@ -91,9 +90,22 @@ interface CompleteNewPasswordData {
   session: string;
 }
 
-interface SocialLoginData {
-  authorizationCode: string;
-  redirectUri: string;
+interface OAuthUrlParams {
+  provider: 'google' | 'facebook' | 'apple';
+  state?: string;
+}
+
+interface OAuthCallbackData {
+  code: string;
+  state?: string;
+}
+
+interface OAuthTokenResponse {
+  access_token: string;
+  id_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
 }
 
 // Custom error classes
@@ -538,6 +550,284 @@ export class AuthService {
 
       throw error;
     }
+  }
+
+  /**
+   * Ottieni l'URL per iniziare il flusso OAuth con un provider social
+   */
+  getOAuthUrl(params: OAuthUrlParams): string {
+    try {
+      const { provider, state } = params;
+      const { domain, callbackUrl, scope, responseType } = config.cognito.oauth;
+
+      // Genera state casuale se non fornito (per sicurezza CSRF)
+      const oauthState = state || this.generateRandomState();
+
+      // Costruisci l'URL per l'authorization endpoint di Cognito
+      const authUrl = new URL(`https://${domain}/oauth2/authorize`);
+      
+      authUrl.searchParams.append('client_id', config.cognito.clientId);
+      authUrl.searchParams.append('response_type', responseType);
+      authUrl.searchParams.append('scope', scope.join(' '));
+      authUrl.searchParams.append('redirect_uri', callbackUrl);
+      authUrl.searchParams.append('identity_provider', this.mapProviderName(provider));
+      authUrl.searchParams.append('state', oauthState);
+
+      logger.info('Generated OAuth URL', { provider });
+
+      return authUrl.toString();
+    } catch (error: any) {
+      logger.error('Error generating OAuth URL:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gestisci il callback OAuth e scambia il codice di autorizzazione per i token
+   */
+  async handleOAuthCallback(data: OAuthCallbackData): Promise<AuthResponse> {
+    try {
+      const { code } = data;
+      const { domain, callbackUrl } = config.cognito.oauth;
+
+      // 1. SCAMBIA IL CODICE DI AUTORIZZAZIONE CON I TOKEN
+      const tokenData = await this.exchangeCodeForTokens(code, callbackUrl, domain);
+      const { access_token, id_token, refresh_token, token_type } = tokenData;
+
+      // 2. DECODIFICA ID TOKEN PER OTTENERE INFO UTENTE
+      const idTokenDecoded = this.decodeToken(id_token);
+      const cognitoSub = idTokenDecoded.sub;
+      const email = idTokenDecoded.email;
+
+      // 3. CERCA O CREA UTENTE (con account linking)
+      let user = await this.findOrCreateOAuthUser(cognitoSub, email, idTokenDecoded);
+
+      // 4. VERIFICA CHE L'ACCOUNT SIA ATTIVO
+      if (!user.isActive) {
+        throw new AuthenticationError('Account is disabled');
+      }
+
+      // 5. AGGIORNA ULTIMO LOGIN
+      await user.update({ lastLoginAt: new Date() });
+
+      logger.info('OAuth login successful', { email, cognitoSub });
+
+      return {
+        user: this.formatUserResponse(user),
+        accessToken: access_token,
+        idToken: id_token,
+        refreshToken: refresh_token,
+        tokenType: token_type || 'Bearer'
+      };
+
+    } catch (error: any) {
+      logger.error('Error in handleOAuthCallback:', error);
+
+      if (error.name === 'AuthenticationError') {
+        throw error;
+      }
+
+      throw new AuthenticationError('OAuth authentication failed');
+    }
+  }
+
+  /**
+   * Scambia authorization code per token OAuth
+   */
+  private async exchangeCodeForTokens(
+    code: string, 
+    callbackUrl: string, 
+    domain: string
+  ): Promise<OAuthTokenResponse> {
+    const tokenUrl = `https://${domain}/oauth2/token`;
+    
+    const params = new URLSearchParams();
+    params.append('grant_type', 'authorization_code');
+    params.append('client_id', config.cognito.clientId);
+    params.append('code', code);
+    params.append('redirect_uri', callbackUrl);
+
+    const response = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: params.toString()
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      logger.error('Token exchange failed:', { status: response.status, error: errorData });
+      throw new AuthenticationError('Failed to exchange authorization code for tokens');
+    }
+
+    const tokenData = await response.json() as OAuthTokenResponse;
+    
+    if (!tokenData.access_token || !tokenData.id_token) {
+      throw new AuthenticationError('Invalid token response from OAuth provider');
+    }
+
+    return tokenData;
+  }
+
+  /**
+   * Trova utente esistente o crea nuovo utente OAuth (con account linking)
+   */
+  private async findOrCreateOAuthUser(
+    cognitoSub: string,
+    email: string,
+    idTokenDecoded: any
+  ): Promise<User> {
+    // 1. Cerca utente per cognitoSub (utente OAuth già esistente)
+    let user = await User.findOne({
+      where: { cognitoSub },
+      include: [{ model: Agency, as: 'agency' }]
+    });
+
+    if (user) {
+      // Utente OAuth già registrato - assicurati che linkedProviders sia aggiornato
+      if (!user.linkedProviders || !user.linkedProviders.includes('google')) {
+        const currentProviders = user.linkedProviders || [];
+        await user.update({
+          linkedProviders: [...currentProviders, 'google'],
+          isVerified: true
+        });
+        logger.info('Updated linkedProviders for existing OAuth user', { 
+          email: user.email,
+          linkedProviders: user.linkedProviders 
+        });
+      }
+      return user;
+    }
+
+    // 2. Se non trovato per cognitoSub, cerca per email (possibile account linking)
+    const existingUser = await User.findOne({
+      where: { email },
+      include: [{ model: Agency, as: 'agency' }]
+    });
+
+    if (existingUser) {
+      // ACCOUNT LINKING: utente registrato con email/password, aggiungi OAuth
+      return await this.linkOAuthToExistingUser(existingUser, cognitoSub, idTokenDecoded);
+    }
+
+    // 3. Nessun utente trovato: crea nuovo utente OAuth con findOrCreate
+    const [newUser, created] = await User.findOrCreate({
+      where: { 
+        cognitoSub: cognitoSub 
+      },
+      defaults: {
+        email: email,
+        cognitoSub: cognitoSub,
+        cognitoUsername: email,
+        firstName: idTokenDecoded.given_name || '',
+        lastName: idTokenDecoded.family_name || '',
+        phone: idTokenDecoded.phone_number || undefined,
+        avatar: idTokenDecoded.picture || undefined,
+        role: 'client',
+        isActive: true,
+        isVerified: true, // OAuth providers verificano sempre l'email
+        linkedProviders: ['google'],
+        acceptedTermsAt: new Date(),
+        acceptedPrivacyAt: new Date()
+      }
+    });
+
+    if (created) {
+      logger.info('Creating new user from OAuth login', { 
+        email, 
+        cognitoSub,
+        hasAvatar: !!idTokenDecoded.picture
+      });
+
+      // Crea preferenze per nuovo utente
+      await Promise.all([
+        UserPreferences.create({ userId: newUser.id }),
+        NotificationPreferences.create({ userId: newUser.id })
+      ]);
+
+      // Aggiungi a gruppo Cognito
+      await this.addUserToGroup(cognitoSub, config.cognito.groups.clients);
+    }
+
+    // Ricarica con include per avere la struttura completa
+    const userWithRelations = await User.findByPk(newUser.id, {
+      include: [{ model: Agency, as: 'agency' }]
+    });
+
+    return userWithRelations!;
+  }
+
+  /**
+   * Collega OAuth a un account esistente (account linking)
+   */
+  private async linkOAuthToExistingUser(
+    existingUser: User,
+    cognitoSub: string,
+    idTokenDecoded: any
+  ): Promise<User> {
+    logger.info('Linking OAuth account to existing email/password account', { 
+      email: existingUser.email, 
+      existingCognitoSub: existingUser.cognitoSub,
+      newCognitoSub: cognitoSub,
+      hasAvatar: !!idTokenDecoded.picture,
+      existingProviders: existingUser.linkedProviders
+    });
+
+    // Aggiungi 'google' a linkedProviders se non è già presente
+    const currentProviders = existingUser.linkedProviders || [];
+    const updatedProviders = currentProviders.includes('google') 
+      ? currentProviders 
+      : [...currentProviders, 'google'];
+
+    await existingUser.update({
+      cognitoSub: cognitoSub,
+      cognitoUsername: existingUser.email,
+      isVerified: true, // OAuth providers verificano l'email
+      linkedProviders: updatedProviders,
+      firstName: existingUser.firstName || idTokenDecoded.given_name || '',
+      lastName: existingUser.lastName || idTokenDecoded.family_name || '',
+      avatar: existingUser.avatar || idTokenDecoded.picture || undefined
+    });
+
+    // Aggiungi a gruppo Cognito
+    await this.addUserToGroup(cognitoSub, config.cognito.groups.clients);
+
+    return existingUser;
+  }
+
+  /**
+   * Aggiunge utente a gruppo Cognito
+   */
+  private async addUserToGroup(username: string, groupName: string): Promise<void> {
+    try {
+      const addToGroupCommand = new AdminAddUserToGroupCommand({
+        UserPoolId: config.cognito.userPoolId,
+        Username: username,
+        GroupName: groupName
+      });
+      await cognitoClient.send(addToGroupCommand);
+    } catch (groupError) {
+      logger.warn('Could not add user to Cognito group:', { username, groupName, error: groupError });
+    }
+  }
+
+  /**
+   * Genera uno state casuale per protezione CSRF
+   */
+  private generateRandomState(): string {
+    return Buffer.from(Math.random().toString()).toString('base64').substring(0, 32);
+  }
+
+  /**
+   * Mappa il nome del provider al formato richiesto da Cognito
+   */
+  private mapProviderName(provider: string): string {
+    const providerMap: { [key: string]: string } = {
+      'google': 'Google'
+    };
+
+    return providerMap[provider.toLowerCase()] || provider;
   }
 
   /**
