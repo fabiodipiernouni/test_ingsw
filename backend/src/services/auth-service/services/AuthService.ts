@@ -1,4 +1,17 @@
-import jwt, { SignOptions } from 'jsonwebtoken';
+import {
+  CognitoIdentityProviderClient,
+  SignUpCommand,
+  InitiateAuthCommand,
+  RespondToAuthChallengeCommand,
+  AdminGetUserCommand,
+  AdminAddUserToGroupCommand,
+  ChangePasswordCommand,
+  ForgotPasswordCommand,
+  ConfirmForgotPasswordCommand,
+  GlobalSignOutCommand,
+  AuthFlowType,
+  ChallengeNameType
+} from '@aws-sdk/client-cognito-identity-provider';
 import { User } from '@shared/database/models/User';
 import { Agency } from '@shared/database/models/Agency';
 import { UserPreferences } from '@shared/database/models/UserPreferences';
@@ -6,6 +19,14 @@ import { NotificationPreferences } from '@shared/database/models/NotificationPre
 import config from '@shared/config';
 import logger from '@shared/utils/logger';
 
+// Cognito Client
+const cognitoClient = new CognitoIdentityProviderClient({
+  region: config.cognito.region,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
+  }
+});
 
 // Types
 interface RegisterData {
@@ -26,7 +47,13 @@ interface LoginCredentials {
 interface AuthResponse {
   user: UserResponse;
   accessToken: string;
+  idToken: string;
   refreshToken: string;
+  tokenType: string;
+  challenge?: {
+    name: string;
+    session: string;
+  };
 }
 
 interface UserResponse {
@@ -58,14 +85,15 @@ interface AgencyResponse {
   website?: string;
 }
 
-interface ChangePasswordData {
-  currentPassword: string;
+interface CompleteNewPasswordData {
+  email: string;
   newPassword: string;
+  session: string;
 }
 
-interface EmailVerificationData {
-  email: string;
-  otp: string;
+interface SocialLoginData {
+  authorizationCode: string;
+  redirectUri: string;
 }
 
 // Custom error classes
@@ -101,7 +129,7 @@ class ConflictError extends Error {
 
 export class AuthService {
   /**
-   * Registrazione nuovo utente
+   * Registrazione nuovo utente con Cognito
    */
   async register(registerData: RegisterData): Promise<AuthResponse> {
     try {
@@ -116,58 +144,146 @@ export class AuthService {
         throw new ValidationError('Privacy policy acceptance is required');
       }
 
-      // Verifica se l'utente esiste già
+      // Verifica se l'utente esiste già nel DB locale
       const existingUser = await User.findOne({ where: { email } });
       if (existingUser) {
         throw new ConflictError('User with this email already exists');
       }
 
-      // Crea l'utente
-      const userData = {
+      // 1. REGISTRA UTENTE IN COGNITO
+      const signUpCommand = new SignUpCommand({
+        ClientId: config.cognito.clientId,
+        Username: email,
+        Password: password,
+        UserAttributes: [
+          { Name: 'email', Value: email },
+          { Name: 'given_name', Value: firstName },
+          { Name: 'family_name', Value: lastName },
+          ...(phone ? [{ Name: 'phone_number', Value: phone }] : [])
+        ]
+      });
+
+      const signUpResponse = await cognitoClient.send(signUpCommand);
+      const cognitoSub = signUpResponse.UserSub;
+
+      if (!cognitoSub) {
+        throw new Error('Failed to create user in Cognito');
+      }
+
+      // 2. AGGIUNGI AL GRUPPO 'clients' (ruolo default)
+      const addToGroupCommand = new AdminAddUserToGroupCommand({
+        UserPoolId: config.cognito.userPoolId,
+        Username: email,
+        GroupName: config.cognito.groups.clients
+      });
+
+      await cognitoClient.send(addToGroupCommand);
+
+      // 3. CREA UTENTE NEL DB LOCALE
+      const user = await User.create({
         email,
-        password,
+        cognitoSub,
+        cognitoUsername: email,
         firstName,
         lastName,
         phone,
-        role: 'client' as const,
-        acceptTerms,
-        acceptPrivacy,
-        acceptedTermsAt: acceptTerms ? new Date() : null,
-        acceptedPrivacyAt: acceptPrivacy ? new Date() : null,
+        role: 'client',
+        acceptedTermsAt: acceptTerms ? new Date() : undefined,
+        acceptedPrivacyAt: acceptPrivacy ? new Date() : undefined,
         isActive: true,
-        isVerified: false
-      };
+        isVerified: false // Sarà true dopo conferma email
+      });
 
-      const user = await User.create(userData);
-
-      // Crea preferenze predefinite
+      // 4. CREA PREFERENZE PREDEFINITE
       await UserPreferences.create({ userId: user.id });
       await NotificationPreferences.create({ userId: user.id });
 
-      // Genera token
-      const { accessToken, refreshToken } = this.generateTokens(user);
+      logger.info('User registered successfully', { email, cognitoSub });
 
+      // 5. RITORNA INFORMAZIONI (nessun token ancora - deve confermare email)
       return {
         user: this.formatUserResponse(user),
-        accessToken,
-        refreshToken
+        accessToken: '',
+        idToken: '',
+        refreshToken: '',
+        tokenType: 'Bearer',
+        challenge: {
+          name: 'EMAIL_VERIFICATION_REQUIRED',
+          session: ''
+        }
       };
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Error in register service:', error);
+
+      // Gestione errori Cognito
+      if (error.name === 'UsernameExistsException') {
+        throw new ConflictError('User already exists in authentication system');
+      }
+
+      if (error.name === 'InvalidPasswordException') {
+        throw new ValidationError('Password does not meet requirements');
+      }
+
       throw error;
     }
   }
 
   /**
-   * Login utente
+   * Login utente con Cognito
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
       const { email, password } = credentials;
 
-      // Trova l'utente con le associazioni
-      const user = await User.findOne({ 
-        where: { email },
+      // 1. AUTENTICA CON COGNITO
+      const authCommand = new InitiateAuthCommand({
+        AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
+        ClientId: config.cognito.clientId,
+        AuthParameters: {
+          USERNAME: email,
+          PASSWORD: password
+        }
+      });
+
+      const authResponse = await cognitoClient.send(authCommand);
+
+      // 2. GESTISCI CHALLENGE (se presente)
+      if (authResponse.ChallengeName) {
+        // Utente deve cambiare password (creato da admin)
+        if (authResponse.ChallengeName === ChallengeNameType.NEW_PASSWORD_REQUIRED) {
+          // Recupera utente dal DB
+          const user = await User.findOne({ where: { email } });
+          
+          return {
+            user: user ? this.formatUserResponse(user) : ({} as UserResponse),
+            accessToken: '',
+            idToken: '',
+            refreshToken: '',
+            tokenType: 'Bearer',
+            challenge: {
+              name: authResponse.ChallengeName,
+              session: authResponse.Session || ''
+            }
+          };
+        }
+
+        throw new AuthenticationError(`Challenge not supported: ${authResponse.ChallengeName}`);
+      }
+
+      // 3. OTTIENI TOKEN DA COGNITO
+      const { AccessToken, IdToken, RefreshToken } = authResponse.AuthenticationResult || {};
+
+      if (!AccessToken || !IdToken || !RefreshToken) {
+        throw new AuthenticationError('Failed to obtain tokens from Cognito');
+      }
+
+      // 4. DECODIFICA ID TOKEN PER OTTENERE cognitoSub
+      const idTokenDecoded = this.decodeToken(IdToken);
+      const cognitoSub = idTokenDecoded.sub;
+
+      // 5. TROVA UTENTE NEL DB LOCALE
+      const user = await User.findOne({
+        where: { cognitoSub },
         include: [
           {
             model: Agency,
@@ -178,13 +294,7 @@ export class AuthService {
       });
 
       if (!user) {
-        throw new AuthenticationError('Invalid email or password');
-      }
-
-      // Verifica la password
-      const isPasswordValid = await user.comparePassword(password);
-      if (!isPasswordValid) {
-        throw new AuthenticationError('Invalid email or password');
+        throw new NotFoundError('User not found in local database');
       }
 
       // Verifica che l'utente sia attivo
@@ -192,175 +302,256 @@ export class AuthService {
         throw new AuthenticationError('Account is disabled');
       }
 
-      // Genera token
-      const { accessToken, refreshToken } = this.generateTokens(user);
+      // 6. AGGIORNA lastLoginAt
+      await user.update({ lastLoginAt: new Date() });
+
+      logger.info('User logged in successfully', { email, cognitoSub });
 
       return {
         user: this.formatUserResponse(user),
-        accessToken,
-        refreshToken
+        accessToken: AccessToken,
+        idToken: IdToken,
+        refreshToken: RefreshToken,
+        tokenType: 'Bearer'
       };
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Error in login service:', error);
+
+      // Gestione errori Cognito
+      if (error.name === 'NotAuthorizedException') {
+        throw new AuthenticationError('Invalid email or password');
+      }
+
+      if (error.name === 'UserNotConfirmedException') {
+        throw new AuthenticationError('Email not verified. Please check your email.');
+      }
+
       throw error;
     }
   }
 
   /**
-   * Refresh token
+   * Completa il cambio password obbligatorio (NEW_PASSWORD_REQUIRED challenge)
    */
-  async refreshToken(token: string): Promise<{ accessToken: string; refreshToken: string }> {
+  async completeNewPasswordChallenge(data: CompleteNewPasswordData): Promise<AuthResponse> {
     try {
-      // Verifica il refresh token
-      const decoded = jwt.verify(token, config.jwt.refreshSecret) as any;
-      
-      // Trova l'utente
-      const user = await User.findByPk(decoded.userId);
-      if (!user || !user.isActive) {
-        throw new AuthenticationError('Invalid refresh token');
-      }
+      const { email, newPassword, session } = data;
 
-      // Genera nuovi token
-      return this.generateTokens(user);
-    } catch (error) {
-      logger.error('Error in refreshToken service:', error);
-      if (error instanceof jwt.JsonWebTokenError) {
-        throw new AuthenticationError('Invalid refresh token');
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Verifica token
-   */
-  async verifyToken(token: string): Promise<UserResponse> {
-    try {
-      const decoded = jwt.verify(token, config.jwt.secret) as any;
-      
-      const user = await User.findByPk(decoded.userId, {
-        include: [
-          {
-            model: Agency,
-            as: 'agency',
-            attributes: ['id', 'name', 'street', 'city', 'province', 'zipCode', 'country', 'phone', 'email', 'website']
-          }
-        ]
+      // 1. RISPONDI AL CHALLENGE COGNITO
+      const respondCommand = new RespondToAuthChallengeCommand({
+        ChallengeName: ChallengeNameType.NEW_PASSWORD_REQUIRED,
+        ClientId: config.cognito.clientId,
+        Session: session,
+        ChallengeResponses: {
+          USERNAME: email,
+          NEW_PASSWORD: newPassword
+        }
       });
 
-      if (!user || !user.isActive) {
-        throw new AuthenticationError('Invalid token');
+      const response = await cognitoClient.send(respondCommand);
+
+      const { AccessToken, IdToken, RefreshToken } = response.AuthenticationResult || {};
+
+      if (!AccessToken || !IdToken || !RefreshToken) {
+        throw new AuthenticationError('Failed to complete password challenge');
       }
 
-      return this.formatUserResponse(user);
-    } catch (error) {
-      logger.error('Error in verifyToken service:', error);
-      if (error instanceof jwt.JsonWebTokenError) {
-        throw new AuthenticationError('Invalid token');
-      }
-      throw error;
-    }
-  }
+      // 2. DECODIFICA TOKEN E RECUPERA UTENTE
+      const idTokenDecoded = this.decodeToken(IdToken);
+      const cognitoSub = idTokenDecoded.sub;
 
-  /**
-   * Cambio password
-   */
-  async changePassword(userId: string, passwordData: ChangePasswordData): Promise<void> {
-    try {
-      const { currentPassword, newPassword } = passwordData;
+      const user = await User.findOne({
+        where: { cognitoSub },
+        include: [{ model: Agency, as: 'agency' }]
+      });
 
-      const user = await User.findByPk(userId);
       if (!user) {
         throw new NotFoundError('User not found');
       }
 
-      // Verifica password corrente
-      const isCurrentPasswordValid = await user.comparePassword(currentPassword);
-      if (!isCurrentPasswordValid) {
+      // 3. AGGIORNA isVerified (primo login completato)
+      if (!user.isVerified) {
+        await user.update({ isVerified: true });
+      }
+
+      logger.info('Password challenge completed', { email, cognitoSub });
+
+      return {
+        user: this.formatUserResponse(user),
+        accessToken: AccessToken,
+        idToken: IdToken,
+        refreshToken: RefreshToken,
+        tokenType: 'Bearer'
+      };
+    } catch (error: any) {
+      logger.error('Error in completeNewPasswordChallenge:', error);
+
+      if (error.name === 'InvalidPasswordException') {
+        throw new ValidationError('Password does not meet requirements');
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Refresh token con Cognito
+   */
+  async refreshToken(refreshToken: string): Promise<{ accessToken: string; idToken: string }> {
+    try {
+      // 1. RICHIEDI NUOVI TOKEN A COGNITO
+      const refreshCommand = new InitiateAuthCommand({
+        AuthFlow: AuthFlowType.REFRESH_TOKEN_AUTH,
+        ClientId: config.cognito.clientId,
+        AuthParameters: {
+          REFRESH_TOKEN: refreshToken
+        }
+      });
+
+      const response = await cognitoClient.send(refreshCommand);
+
+      const { AccessToken, IdToken } = response.AuthenticationResult || {};
+
+      if (!AccessToken || !IdToken) {
+        throw new AuthenticationError('Failed to refresh tokens');
+      }
+
+      logger.info('Tokens refreshed successfully');
+
+      return {
+        accessToken: AccessToken,
+        idToken: IdToken
+      };
+    } catch (error: any) {
+      logger.error('Error in refreshToken service:', error);
+
+      if (error.name === 'NotAuthorizedException') {
+        throw new AuthenticationError('Invalid or expired refresh token');
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Logout globale (invalida tutti i token dell'utente)
+   */
+  async logout(accessToken: string): Promise<void> {
+    try {
+      const signOutCommand = new GlobalSignOutCommand({
+        AccessToken: accessToken
+      });
+
+      await cognitoClient.send(signOutCommand);
+
+      logger.info('User logged out successfully');
+    } catch (error) {
+      logger.error('Error in logout service:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cambia password utente autenticato
+   */
+  async changePassword(accessToken: string, oldPassword: string, newPassword: string): Promise<void> {
+    try {
+      const changePasswordCommand = new ChangePasswordCommand({
+        AccessToken: accessToken,
+        PreviousPassword: oldPassword,
+        ProposedPassword: newPassword
+      });
+
+      await cognitoClient.send(changePasswordCommand);
+
+      logger.info('Password changed successfully');
+    } catch (error: any) {
+      logger.error('Error in changePassword service:', error);
+
+      if (error.name === 'NotAuthorizedException') {
         throw new AuthenticationError('Current password is incorrect');
       }
 
-      // Aggiorna password (sarà hashata automaticamente dal modello)
-      await user.update({ password: newPassword });
-    } catch (error) {
-      logger.error('Error in changePassword service:', error);
+      if (error.name === 'InvalidPasswordException') {
+        throw new ValidationError('New password does not meet requirements');
+      }
+
+      if (error.name === 'LimitExceededException') {
+        throw new ValidationError('Too many password change attempts. Please try again later.');
+      }
+
       throw error;
     }
   }
 
   /**
-   * Invio verifica email
+   * Forgot password - Invia codice di reset via email
    */
-  async sendEmailVerification(email: string): Promise<void> {
+  async forgotPassword(email: string): Promise<void> {
     try {
-      const user = await User.findOne({ where: { email } });
-      if (!user) {
-        throw new NotFoundError('User not found');
+      const forgotPasswordCommand = new ForgotPasswordCommand({
+        ClientId: config.cognito.clientId,
+        Username: email
+      });
+
+      await cognitoClient.send(forgotPasswordCommand);
+
+      logger.info('Password reset code sent', { email });
+    } catch (error: any) {
+      logger.error('Error in forgotPassword service:', error);
+
+      if (error.name === 'UserNotFoundException') {
+        // Per sicurezza, non rivelare che l'utente non esiste
+        logger.warn('Password reset requested for non-existent user', { email });
+        return; // Silenzioso
       }
 
-      if (user.isVerified) {
-        throw new ConflictError('Email already verified');
-      }
-
-      // TODO: Implementare invio OTP via email
-      // Per ora logghiamo soltanto
-      logger.info('Email verification requested for user:', { email, userId: user.id });
-    } catch (error) {
-      logger.error('Error in sendEmailVerification service:', error);
       throw error;
     }
   }
 
   /**
-   * Verifica OTP email
+   * Conferma reset password con codice
    */
-  async verifyEmailOtp(verificationData: EmailVerificationData): Promise<UserResponse> {
+  async confirmForgotPassword(email: string, code: string, newPassword: string): Promise<void> {
     try {
-      const { email, otp } = verificationData;
+      const confirmCommand = new ConfirmForgotPasswordCommand({
+        ClientId: config.cognito.clientId,
+        Username: email,
+        ConfirmationCode: code,
+        Password: newPassword
+      });
 
-      const user = await User.findOne({ where: { email } });
-      if (!user) {
-        throw new NotFoundError('User not found');
+      await cognitoClient.send(confirmCommand);
+
+      logger.info('Password reset completed', { email });
+    } catch (error: any) {
+      logger.error('Error in confirmForgotPassword service:', error);
+
+      if (error.name === 'CodeMismatchException') {
+        throw new ValidationError('Invalid or expired verification code');
       }
 
-      // TODO: Implementare verifica OTP
-      // Per ora accettiamo sempre "123456" come OTP valido
-      if (otp !== '123456') {
-        throw new AuthenticationError('Invalid OTP');
+      if (error.name === 'InvalidPasswordException') {
+        throw new ValidationError('Password does not meet requirements');
       }
 
-      // Marca email come verificata
-      await user.update({ isVerified: true });
-
-      return this.formatUserResponse(user);
-    } catch (error) {
-      logger.error('Error in verifyEmailOtp service:', error);
       throw error;
     }
   }
 
   /**
-   * Genera token JWT
+   * Decodifica token JWT (senza validazione - solo per lettura claims)
    */
-  private generateTokens(user: User): { accessToken: string; refreshToken: string } {
-    const payload = {
-      userId: user.id,
-      email: user.email,
-      role: user.role
-    };
+  private decodeToken(token: string): any {
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      throw new Error('Invalid token format');
+    }
 
-    const accessTokenOptions: SignOptions = {
-      expiresIn: (config.jwt.expiresIn || '15m') as any
-    };
-
-    const refreshTokenOptions: SignOptions = {
-      expiresIn: (config.jwt.refreshExpiresIn || '7d') as any
-    };
-
-    const accessToken = jwt.sign(payload, config.jwt.secret, accessTokenOptions);
-    const refreshToken = jwt.sign(payload, config.jwt.refreshSecret, refreshTokenOptions);
-
-    return { accessToken, refreshToken };
+    const payload = parts[1];
+    const decoded = Buffer.from(payload, 'base64').toString('utf-8');
+    return JSON.parse(decoded);
   }
 
   /**

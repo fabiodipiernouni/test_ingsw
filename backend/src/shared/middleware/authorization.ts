@@ -36,8 +36,8 @@ export const requireAgencyAdmin = async (
       });
     }
 
-    // Verifica che l'utente sia admin e abbia un'agenzia
-    if (user.role !== 'admin') {
+    // Verifica che l'utente sia admin/owner e abbia un'agenzia
+    if (!['admin', 'owner'].includes(user.role)) {
       return res.status(403).json({
         success: false,
         message: 'Only agency administrators can create agents'
@@ -64,10 +64,10 @@ export const requireAgencyAdmin = async (
 };
 
 /**
- * Middleware per verificare che l'utente sia il creator dell'agenzia
+ * Middleware per verificare che l'utente sia il owner dell'agenzia
  * e possa creare admin per la sua agenzia
  */
-export const requireAgencyCreator = async (
+export const requireAgencyOwner = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
@@ -95,11 +95,18 @@ export const requireAgencyCreator = async (
       });
     }
 
-    // Verifica che l'utente sia il creator dell'agenzia
+    // Verifica che l'utente sia il owner dell'agenzia
+    if (user.role !== 'owner') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only agency owners can perform this action'
+      });
+    }
+
     if (user.agency.createdBy !== userId) {
       return res.status(403).json({
         success: false,
-        message: 'Only the agency creator can create administrators'
+        message: 'Only the agency owner can create new admins'
       });
     }
 
@@ -107,7 +114,41 @@ export const requireAgencyCreator = async (
     req.userAgency = user.agency;
     next();
   } catch (error) {
-    logger.error('Error in requireAgencyCreator middleware:', error);
+    logger.error('Error in requireAgencyOwner middleware:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Middleware per verificare che l'utente sia admin O owner
+ */
+export const requireAdminOrOwner = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
+    if (!req.user || !['admin', 'owner'].includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin or owner role required'
+      });
+    }
+
+    next();
+  } catch (error) {
+    logger.error('Error in requireAdminOrOwner middleware:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'

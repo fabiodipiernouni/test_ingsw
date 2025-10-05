@@ -1,12 +1,36 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { User } from '@shared/database/models';
+import jwksRsa from 'jwks-rsa';
+import { User, Agency } from '@shared/database/models';
 import { AuthenticatedRequest } from '@shared/types/common.types';
 import { unauthorizedResponse, forbiddenResponse } from '@shared/utils/helpers';
-import { config } from '../../config';
+import appConfig from '@shared/config';
+
+// JWKS Client per validare token Cognito
+const jwksClient = jwksRsa({
+  cache: true,
+  rateLimit: true,
+  jwksRequestsPerMinute: 10,
+  jwksUri: `https://cognito-idp.${appConfig.cognito.region}.amazonaws.com/${appConfig.cognito.userPoolId}/.well-known/jwks.json`
+});
 
 /**
- * JWT Authentication middleware
+ * Helper per ottenere chiave pubblica da JWKS
+ */
+function getKey(header: any, callback: any) {
+  jwksClient.getSigningKey(header.kid, (err, key) => {
+    if (err) {
+      callback(err);
+      return;
+    }
+    const signingKey = key?.getPublicKey();
+    callback(null, signingKey);
+  });
+}
+
+/**
+ * JWT Authentication middleware con Cognito
+ * Valida il token JWT di Cognito e carica l'utente dal DB
  */
 export const authenticateToken = async (
   req: AuthenticatedRequest,
@@ -21,33 +45,83 @@ export const authenticateToken = async (
       return unauthorizedResponse(res, 'Access token required');
     }
 
-    const decoded = jwt.verify(token, config.auth.jwtSecret) as any;
-    
-    // Fetch user from database to ensure it still exists and is active
-    const user = await User.findByPk(decoded.userId);
-    
-    if (!user) {
-      return unauthorizedResponse(res, 'User not found');
-    }
+    // Valida token JWT Cognito con firma RSA256
+    jwt.verify(
+      token,
+      getKey,
+      {
+        issuer: appConfig.cognito.issuer,
+        algorithms: ['RS256']
+      },
+      async (err, decoded: any) => {
+        if (err) {
+          if (err.name === 'TokenExpiredError') {
+            return unauthorizedResponse(res, 'Token expired');
+          }
+          return unauthorizedResponse(res, 'Invalid token');
+        }
 
-    // Add user to request object
-    (req as any).user = user.toJSON();
-    next();
+        try {
+          // Estrai dati da token Cognito
+          const cognitoSub = decoded.sub;
+          const cognitoUsername = decoded.username || decoded['cognito:username'];
+          const cognitoGroups: string[] = decoded['cognito:groups'] || [];
+
+          // Recupera utente dal DB locale
+          const user = await User.findOne({
+            where: { cognitoSub },
+            include: [
+              {
+                model: Agency,
+                as: 'agency'
+              }
+            ]
+          });
+
+          if (!user) {
+            return unauthorizedResponse(res, 'User not found');
+          }
+
+          if (!user.isActive) {
+            return forbiddenResponse(res, 'Account is disabled');
+          }
+
+          // Determina ruolo dai Cognito Groups
+          let role: 'client' | 'agent' | 'admin' | 'owner' = 'client';
+          
+          if (cognitoGroups.includes(appConfig.cognito.groups.owners)) {
+            role = 'owner';
+          } else if (cognitoGroups.includes(appConfig.cognito.groups.admins)) {
+            role = 'admin';
+          } else if (cognitoGroups.includes(appConfig.cognito.groups.agents)) {
+            role = 'agent';
+          } else if (cognitoGroups.includes(appConfig.cognito.groups.clients)) {
+            role = 'client';
+          }
+
+          // Sincronizza ruolo con DB se diverso
+          if (user.role !== role) {
+            await user.update({ role });
+            user.role = role;
+          }
+
+          // Aggiungi user a request
+          req.user = user.toJSON();
+          next();
+        } catch (dbError) {
+          console.error('Database error in auth middleware:', dbError);
+          return unauthorizedResponse(res, 'Authentication failed');
+        }
+      }
+    );
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      return unauthorizedResponse(res, 'Invalid token');
-    }
-    
-    if (error instanceof jwt.TokenExpiredError) {
-      return unauthorizedResponse(res, 'Token expired');
-    }
-
+    console.error('Authentication error:', error);
     return unauthorizedResponse(res, 'Authentication failed');
   }
 };
 
 /**
- * Optional authentication middleware (doesn't fail if no token)
+ * Optional authentication middleware con Cognito (doesn't fail if no token)
  */
 export const optionalAuth = async (
   req: AuthenticatedRequest,
@@ -59,28 +133,58 @@ export const optionalAuth = async (
     const token = authHeader && authHeader.split(' ')[1];
 
     if (token) {
-      const decoded = jwt.verify(token, config.auth.jwtSecret) as any;
-      const user = await User.findByPk(decoded.userId);
-      
-      //TODO: decidere se si vuole che un utente sia verificato (ha confermato la mail) per usare qualsiasi funzionalità dell'applicazione, al momento non è obbligatorio
-      if (user) {
-        req.user = user.toJSON();
-      }
-    }
-    
-    next();
-  } catch (error: any) {
-    // TODO: decidere se in caso di token non valido si vuole bloccare la richiesta o ignorare l'errore
-    // nel caso non si voglia bloccare la richiesta cambiare tutto il codice nel catch in next();
-    if (error instanceof jwt.JsonWebTokenError) {
-      return unauthorizedResponse(res, 'Invalid token');
-    }
-    
-    if (error instanceof jwt.TokenExpiredError) {
-      return unauthorizedResponse(res, 'Token expired');
-    }
+      // Valida token Cognito
+      jwt.verify(
+        token,
+        getKey,
+        {
+          issuer: appConfig.cognito.issuer,
+          algorithms: ['RS256']
+        },
+        async (err, decoded: any) => {
+          if (!err && decoded) {
+            try {
+              const cognitoSub = decoded.sub;
+              const cognitoGroups: string[] = decoded['cognito:groups'] || [];
 
-    return unauthorizedResponse(res, 'Authentication failed');
+              const user = await User.findOne({
+                where: { cognitoSub },
+                include: [{ model: Agency, as: 'agency' }]
+              });
+
+              if (user && user.isActive) {
+                // Determina ruolo
+                let role: 'client' | 'agent' | 'admin' | 'owner' = 'client';
+                if (cognitoGroups.includes(appConfig.cognito.groups.owners)) {
+                  role = 'owner';
+                } else if (cognitoGroups.includes(appConfig.cognito.groups.admins)) {
+                  role = 'admin';
+                } else if (cognitoGroups.includes(appConfig.cognito.groups.agents)) {
+                  role = 'agent';
+                }
+
+                // Sincronizza ruolo
+                if (user.role !== role) {
+                  await user.update({ role });
+                  user.role = role;
+                }
+
+                req.user = user.toJSON();
+              }
+            } catch (dbError) {
+              // Ignora errori DB in optionalAuth
+              console.warn('DB error in optionalAuth:', dbError);
+            }
+          }
+          next();
+        }
+      );
+    } else {
+      next();
+    }
+  } catch (error) {
+    // In optionalAuth ignoriamo gli errori e proseguiamo senza user
+    next();
   }
 };
 
@@ -106,18 +210,18 @@ export const requireRole = (roles: string | string[]) => {
 /**
  * Agent authorization middleware
  */
-export const requireAgent = requireRole(['agent', 'admin']);
+export const requireAgent = requireRole(['agent', 'admin', 'owner']);
 
 /**
  * Admin authorization middleware
  */
-export const requireAdmin = requireRole('admin');
+export const requireAdmin = requireRole(['admin', 'owner']);
 
 /**
  * Resource ownership middleware
  */
 export const requireOwnership = (
-  getResourceUserId: (req: AuthenticatedRequest) => string | Promise<string>
+  getResourceUserId: (req: AuthenticatedRequest) => string | Promise<string | undefined> | undefined
 ) => {
   return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -125,14 +229,14 @@ export const requireOwnership = (
         return unauthorizedResponse(res, 'Authentication required');
       }
 
-      // Admins can access any resource
-      if (req.user.role === 'admin') {
+      // Owners and admins can access any resource
+      if (req.user.role === 'admin' || req.user.role === 'owner') {
         return next();
       }
 
       const resourceUserId = await getResourceUserId(req);
       
-      if (req.user.id !== resourceUserId) {
+      if (!resourceUserId || req.user.id !== resourceUserId) {
         return forbiddenResponse(res, 'Access denied to this resource');
       }
 
@@ -153,35 +257,9 @@ export const authenticateService = (
 ) => {
   const serviceToken = req.headers['x-service-token'];
   
-  // TODO: Add serviceSecret to config or remove this middleware if not needed
-  if (!serviceToken || serviceToken !== 'temp-service-secret') {
+  if (!serviceToken || serviceToken !== appConfig.serviceSecret) {
     return unauthorizedResponse(res, 'Invalid service token');
   }
 
   next();
-};
-
-/**
- * Generate JWT token
- */
-export const generateToken = (payload: any, expiresIn?: string): string => {
-  return jwt.sign(payload, config.auth.jwtSecret, {
-    expiresIn: expiresIn || config.auth.jwtExpiration
-  } as jwt.SignOptions);
-};
-
-/**
- * Generate refresh token
- */
-export const generateRefreshToken = (payload: any): string => {
-  return jwt.sign(payload, config.auth.jwtSecret, {
-    expiresIn: config.auth.refreshTokenExpiration
-  } as jwt.SignOptions);
-};
-
-/**
- * Verify refresh token
- */
-export const verifyRefreshToken = (token: string): any => {
-  return jwt.verify(token, config.auth.jwtSecret);
 };

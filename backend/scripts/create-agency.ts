@@ -1,20 +1,35 @@
 #!/usr/bin/env node
 
 /**
- * Script per creare una nuova agenzia immobiliare con utente admin
+ * Script per creare una nuova agenzia immobiliare con utente owner
  * 
  * Questo script:
  * 1. Chiede i dati dell'agenzia
- * 2. Crea l'agenzia nel database
- * 3. Crea un utente admin con credenziali predefinite
- * 4. Associa l'utente all'agenzia creata
- * 5. Imposta il flag shouldChangePassword a true
+ * 2. Crea l'owner in AWS Cognito (con email automatica)
+ * 3. Crea l'agenzia nel database
+ * 4. Crea il record utente locale con cognitoSub
+ * 5. Associa l'owner all'agenzia creata
  */
 
 import readline from 'readline';
 import { v4 as uuidv4 } from 'uuid';
 import { database } from '../src/shared/database';
 import { User, Agency } from '../src/shared/database/models';
+import {
+  CognitoIdentityProviderClient,
+  AdminCreateUserCommand,
+  AdminAddUserToGroupCommand
+} from '@aws-sdk/client-cognito-identity-provider';
+import config from '../src/shared/config';
+
+// Cognito Client
+const cognitoClient = new CognitoIdentityProviderClient({
+  region: config.cognito.region,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
+  }
+});
 
 // Configurazione readline per input utente
 const rl = readline.createInterface({
@@ -35,15 +50,6 @@ function askQuestion(question: string): Promise<string> {
 function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
-}
-
-function generateRandomPassword(length: number = 12): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=';
-  let password = '';
-  for (let i = 0; i < length; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return password;
 }
 
 // Funzione principale
@@ -73,19 +79,36 @@ async function createAgencyAndAdmin() {
 
     const description = await askQuestion('Descrizione (opzionale): ');
     const street = await askQuestion('Indirizzo via e numero (opzionale): '); //TODO: potremmo integrare un servizio di geocoding per validare l'indirizzo
-    const city = await askQuestion('Città (opzionale): ');
-    const province = await askQuestion('Provincia (opzionale): ');
-    const zipCode = await askQuestion('CAP (opzionale): ');
-    const country = await askQuestion('Paese (opzionale, default: Italy): ');
+    let city, province, zipCode, country;
+    if (street) {
+      city = await askQuestion('Città: ');
+      if(!city) {
+        throw new Error('La città è obbligatoria');
+      }
+      province = await askQuestion('Provincia: ');
+      if(!province) {
+        throw new Error('La provincia è obbligatoria');
+      }
+      zipCode = await askQuestion('CAP: ');
+      if(!zipCode) {
+        throw new Error('Il CAP è obbligatorio');
+      }
+      country = await askQuestion('Paese (opzionale, default: Italia): ');
+    } else {
+      city = null;
+      province = null;
+      zipCode = null;
+      country = null;
+    }
     const phone = await askQuestion('Telefono (opzionale): ');
     const email = await askQuestion('Email agenzia (opzionale): ');
-    const website = await askQuestion('Sito web (opzionale): ');
-    const licenseNumber = await askQuestion('Numero licenza (opzionale): ');
-
     // Validazione email se fornita
     if (email && !isValidEmail(email)) {
       throw new Error('Email non valida');
     }
+
+    const website = await askQuestion('Sito web (opzionale): ');
+    const licenseNumber = await askQuestion('Numero licenza (opzionale): ');
 
     console.log('\nDATI UTENTE ADMIN');
     console.log('-'.repeat(20));
@@ -111,17 +134,13 @@ async function createAgencyAndAdmin() {
       throw new Error('Il cognome è obbligatorio');
     }
 
-    const adminPhone = await askQuestion('Telefono admin (opzionale): ');
-
-    // Credenziali predefinite
-    const randomPassword = generateRandomPassword(12);
+    const ownerPhone = await askQuestion('Telefono owner (opzionale): ');
     
     console.log('\n🔧 RIEPILOGO');
     console.log('-'.repeat(20));
     console.log(`Agenzia: ${agencyName}`);
-    console.log(`Admin: ${firstName} ${lastName} (${adminEmail})`);
-    console.log(`Password temporanea: ${randomPassword}`);
-    console.log('\nL\'utente admin sarà creato con credenziali predefinite');
+    console.log(`Owner: ${firstName} ${lastName} (${adminEmail})`);
+    console.log('\nL\'owner sarà creato in Cognito e riceverà una email con le credenziali temporanee');
     
     const confirm = await askQuestion('\nConfermi la creazione? (s/N): ');
     if (confirm.toLowerCase() !== 's' && confirm.toLowerCase() !== 'si') {
@@ -131,23 +150,56 @@ async function createAgencyAndAdmin() {
 
     console.log('\nCreazione in corso...');
 
-    // Inizio transazione
+    // 1. Crea l'owner in Cognito
+    console.log('Creazione owner in Cognito...');
+    const createUserCommand = new AdminCreateUserCommand({
+      UserPoolId: config.cognito.userPoolId,
+      Username: adminEmail,
+      UserAttributes: [
+        { Name: 'email', Value: adminEmail },
+        { Name: 'email_verified', Value: 'true' },
+        { Name: 'given_name', Value: firstName },
+        { Name: 'family_name', Value: lastName },
+        ...(ownerPhone ? [{ Name: 'phone_number', Value: ownerPhone }] : [])
+      ],
+      DesiredDeliveryMediums: ['EMAIL'] // Cognito invia email automaticamente
+    });
+
+    const cognitoResponse = await cognitoClient.send(createUserCommand);
+    const cognitoSub = cognitoResponse.User?.Attributes?.find(attr => attr.Name === 'sub')?.Value;
+
+    if (!cognitoSub) {
+      throw new Error('Failed to create owner in Cognito');
+    }
+
+    console.log('Owner creato in Cognito:', cognitoSub);
+
+    // 2. Aggiungi al gruppo 'owners'
+    const addToGroupCommand = new AdminAddUserToGroupCommand({
+      UserPoolId: config.cognito.userPoolId,
+      Username: adminEmail,
+      GroupName: config.cognito.groups.owners
+    });
+
+    await cognitoClient.send(addToGroupCommand);
+    console.log('Owner aggiunto al gruppo owners');
+
+    // Inizio transazione DB
     const transaction = await database.getInstance().transaction();
 
     try {
-      // 1. Crea l'utente admin (senza agencyId)
-
-      const adminUser = await User.create({
+      // 3. Crea il record utente locale
+      const ownerUser = await User.create({
         id: uuidv4(),
         email: adminEmail,
-        password: randomPassword,
+        cognitoSub: cognitoSub,
+        cognitoUsername: adminEmail,
         firstName: firstName,
         lastName: lastName,
-        role: 'admin',
-        phone: adminPhone || null,
-        isVerified: false,
+        role: 'owner',
+        phone: ownerPhone || null,
+        isVerified: true, // Verificato tramite Cognito
         isActive: true,
-        shouldChangePassword: true,
         agencyId: null, // sarà aggiornato dopo
         linkedProviders: [],
         reviewsCount: 0,
@@ -155,9 +207,9 @@ async function createAgencyAndAdmin() {
         acceptedTermsAt: new Date()
       }, { transaction });
 
-      console.log('Utente admin creato');
+      console.log('Record utente owner creato nel DB');
 
-      // 2. Crea l'agenzia con createdBy = adminUser.id
+      // 4. Crea l'agenzia con createdBy = ownerUser.id
       const agency = await Agency.create({
         id: uuidv4(),
         name: agencyName,
@@ -172,17 +224,17 @@ async function createAgencyAndAdmin() {
         website: website || null,
         licenseNumber: licenseNumber || null,
         isActive: true,
-        createdBy: adminUser.id
+        createdBy: ownerUser.id
       }, { transaction });
 
       console.log('Agenzia creata');
 
-      // 3. Aggiorna l'utente admin con agencyId
-      await adminUser.update({
+      // 5. Aggiorna l'utente owner con agencyId
+      await ownerUser.update({
         agencyId: agency.id
       }, { transaction });
 
-      console.log('Associazione admin-agenzia completata');
+      console.log('Associazione owner-agenzia completata');
 
       // Commit transazione
       await transaction.commit();
@@ -190,12 +242,13 @@ async function createAgencyAndAdmin() {
       console.log('\nCREAZIONE COMPLETATA!');
       console.log('=' .repeat(50));
       console.log(`Agenzia "${agencyName}" creata con ID: ${agency.id}`);
-      console.log(`Admin "${firstName} ${lastName}" creato con ID: ${adminUser.id}`);
+      console.log(`Owner "${firstName} ${lastName}" creato con ID: ${ownerUser.id}`);
       console.log(`Email: ${adminEmail}`);
-      console.log(`Password temporanea: ${randomPassword}`);
+      console.log(`Cognito Sub: ${cognitoSub}`);
       console.log('\nIMPORTANTE:');
-      console.log('   - L\'utente è stato creato con credenziali predefinite');
-      console.log('   - Sarà consigliato di cambiare la password nella pagina di onboarding');
+      console.log('   - L\'owner è stato creato in AWS Cognito');
+      console.log('   - Una email con le credenziali temporanee è stata inviata a: ' + adminEmail);
+      console.log('   - Al primo accesso sarà richiesto di cambiare la password');
 
     } catch (error) {
       await transaction.rollback();

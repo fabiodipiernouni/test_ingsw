@@ -5,21 +5,21 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'client' | 'agent' | 'admin';
+  role: 'client' | 'agent' | 'admin' | 'owner';
   avatar?: string;
   phone?: string;
   isVerified: boolean;
-  linkedProviders: Array<'google' | 'github'>;
+  cognitoSub?: string;
+  cognitoUsername?: string;
+  agencyId?: string;
   lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface AuthenticatedRequest extends Request {
-  user?: any;
+  user?: User;
   userAgency?: any;
-  file?: any;
-  files?: { [fieldname: string]: UploadedFile[]; } | UploadedFile[] | undefined;
 }
 
 export interface UploadedFile {

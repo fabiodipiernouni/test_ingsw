@@ -162,42 +162,130 @@ router.post('/refresh-token', authController.refreshToken);
 
 /**
  * @swagger
- * /verify-token:
- *   get:
- *     summary: Verifica validità token
- *     description: Verifica se un token JWT è valido e restituisce i dati dell'utente
+ * /complete-new-password:
+ *   post:
+ *     summary: Completa la challenge NEW_PASSWORD_REQUIRED
+ *     description: Imposta una nuova password quando richiesto da Cognito al primo login
  *     tags:
- *       - Token Management
- *     security:
- *       - bearerAuth: []
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - newPassword
+ *               - session
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 8
+ *               session:
+ *                 type: string
  *     responses:
  *       200:
- *         description: Token valido
+ *         description: Password impostata con successo
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/TokenVerificationResponse'
+ *               $ref: '#/components/schemas/AuthResponse'
+ *       400:
+ *         description: Dati mancanti
  *       401:
- *         description: Token non valido, mancante o scaduto
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *         description: Session non valida
  *       500:
  *         description: Errore interno del server
+ */
+router.post('/complete-new-password', authController.completeNewPassword);
+
+/**
+ * @swagger
+ * /forgot-password:
+ *   post:
+ *     summary: Inizia il processo di recupero password
+ *     description: Invia un codice di verifica via email per il reset della password
+ *     tags:
+ *       - Password Management
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Codice di reset inviato
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: Email mancante
+ *       500:
+ *         description: Errore interno del server
  */
-router.get('/verify-token', authController.verifyToken);
+router.post('/forgot-password', authController.forgotPassword);
+
+/**
+ * @swagger
+ * /confirm-forgot-password:
+ *   post:
+ *     summary: Conferma il reset della password
+ *     description: Completa il processo di recupero password con il codice ricevuto via email
+ *     tags:
+ *       - Password Management
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - code
+ *               - newPassword
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               code:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 8
+ *     responses:
+ *       200:
+ *         description: Password reset completato
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: Dati mancanti
+ *       401:
+ *         description: Codice non valido o scaduto
+ *       500:
+ *         description: Errore interno del server
+ */
+router.post('/confirm-forgot-password', authController.confirmForgotPassword);
 
 /**
  * @swagger
  * /change-password:
  *   post:
- *     summary: Cambia password utente
- *     description: Consente all'utente autenticato di cambiare la propria password
+ *     summary: Cambia password utente autenticato
+ *     description: Permette all'utente autenticato di cambiare la propria password fornendo quella attuale
  *     tags:
  *       - Password Management
  *     security:
@@ -207,7 +295,18 @@ router.get('/verify-token', authController.verifyToken);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/ChangePasswordRequest'
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 format: password
+ *               newPassword:
+ *                 type: string
+ *                 format: password
+ *                 minLength: 8
  *     responses:
  *       200:
  *         description: Password cambiata con successo
@@ -216,140 +315,12 @@ router.get('/verify-token', authController.verifyToken);
  *             schema:
  *               $ref: '#/components/schemas/SuccessResponse'
  *       400:
- *         description: Dati di input non validi o password non conforme ai requisiti
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *         description: Dati mancanti o password non valida
  *       401:
- *         description: Token non valido o password attuale errata
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       404:
- *         description: Utente non trovato
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *         description: Password attuale errata o token non valido
  *       500:
  *         description: Errore interno del server
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post('/change-password', authenticateToken as any, validate(authValidations.changePassword), authController.changePassword);
-
-/**
- * @swagger
- * /send-email-verification:
- *   post:
- *     summary: Invia codice verifica email
- *     description: Invia un codice OTP a 6 cifre all'indirizzo email specificato per la verifica
- *     tags:
- *       - Email Verification
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/EmailVerificationRequest'
- *     responses:
- *       200:
- *         description: Codice di verifica inviato con successo
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/SuccessResponse'
- *       400:
- *         description: Email non fornita
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       404:
- *         description: Email non trovata nel sistema
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       409:
- *         description: Email già verificata
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       500:
- *         description: Errore interno del server
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
-router.post('/send-email-verification', validate(authValidations.sendEmailVerification), authController.sendEmailVerification);
-
-/**
- * @swagger
- * /verify-email-otp:
- *   post:
- *     summary: Verifica codice OTP email
- *     description: Verifica il codice OTP ricevuto via email e conferma la verifica dell'indirizzo email
- *     tags:
- *       - Email Verification
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/VerifyOtpRequest'
- *     responses:
- *       200:
- *         description: Email verificata con successo
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/SuccessResponse'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       type: object
- *                       properties:
- *                         user:
- *                           $ref: '#/components/schemas/User'
- *       400:
- *         description: Email o codice OTP non forniti o non validi
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       401:
- *         description: Codice OTP non valido o scaduto
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       404:
- *         description: Email non trovata nel sistema
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       409:
- *         description: Email già verificata
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       500:
- *         description: Errore interno del server
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
-router.post('/verify-email-otp', validate(authValidations.verifyEmailOtp), authController.verifyEmailOtp);
 
 export default router;

@@ -268,36 +268,6 @@ const options = {
             }
           }
         },
-        EmailVerificationRequest: {
-          type: 'object',
-          required: ['email'],
-          properties: {
-            email: {
-              type: 'string',
-              format: 'email',
-              description: 'Email per cui inviare il codice di verifica',
-              example: 'user@example.com'
-            }
-          }
-        },
-        VerifyOtpRequest: {
-          type: 'object',
-          required: ['email', 'otp'],
-          properties: {
-            email: {
-              type: 'string',
-              format: 'email',
-              description: 'Email dell\'utente',
-              example: 'user@example.com'
-            },
-            otp: {
-              type: 'string',
-              pattern: '^[0-9]{6}$',
-              description: 'Codice OTP a 6 cifre',
-              example: '123456'
-            }
-          }
-        },
         TokenVerificationResponse: {
           type: 'object',
           properties: {
