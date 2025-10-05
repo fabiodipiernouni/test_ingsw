@@ -276,6 +276,109 @@ export class AuthController {
   }
 
   /**
+   * Conferma email con codice di verifica
+   */
+  async confirmEmail(req: Request, res: Response) {
+    try {
+      const { email, code } = req.body;
+
+      if (!email || !code) {
+        validationErrorResponse(res, ['Email and verification code are required']);
+        return;
+      }
+
+      logger.info('Email confirmation request', { email });
+
+      const result = await authService.confirmEmail(email, code);
+
+      successResponse(res, { message: result.message }, 'Email verified successfully', 200);
+
+    } catch (error: any) {
+      logger.error('Error in confirmEmail controller:', error);
+
+      if (error.name === 'ValidationError') {
+        errorResponse(res, 'INVALID_CODE', error.message, 400);
+        return;
+      }
+
+      if (error.name === 'CodeMismatchException') {
+        errorResponse(res, 'INVALID_CODE', 'Invalid verification code. Please check and try again.', 400);
+        return;
+      }
+
+      if (error.name === 'ExpiredCodeException') {
+        errorResponse(res, 'CODE_EXPIRED', 'Verification code has expired. Please request a new code.', 400);
+        return;
+      }
+
+      if (error.name === 'NotAuthorizedException') {
+        errorResponse(res, 'ALREADY_VERIFIED', 'User is already verified.', 400);
+        return;
+      }
+
+      if (error.name === 'NotFoundError' ||
+          error.name === 'UserNotFoundException' || 
+          (error.message && error.message.includes('Username/client id combination not found')) ||
+          (error.message && error.message.includes('User not found'))) {
+        notFoundResponse(res, 'User not found. Please check your email or register first.');
+        return;
+      }
+
+      if (error.name === 'InvalidParameterException') {
+        errorResponse(res, 'BAD_REQUEST', error.message || 'Invalid parameters provided.', 400);
+        return;
+      }
+
+      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to verify email', 500);
+    }
+  }
+
+  /**
+   * Reinvia codice di verifica email
+   */
+  async resendVerificationCode(req: Request, res: Response) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        validationErrorResponse(res, ['Email is required']);
+        return;
+      }
+
+      logger.info('Resend verification code request', { email });
+
+      const result = await authService.resendVerificationCode(email);
+
+      successResponse(res, { message: result.message }, 'Verification code sent', 200);
+
+    } catch (error: any) {
+      logger.error('Error in resendVerificationCode controller:', error);
+
+      if (error.name === 'NotFoundError' || error.name === 'UserNotFoundException') {
+        notFoundResponse(res, 'User not found');
+        return;
+      }
+
+      if (error.name === 'ValidationError') {
+        errorResponse(res, 'BAD_REQUEST', error.message, 400);
+        return;
+      }
+
+      if (error.name === 'InvalidParameterException') {
+        errorResponse(res, 'ALREADY_VERIFIED', 'User is already verified.', 400);
+        return;
+      }
+
+      if (error.name === 'LimitExceededException') {
+        errorResponse(res, 'TOO_MANY_REQUESTS', 'Too many requests. Please try again later.', 429);
+        return;
+      }
+
+      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to resend verification code', 500);
+    }
+  }
+
+  /**
    * Logout utente
    */
   async logout(req: Request, res: Response) {

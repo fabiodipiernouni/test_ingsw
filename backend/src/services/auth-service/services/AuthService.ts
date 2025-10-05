@@ -7,6 +7,8 @@ import {
   ChangePasswordCommand,
   ForgotPasswordCommand,
   ConfirmForgotPasswordCommand,
+  ConfirmSignUpCommand,
+  ResendConfirmationCodeCommand,
   GlobalSignOutCommand,
   AuthFlowType,
   ChallengeNameType
@@ -842,6 +844,97 @@ export class AuthService {
     const payload = parts[1];
     const decoded = Buffer.from(payload, 'base64').toString('utf-8');
     return JSON.parse(decoded);
+  }
+
+  /**
+   * Conferma email con codice di verifica
+   */
+  async confirmEmail(email: string, code: string): Promise<{ message: string }> {
+    try {
+      logger.info('Confirming email', { email });
+
+      // Conferma registrazione in Cognito
+      const confirmCommand = new ConfirmSignUpCommand({
+        ClientId: config.cognito.clientId,
+        Username: email,
+        ConfirmationCode: code
+      });
+
+      await cognitoClient.send(confirmCommand);
+
+      // Aggiorna stato verifica nel database locale
+      const user = await User.findOne({ where: { email } });
+      if (user) {
+        await user.update({ isVerified: true });
+        logger.info('User email verified in database', { userId: user.id });
+      }
+
+      logger.info('Email confirmed successfully', { email });
+
+      return {
+        message: 'Email verified successfully. You can now login.'
+      };
+    } catch (error: any) {
+      logger.error('Error confirming email:', error);
+
+      if (error.name === 'CodeMismatchException') {
+        throw new ValidationError('Invalid verification code. Please check and try again.');
+      }
+
+      if (error.name === 'ExpiredCodeException') {
+        throw new ValidationError('Verification code has expired. Please request a new code.');
+      }
+
+      if (error.name === 'NotAuthorizedException') {
+        throw new ValidationError('User is already verified.');
+      }
+
+      if (error.name === 'UserNotFoundException' || 
+          (error.message && error.message.includes('Username/client id combination not found'))) {
+        throw new NotFoundError('User not found. Please check your email or register first.');
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Reinvia codice di verifica email
+   */
+  async resendVerificationCode(email: string): Promise<{ message: string }> {
+    try {
+      logger.info('Resending verification code', { email });
+
+      // Reinvia codice in Cognito
+      const resendCommand = new ResendConfirmationCodeCommand({
+        ClientId: config.cognito.clientId,
+        Username: email
+      });
+
+      await cognitoClient.send(resendCommand);
+
+      logger.info('Verification code resent successfully', { email });
+
+      return {
+        message: 'Verification code sent to your email. Please check your inbox.'
+      };
+    } catch (error: any) {
+      logger.error('Error resending verification code:', error);
+
+      if (error.name === 'UserNotFoundException') {
+        throw new NotFoundError('User not found.');
+      }
+
+      if (error.name === 'InvalidParameterException') {
+        throw new ValidationError('User is already verified.');
+      }
+
+      if (error.name === 'LimitExceededException') {
+        throw new ValidationError('Too many requests. Please try again later.');
+      }
+
+      throw error;
+    }
   }
 
   /**

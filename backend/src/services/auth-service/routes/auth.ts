@@ -282,6 +282,93 @@ router.post('/confirm-forgot-password', authController.confirmForgotPassword);
 
 /**
  * @swagger
+ * /confirm-email:
+ *   post:
+ *     summary: Conferma email con codice di verifica
+ *     description: Verifica l'indirizzo email dell'utente utilizzando il codice ricevuto via email dopo la registrazione
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - code
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email dell'utente da verificare
+ *               code:
+ *                 type: string
+ *                 description: Codice di verifica ricevuto via email
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: Email verificata con successo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: Codice non valido o scaduto
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Errore interno del server
+ */
+router.post('/confirm-email', authController.confirmEmail);
+
+/**
+ * @swagger
+ * /resend-verification-code:
+ *   post:
+ *     summary: Reinvia codice di verifica email
+ *     description: Reinvia il codice di verifica via email se l'utente non l'ha ricevuto o è scaduto
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email dell'utente
+ *     responses:
+ *       200:
+ *         description: Codice di verifica inviato
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: Utente già verificato o troppi tentativi
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Utente non trovato
+ *       429:
+ *         description: Troppi tentativi, riprova più tardi
+ *       500:
+ *         description: Errore interno del server
+ */
+router.post('/resend-verification-code', authController.resendVerificationCode);
+
+/**
+ * @swagger
  * /change-password:
  *   post:
  *     summary: Cambia password utente autenticato

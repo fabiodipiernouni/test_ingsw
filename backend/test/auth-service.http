@@ -87,3 +87,20 @@ Content-Type: application/json
   "code": "556500",
   "newPassword": "Password123!"
 }
+
+### Confirm Email (Verifica codice di registrazione)
+POST http://localhost:3001/api/confirm-email
+Content-Type: application/json
+
+{
+  "email": "luca.bianco@example.com",
+  "code": "123456"
+}
+
+### Resend Verification Code
+POST http://localhost:3001/api/resend-verification-code
+Content-Type: application/json
+
+{
+  "email": "luca.bianco@example.com"
+}
