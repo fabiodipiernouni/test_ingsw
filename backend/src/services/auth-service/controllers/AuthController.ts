@@ -6,6 +6,7 @@ import logger from '@shared/utils/logger';
 import { AuthenticatedRequest } from '@shared/types/common.types';
 import { successResponse, errorResponse, validationErrorResponse, notFoundResponse } from '@shared/utils/helpers';
 import { RegisterDto } from '@auth/dto/RegisterDto';
+import { LoginDto } from '@auth/dto/LoginDto';
 
 export class AuthController {
   /**
@@ -60,11 +61,11 @@ export class AuthController {
   async login(req: Request, res: Response) {
     
     try {
-      const { email, password } = req.body;
+      const loginData: LoginDto = req.body;
       
-      logger.info('User login request', { email });
+      logger.info('User login request', { loginData.email });
 
-      const result = await authService.login({ email, password });
+      const result = await authService.login({ loginData.email, loginData.password });
 
       successResponse(
         res, 
@@ -86,44 +87,6 @@ export class AuthController {
       }
 
       errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Login failed', 500);
-    }
-  }
-
-  /**
-   * Logout utente
-   */
-  async logout(req: Request, res: Response) {
-    try {
-      // Il middleware authenticateToken ha già verificato il token e aggiunto l'utente
-      const user = (req as any).user;
-      const userId = user?.id;
-      
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'UNAUTHORIZED',
-          message: 'Invalid token',
-          timestamp: new Date(),
-          path: req.originalUrl
-        });
-      }
-
-      // TODO: In futuro, aggiungere il token a una blacklist Redis/DB
-      // per invalidarlo immediatamente
-      
-      logger.info(`User logged out: ${userId}`);
-      
-      // Seguendo lo spec OpenAPI, restituiamo solo status 200 senza body
-      res.status(200).send();
-    } catch (error) {
-      logger.error('Logout error:', error);
-      res.status(500).json({
-        success: false,
-        error: 'INTERNAL_ERROR',
-        message: 'Logout failed',
-        timestamp: new Date(),
-        path: req.originalUrl
-      });
     }
   }
 
