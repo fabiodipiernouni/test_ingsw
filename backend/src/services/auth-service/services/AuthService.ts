@@ -5,58 +5,10 @@ import { UserPreferences } from '@shared/database/models/UserPreferences';
 import { NotificationPreferences } from '@shared/database/models/NotificationPreferences';
 import config from '@shared/config';
 import logger from '@shared/utils/logger';
+import { RegisterDto } from '@auth/dto/RegisterDto';
+import { LoginDto } from '@auth/dto/LoginDto';
+import { AuthResponse } from '@auth/dto/AuthResponse';
 
-
-// Types
-interface RegisterData {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  acceptTerms: boolean;
-  acceptPrivacy: boolean;
-  phone?: string;
-}
-
-interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-interface AuthResponse {
-  user: UserResponse;
-  accessToken: string;
-  refreshToken: string;
-}
-
-interface UserResponse {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone?: string;
-  role: string;
-  isActive: boolean;
-  emailVerified: boolean;
-  createdAt: string;
-  updatedAt: string;
-  agency?: AgencyResponse;
-}
-
-interface AgencyResponse {
-  id: string;
-  name: string;
-  address?: {
-    street?: string;
-    city?: string;
-    province?: string;
-    zipCode?: string;
-    country?: string;
-  };
-  phone?: string;
-  email?: string;
-  website?: string;
-}
 
 interface ChangePasswordData {
   currentPassword: string;
@@ -103,7 +55,7 @@ export class AuthService {
   /**
    * Registrazione nuovo utente
    */
-  async register(registerData: RegisterData): Promise<AuthResponse> {
+  async register(registerData: RegisterDto): Promise<AuthResponse> {
     try {
       const { email, password, firstName, lastName, acceptTerms, acceptPrivacy, phone } = registerData;
 
@@ -161,7 +113,7 @@ export class AuthService {
   /**
    * Login utente
    */
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+  async login(credentials: LoginDto): Promise<AuthResponse> {
     try {
       const { email, password } = credentials;
 

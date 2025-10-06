@@ -7,6 +7,70 @@ const router = express.Router();
 
 /**
  * @swagger
+ * /properties/card:
+ *   get:
+ *     summary: Lista proprietà in formato card con paginazione
+ *     description: |
+ *       Restituisce una lista paginata di proprietà in formato card. Il comportamento varia in base al ruolo dell'utente:
+ *       - **Utenti non autenticati/Clienti**: Solo proprietà pubbliche e attive
+ *       - **Agenti**: Solo le proprie proprietà (tutte)
+ *       - **Admin**: Proprietà degli agenti della propria agenzia
+ *     tags:
+ *       - Properties
+ *     security:
+ *       - bearerAuth: []
+ *       - {}
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Numero di pagina
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 20
+ *         description: Numero di elementi per pagina (max 100)
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [active, pending, sold, rented, withdrawn]
+ *         description: Filtra per stato (solo per agenti e admin)
+ *       - in: query
+ *         name: agentId
+ *         schema:
+ *           type: string
+ *         description: Filtra per agente specifico (solo per admin)
+ *     responses:
+ *       200:
+ *         description: Lista delle proprietà in formato card recuperata con successo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PropertiesListResponse'
+ *       403:
+ *         description: Accesso negato (ruolo non valido)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Errore interno del server
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get('/cards', optionalAuth, propertyController.getPropertiesCards.bind(propertyController));
+
+/**
+ * @swagger
  * /properties:
  *   get:
  *     summary: Lista proprietà con paginazione

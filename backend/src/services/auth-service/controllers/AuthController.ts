@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 import { authService } from '../services/AuthService';
 import logger from '@shared/utils/logger';
 import { AuthenticatedRequest } from '@shared/types/common.types';
 import { successResponse, errorResponse, validationErrorResponse, notFoundResponse } from '@shared/utils/helpers';
+import { RegisterDto } from '@auth/dto/RegisterDto';
 
 export class AuthController {
   /**
@@ -10,7 +13,12 @@ export class AuthController {
    */
   async register(req: Request, res: Response) {
     try {
-      const registerData = req.body;
+
+      const registerData: RegisterDto = plainToInstance(RegisterDto, req.body);
+      const errors = await validate(registerData);
+      if (errors.length > 0) {
+        return validationErrorResponse(res, errors.map(e => Object.values(e.constraints || {})).flat());
+      }
       
       logger.info('User registration request', { email: registerData.email });
 
@@ -50,6 +58,7 @@ export class AuthController {
    * Login utente
    */
   async login(req: Request, res: Response) {
+    
     try {
       const { email, password } = req.body;
       

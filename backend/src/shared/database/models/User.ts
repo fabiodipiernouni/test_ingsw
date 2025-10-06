@@ -77,7 +77,7 @@ export class User extends Model {
 
   @AllowNull(true)
   @Column(DataType.JSON)
-  linkedProviders?: Array<'google' | 'github'>;
+  linkedProviders?: Array<'google' | 'github' | 'facebook'>;
 
   @AllowNull(true)
   @Column(DataType.DATE)

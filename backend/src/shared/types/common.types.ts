@@ -1,35 +1,7 @@
 import { Request } from 'express';
 
-export interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: 'client' | 'agent' | 'admin';
-  avatar?: string;
-  phone?: string;
-  isVerified: boolean;
-  linkedProviders: Array<'google' | 'github'>;
-  lastLoginAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export interface AuthenticatedRequest extends Request {
-  user?: any;
-  userAgency?: any;
-  file?: any;
-  files?: { [fieldname: string]: UploadedFile[]; } | UploadedFile[] | undefined;
-}
-
-export interface UploadedFile {
-  fieldname: string;
-  originalname: string;
-  encoding: string;
-  mimetype: string;
-  size: number;
-  buffer?: Buffer;
-  path?: string;
+  user?: User;
 }
 
 export interface PropertyAddress {
