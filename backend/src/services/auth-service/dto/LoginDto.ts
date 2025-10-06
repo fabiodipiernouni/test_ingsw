@@ -1,6 +1,6 @@
 import { IsEmail } from 'class-validator';
 
-export interface LoginDto {
+export class LoginDto {
   @IsEmail({}, { message: 'Email non valida' })
   email: string;
 
