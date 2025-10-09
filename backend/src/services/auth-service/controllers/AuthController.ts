@@ -200,37 +200,6 @@ export class AuthController {
   }
 
   /**
-   * Inizia il processo di recupero password
-   */
-  async forgotPassword(req: Request, res: Response) {
-    try {
-      const { email } = req.body;
-
-      if (!email) {
-        errorResponse(res, 'BAD_REQUEST', 'Email is required', 400);
-        return;
-      }
-
-      logger.info('Forgot password request', { email });
-
-      await authService.forgotPassword(email);
-
-      successResponse(res, { message: 'Password reset code sent to your email' });
-
-    } catch (error: any) {
-      logger.error('Error in forgotPassword controller:', error);
-
-      if (error.name === 'NotFoundError') {
-        // Per sicurezza, non rivelare se l'utente esiste o meno
-        successResponse(res, { message: 'If an account exists, a password reset code has been sent' });
-        return;
-      }
-
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to initiate password reset', 500);
-    }
-  }
-
-  /**
    * Conferma il reset della password con il codice
    */
   async confirmForgotPassword(req: Request, res: Response) {
