@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { UserController } from '../controllers/UserController';
 import { authenticateToken } from '../../../shared/middleware/auth';
-import { requireAgencyAdmin, requireAgencyCreator } from '../../../shared/middleware/authorization';
+import { requireAgencyAdmin, requireAgencyOwner } from '../../../shared/middleware/authorization';
 import { validateCreateAgent, validateCreateAdmin } from '../../../shared/middleware/validation';
 
 const router = Router();
@@ -555,7 +555,7 @@ router.post('/create-agent',
  */
 router.post('/create-admin', 
   authenticateToken, 
-  requireAgencyCreator, 
+  requireAgencyOwner, 
   validateCreateAdmin, 
   userController.createAdmin.bind(userController)
 );

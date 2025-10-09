@@ -1,12 +1,13 @@
 import { Request } from 'express';
 import { UserModel } from '@user/models/UserModel';
 import { EnergyClass, ListingType, PropertyType } from '@property/models/types';
+import { Agency } from '@shared/database/models';
 
 
 
 export interface AuthenticatedRequest extends Request {
   user?: UserModel;
-  userAgency?: any;
+  userAgency?: Agency;
 }
 
 export interface UploadedFile {

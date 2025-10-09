@@ -233,6 +233,7 @@ router.get('/suggestions', validateSuggestionsRequest, searchController.getSearc
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
+router.get('/saved', authenticateToken, searchController.getSavedSearches.bind(searchController));
 router.post('/saved', authenticateToken, validateSavedSearchData, searchController.saveSearch.bind(searchController));
 
 /**

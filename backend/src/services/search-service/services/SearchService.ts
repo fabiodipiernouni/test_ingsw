@@ -1,5 +1,6 @@
 import { Op, Sequelize } from 'sequelize';
 import { Property, SearchHistory, SavedSearch } from '@shared/database/models';
+import { isValidGeoJSONPoint, extractCoordinates } from '@shared/types/geojson.types';
 import {
   SearchFilters, 
   SearchRequest, 
@@ -66,7 +67,9 @@ export class SearchService {
           },
           {
             association: 'images',
-            attributes: ['id', 'url', 'alt', 'isPrimary', 'order'],
+            attributes: ['id', 's3KeyOriginal', 's3KeySmall', 's3KeyMedium', 's3KeyLarge', 
+                        'bucketName', 'fileName', 'contentType', 'fileSize', 'width', 'height',
+                        'caption', 'alt', 'isPrimary', 'order', 'uploadDate'],
             where: { isPrimary: true },
             required: false
           }
@@ -186,18 +189,98 @@ export class SearchService {
       whereClause.hasParking = filters.hasParking;
     }
 
-    // Geographic search - raggio di ricerca
-    if (filters.centerLat && filters.centerLng && filters.radius) {
-      // Calcolo approssimativo del bounding box per performance
-      const latDelta = filters.radius / 111; // ~111 km per grado di latitudine
-      const lngDelta = filters.radius / (111 * Math.cos(filters.centerLat * Math.PI / 180));
+    // ===== RICERCA GEOGRAFICA PER RAGGIO (usando Oracle Spatial con GeoJSON) =====
+    if (filters.radiusSearch) {
+      const { center, radius } = filters.radiusSearch;
+      const radiusMeters = radius * 1000; // converti km in metri
+      const { longitude: centerLng, latitude: centerLat } = extractCoordinates(center);
       
-      whereClause.latitude = {
-        [Op.between]: [filters.centerLat - latDelta, filters.centerLat + latDelta]
-      };
-      whereClause.longitude = {
-        [Op.between]: [filters.centerLng - lngDelta, filters.centerLng + lngDelta]
-      };
+      whereClause[Op.and] = whereClause[Op.and] || [];
+      whereClause[Op.and].push(
+        Sequelize.literal(`
+          SDO_WITHIN_DISTANCE(
+            SDO_GEOMETRY(
+              2001,                                    -- tipo: Point 2D
+              4326,                                    -- SRID: WGS84
+              SDO_POINT_TYPE(
+                TO_NUMBER(JSON_VALUE("Property"."geo_location", '$.coordinates[0]')),  -- longitude
+                TO_NUMBER(JSON_VALUE("Property"."geo_location", '$.coordinates[1]')),  -- latitude
+                NULL
+              ),
+              NULL,
+              NULL
+            ),
+            SDO_GEOMETRY(
+              2001,
+              4326,
+              SDO_POINT_TYPE(${centerLng}, ${centerLat}, NULL),
+              NULL,
+              NULL
+            ),
+            'distance=${radiusMeters} unit=M'       -- distanza in metri
+          ) = 'TRUE'
+        `)
+      );
+      
+      logger.debug('Radius search enabled', { 
+        center: [centerLng, centerLat],
+        radius 
+      });
+    }
+
+    // ===== RICERCA GEOGRAFICA PER POLIGONO (usando Oracle Spatial con GeoJSON) =====
+    if (filters.polygon && filters.polygon.length >= 3) {
+      // Costruisce array di coordinate per Oracle SDO_GEOMETRY
+      // Formato: lng1, lat1, lng2, lat2, lng3, lat3, ...
+      let polygonCoords = filters.polygon
+        .map(point => {
+          const { longitude, latitude } = extractCoordinates(point);
+          return `${longitude}, ${latitude}`;
+        })
+        .join(', ');
+      
+      // Chiude automaticamente il poligono se non è già chiuso
+      const firstPoint = filters.polygon[0];
+      const lastPoint = filters.polygon[filters.polygon.length - 1];
+      const firstCoords = extractCoordinates(firstPoint);
+      const lastCoords = extractCoordinates(lastPoint);
+      
+      if (firstCoords.longitude !== lastCoords.longitude || 
+          firstCoords.latitude !== lastCoords.latitude) {
+        polygonCoords += `, ${firstCoords.longitude}, ${firstCoords.latitude}`;
+      }
+      
+      // Aggiunge condizione WHERE con Oracle Spatial
+      whereClause[Op.and] = whereClause[Op.and] || [];
+      whereClause[Op.and].push(
+        Sequelize.literal(`
+          SDO_CONTAINS(
+            SDO_GEOMETRY(
+              2003,                                    -- tipo: Polygon 2D
+              4326,                                    -- SRID: WGS84
+              NULL,                                    -- punto singolo (non usato)
+              SDO_ELEM_INFO_ARRAY(1, 1003, 1),       -- elemento poligono esterno
+              SDO_ORDINATE_ARRAY(${polygonCoords})   -- coordinate poligono
+            ),
+            SDO_GEOMETRY(
+              2001,                                    -- tipo: Point 2D
+              4326,                                    -- SRID: WGS84
+              SDO_POINT_TYPE(
+                TO_NUMBER(JSON_VALUE("Property"."geo_location", '$.coordinates[0]')),  -- longitude
+                TO_NUMBER(JSON_VALUE("Property"."geo_location", '$.coordinates[1]')),  -- latitude
+                NULL
+              ),
+              NULL,
+              NULL
+            )
+          ) = 'TRUE'
+        `)
+      );
+      
+      logger.debug('Polygon search enabled', { 
+        points: filters.polygon.length,
+        closed: polygonCoords 
+      });
     }
 
     // Features - contiene almeno una delle feature richieste
@@ -244,11 +327,12 @@ export class SearchService {
       properties.map(async (property) => {
         const propertyData = await this.formatPropertyResult(property);
         
-        // Calcola distanza se i parametri geografici sono presenti
-        if (filters.centerLat && filters.centerLng) {
+        // Calcola distanza se è una ricerca per raggio
+        if (filters.radiusSearch) {
+          const { longitude: centerLng, latitude: centerLat } = extractCoordinates(filters.radiusSearch.center);
           propertyData.distance = this.calculateHaversineDistance(
-            filters.centerLat,
-            filters.centerLng,
+            centerLat,
+            centerLng,
             property.latitude,
             property.longitude
           );
@@ -335,10 +419,7 @@ export class SearchService {
         zipCode: property.zipCode,
         country: property.country
       },
-      location: {
-        latitude: property.latitude,
-        longitude: property.longitude
-      },
+      location: property.location,  // GeoJSON Point format
       images: validImages as any,
       agentId: property.agentId,
       agent: property.agent ? {
@@ -446,21 +527,42 @@ export class SearchService {
       errors.push('Area minimum cannot be greater than maximum');
     }
 
-    // Validazione search geografica
-    if (request.centerLat && (request.centerLat < -90 || request.centerLat > 90)) {
-      errors.push('Latitude must be between -90 and 90');
+    // ===== VALIDAZIONE RICERCA GEOGRAFICA =====
+    
+    // Non permettere ricerca per raggio E poligono simultaneamente
+    if (request.radiusSearch && request.polygon) {
+      errors.push('Cannot use both radius search and polygon search simultaneously. Choose one.');
     }
-    if (request.centerLng && (request.centerLng < -180 || request.centerLng > 180)) {
-      errors.push('Longitude must be between -180 and 180');
+    
+    // Validazione ricerca per raggio
+    if (request.radiusSearch) {
+      const { center, radius } = request.radiusSearch;
+      
+      if (!isValidGeoJSONPoint(center)) {
+        errors.push('Radius search center must be a valid GeoJSON Point with coordinates [longitude, latitude]');
+      }
+      
+      if (radius === undefined || radius <= 0 || radius > 500) {
+        errors.push('Radius must be between 0.1 and 500 kilometers');
+      }
     }
-    if (request.radius && (request.radius < 0.1 || request.radius > 100)) {
-      errors.push('Radius must be between 0.1 and 100 km');
-    }
-
-    // Geographic search richiede tutti i parametri
-    const hasGeoParams = request.centerLat || request.centerLng || request.radius;
-    if (hasGeoParams && (!request.centerLat || !request.centerLng || !request.radius)) {
-      errors.push('Geographic search requires centerLat, centerLng, and radius');
+    
+    // Validazione ricerca per poligono
+    if (request.polygon) {
+      if (!Array.isArray(request.polygon)) {
+        errors.push('Polygon must be an array of GeoJSON Points');
+      } else if (request.polygon.length < 3) {
+        errors.push('Polygon must have at least 3 points to form a valid area');
+      } else if (request.polygon.length > 100) {
+        errors.push('Polygon cannot have more than 100 points');
+      } else {
+        // Valida ogni punto del poligono
+        request.polygon.forEach((point, index) => {
+          if (!isValidGeoJSONPoint(point)) {
+            errors.push(`Invalid GeoJSON Point at polygon index ${index}`);
+          }
+        });
+      }
     }
 
     if (errors.length > 0) {
@@ -627,10 +729,7 @@ export class SearchService {
 
         case 'feature': {
           // Cerca nelle features più comuni
-          const validFeatures = ['aria condizionata', 'balcone', 'giardino', 'piscina', 'garage', 'ascensore', 'ristrutturato'];
-          suggestions = validFeatures.filter(feature => 
-            feature.toLowerCase().includes(query.toLowerCase())
-          );
+          suggestions = await this.getFeatureSuggestions()
           break;
         }
       }
@@ -640,6 +739,43 @@ export class SearchService {
       logger.error('Error getting search suggestions:', error);
       return [];
     }
+  }
+   /**
+   * Restituisce le feature suggestions (uniche dal db, oppure set predefinito se vuoto)
+   */
+  private async getFeatureSuggestions(): Promise<string[]> {
+    // Set predefinito
+    const defaultFeatures = [
+      'aria condizionata', 'balcone', 'giardino', 'piscina', 'garage', 'ascensore', 'ristrutturato',
+      'terrazzo', 'cantina', 'camino', 'fibra ottica', 'porta blindata', 'videocitofono', 'allarme',
+      'riscaldamento autonomo', 'riscaldamento centralizzato', 'vista panoramica', 'accesso disabili'
+    ];
+
+    // Recupera tutte le proprietà con features valorizzate
+    const properties = await Property.findAll({
+      where: {
+        features: { $ne: null }
+      },
+      attributes: ['features']
+    });
+
+    // Estrai tutte le features uniche
+    const featureSet = new Set<string>();
+    for (const prop of properties) {
+      if (Array.isArray(prop.features)) {
+        for (const f of prop.features) {
+          if (typeof f === 'string' && f.trim().length > 1) {
+            featureSet.add(f.trim().toLowerCase());
+          }
+        }
+      }
+    }
+
+    // Se non ci sono features nel db, restituisci il set predefinito
+    if (featureSet.size === 0) {
+      return defaultFeatures;
+    }
+    return Array.from(featureSet);
   }
 }
 

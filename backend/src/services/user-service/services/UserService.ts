@@ -2,8 +2,22 @@ import { User } from '@shared/database/models/User';
 import { Agency } from '@shared/database/models/Agency';
 import { UserPreferences } from '@shared/database/models/UserPreferences';
 import { NotificationPreferences } from '@shared/database/models/NotificationPreferences';
-import { generateSecurePassword } from '@shared/utils/passwordHelpers';
 import logger from '@shared/utils/logger';
+import {
+  CognitoIdentityProviderClient,
+  AdminCreateUserCommand,
+  AdminAddUserToGroupCommand
+} from '@aws-sdk/client-cognito-identity-provider';
+import config from '@shared/config';
+
+// Cognito Client
+const cognitoClient = new CognitoIdentityProviderClient({
+  region: config.cognito.region,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
+  }
+});
 
 // Types
 interface UserProfileResponse {
@@ -15,7 +29,6 @@ interface UserProfileResponse {
   role: string;
   isActive: boolean;
   isVerified: boolean;
-  shouldChangePassword?: boolean;
   avatar?: string;
   // Campi specifici per agenti (opzionali per altri ruoli)
   licenseNumber?: string;
@@ -107,7 +120,7 @@ interface CreateAdminData {
 
 interface CreateUserResponse {
   user: UserProfileResponse;
-  password: string;
+  message: string;
 }
 
 // Custom error classes
@@ -144,7 +157,7 @@ export class UserService {
           {
             model: Agency,
             as: 'agency',
-            attributes: ['id', 'name', 'address', 'phone', 'email', 'website']
+            attributes: ['id', 'name', 'street', 'city', 'province', 'zipCode', 'country', 'phone', 'email', 'website']
           },
           {
             model: UserPreferences,
@@ -175,7 +188,7 @@ export class UserService {
           {
             model: Agency,
             as: 'agency',
-            attributes: ['id', 'name', 'address', 'phone', 'email', 'website']
+            attributes: ['id', 'name', 'street', 'city', 'province', 'zipCode', 'country', 'phone', 'email', 'website']
           }
         ],
         attributes: ['id', 'firstName', 'lastName', 'avatar', 'role', 'isActive', 'createdAt']
@@ -379,111 +392,205 @@ export class UserService {
   }
 
   /**
-   * Crea un nuovo agente (solo per admin)
+   * Crea un nuovo agente (solo per admin/owner) - Cognito Version
    */
   async createAgent(adminUserId: string, agentData: CreateAgentData): Promise<CreateUserResponse> {
     try {
-      // Verifica che l'utente sia admin
+      // 1. VERIFICA PERMESSI ADMIN/OWNER
       const adminUser = await User.findByPk(adminUserId);
-      if (!adminUser || adminUser.role !== 'admin') {
+      if (!adminUser || !['admin', 'owner'].includes(adminUser.role)) {
         throw new ForbiddenError('Only administrators can create agents');
       }
 
-      // Verifica email duplicata
+      if (!adminUser.agencyId) {
+        throw new ForbiddenError('Admin must be associated with an agency');
+      }
+
+      // 2. VERIFICA EMAIL DUPLICATA NEL DB LOCALE
       const existingUser = await User.findOne({ where: { email: agentData.email } });
       if (existingUser) {
         throw new ConflictError('User with this email already exists');
       }
 
-      // Genera password sicura
-      const password = generateSecurePassword(12);
+      // 3. CREA UTENTE IN COGNITO CON AdminCreateUser
+      const createUserCommand = new AdminCreateUserCommand({
+        UserPoolId: config.cognito.userPoolId,
+        Username: agentData.email,
+        UserAttributes: [
+          { Name: 'email', Value: agentData.email },
+          { Name: 'email_verified', Value: 'true' }, // Email già verificata dall'admin
+          { Name: 'given_name', Value: agentData.firstName },
+          { Name: 'family_name', Value: agentData.lastName },
+          ...(agentData.phone ? [{ Name: 'phone_number', Value: agentData.phone }] : [])
+        ],
+        DesiredDeliveryMediums: ['EMAIL'] // 📧 Cognito invia email con password temporanea
+      });
 
-      // Crea l'agente nella stessa agenzia dell'admin
+      const cognitoResponse = await cognitoClient.send(createUserCommand);
+      
+      // Estrai cognitoSub dalla risposta
+      const cognitoSub = cognitoResponse.User?.Attributes?.find(attr => attr.Name === 'sub')?.Value;
+
+      if (!cognitoSub) {
+        throw new Error('Failed to create user in Cognito');
+      }
+
+      logger.info('Agent created in Cognito', { email: agentData.email, cognitoSub });
+
+      // 4. AGGIUNGI AL GRUPPO 'agents'
+      const addToGroupCommand = new AdminAddUserToGroupCommand({
+        UserPoolId: config.cognito.userPoolId,
+        Username: agentData.email,
+        GroupName: config.cognito.groups.agents
+      });
+
+      await cognitoClient.send(addToGroupCommand);
+
+      logger.info('Agent added to Cognito group', { email: agentData.email, group: 'agents' });
+
+      // 5. CREA RECORD NEL DB LOCALE
       const agent = await User.create({
-        ...agentData,
+        email: agentData.email,
+        cognitoSub: cognitoSub,
+        cognitoUsername: agentData.email,
+        firstName: agentData.firstName,
+        lastName: agentData.lastName,
+        phone: agentData.phone,
         role: 'agent',
-        agencyId: adminUser.agencyId, // Assegna alla stessa agenzia dell'admin
+        agencyId: adminUser.agencyId, // Stessa agenzia dell'admin
+        licenseNumber: agentData.licenseNumber,
         isActive: true,
-        isVerified: false,
-        password: password,
-        shouldChangePassword: true, // sarà consigliato di cambiare al primo login
+        isVerified: true, // Verificato dall'admin
         acceptedTermsAt: new Date(),
         acceptedPrivacyAt: new Date()
       });
 
-      // Crea preferenze predefinite
+      // 6. CREA PREFERENZE PREDEFINITE
       await UserPreferences.create({ userId: agent.id });
       await NotificationPreferences.create({ userId: agent.id });
 
-      // Restituisce profilo con password separata
+      logger.info('Agent created in local DB', { userId: agent.id, email: agent.email });
+
+      // 7. RESTITUISCE RISPOSTA (senza password - Cognito ha inviato email)
       return {
         user: this.formatUserProfileResponse(agent),
-        password: password
+        message: 'Agent created successfully. Login credentials have been sent to their email.'
       };
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Error in createAgent service:', error);
+
+      // Gestione errori Cognito
+      if (error.name === 'UsernameExistsException') {
+        throw new ConflictError('User already exists in authentication system');
+      }
+
       throw error;
     }
   }
 
   /**
-   * Crea un nuovo admin (solo per il creatore dell'agenzia)
+   * Crea un nuovo admin (solo per owner dell'agenzia) - Cognito Version
    */
-  async createAdmin(creatorUserId: string, adminData: CreateAdminData): Promise<CreateUserResponse> {
+  async createAdmin(ownerUserId: string, adminData: CreateAdminData): Promise<CreateUserResponse> {
     try {
-      // Verifica che l'utente sia admin
-      const currentUser = await User.findByPk(creatorUserId, {
+      // 1. VERIFICA CHE L'UTENTE SIA OWNER
+      const ownerUser = await User.findByPk(ownerUserId, {
         include: [{ model: Agency, as: 'agency' }]
       });
-      
-      if (!currentUser || currentUser.role !== 'admin') {
-        throw new ForbiddenError('Only administrators can create admins');
+
+      if (!ownerUser || ownerUser.role !== 'owner') {
+        throw new ForbiddenError('Only agency owners can create administrators');
       }
 
-      // Verifica che l'utente sia il creatore dell'agenzia
-      if (!currentUser.agency || currentUser.agency.createdBy !== creatorUserId) {
-        throw new ForbiddenError('Only the agency creator can create new admins');
+      if (!ownerUser.agency) {
+        throw new ForbiddenError('Owner must be associated with an agency');
       }
 
-      // L'admin deve essere creato nella stessa agenzia del creatore
-      const agencyId = currentUser.agencyId;
+      // Verifica che sia il creator dell'agenzia
+      if (ownerUser.agency.createdBy !== ownerUserId) {
+        throw new ForbiddenError('Only the agency owner can create new admins');
+      }
+
+      const agencyId = ownerUser.agencyId;
+
       if (!agencyId) {
-        throw new ForbiddenError('Current user must belong to an agency');
+        throw new ForbiddenError('Owner must belong to an agency');
       }
 
-      // Verifica email duplicata
+      // 2. VERIFICA EMAIL DUPLICATA
       const existingUser = await User.findOne({ where: { email: adminData.email } });
       if (existingUser) {
         throw new ConflictError('User with this email already exists');
       }
 
-      // Genera password sicura
-      const password = generateSecurePassword(12);
+      // 3. CREA ADMIN IN COGNITO
+      const createUserCommand = new AdminCreateUserCommand({
+        UserPoolId: config.cognito.userPoolId,
+        Username: adminData.email,
+        UserAttributes: [
+          { Name: 'email', Value: adminData.email },
+          { Name: 'email_verified', Value: 'true' },
+          { Name: 'given_name', Value: adminData.firstName },
+          { Name: 'family_name', Value: adminData.lastName },
+          ...(adminData.phone ? [{ Name: 'phone_number', Value: adminData.phone }] : [])
+        ],
+        DesiredDeliveryMediums: ['EMAIL'] // 📧 Email con credenziali temporanee
+      });
 
-      // Crea l'admin nella stessa agenzia del creatore
+      const cognitoResponse = await cognitoClient.send(createUserCommand);
+
+      const cognitoSub = cognitoResponse.User?.Attributes?.find(attr => attr.Name === 'sub')?.Value;
+
+      if (!cognitoSub) {
+        throw new Error('Failed to create admin in Cognito');
+      }
+
+      logger.info('Admin created in Cognito', { email: adminData.email, cognitoSub });
+
+      // 4. AGGIUNGI AL GRUPPO 'admins'
+      const addToGroupCommand = new AdminAddUserToGroupCommand({
+        UserPoolId: config.cognito.userPoolId,
+        Username: adminData.email,
+        GroupName: config.cognito.groups.admins
+      });
+
+      await cognitoClient.send(addToGroupCommand);
+
+      logger.info('Admin added to Cognito group', { email: adminData.email, group: 'admins' });
+
+      // 5. CREA ADMIN NEL DB LOCALE
       const newAdmin = await User.create({
-        ...adminData,
+        email: adminData.email,
+        cognitoSub: cognitoSub,
+        cognitoUsername: adminData.email,
+        firstName: adminData.firstName,
+        lastName: adminData.lastName,
+        phone: adminData.phone,
         role: 'admin',
-        agencyId: agencyId, // Assegna alla stessa agenzia del creatore
+        agencyId: agencyId, // Stessa agenzia dell'owner
         isActive: true,
-        isVerified: false,
-        password: password,
-        shouldChangePassword: true, // sarà consigliato di cambiare al primo login
+        isVerified: true,
         acceptedTermsAt: new Date(),
         acceptedPrivacyAt: new Date()
       });
 
-      // Crea preferenze predefinite
+      // 6. CREA PREFERENZE
       await UserPreferences.create({ userId: newAdmin.id });
       await NotificationPreferences.create({ userId: newAdmin.id });
 
-      // Restituisce profilo con password separata
+      logger.info('Admin created in local DB', { userId: newAdmin.id, email: newAdmin.email });
+
       return {
         user: this.formatUserProfileResponse(newAdmin),
-        password: password
+        message: 'Admin created successfully. Login credentials have been sent to their email.'
       };
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Error in createAdmin service:', error);
+
+      if (error.name === 'UsernameExistsException') {
+        throw new ConflictError('User already exists in authentication system');
+      }
+
       throw error;
     }
   }
@@ -501,7 +608,6 @@ export class UserService {
       role: user.role,
       isActive: user.isActive,
       isVerified: user.isVerified,
-      shouldChangePassword: user.shouldChangePassword,
       avatar: user.avatar,
       // Campi specifici per agenti
       licenseNumber: user.licenseNumber,

@@ -11,6 +11,8 @@ export interface UserModel {
   isVerified: boolean;
   isActive: boolean;
   linkedProviders: Array<'google' | 'github' | 'facebook'>;
+  cognitoSub?: string;
+  cognitoUsername?: string;
   lastLoginAt?: Date;
   agencyId?: string;
   Agency?: Agency;

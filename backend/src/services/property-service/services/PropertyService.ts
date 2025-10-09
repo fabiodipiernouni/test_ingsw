@@ -1,5 +1,4 @@
 import { Property, PropertyImage } from '@shared/database/models';
-
 import logger from '@shared/utils/logger';
 import { imageService } from '@shared/services/ImageService';
 import config from '@shared/config';

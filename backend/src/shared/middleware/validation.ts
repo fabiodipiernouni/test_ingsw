@@ -231,18 +231,6 @@ export const authValidations = {
       .withMessage('New password must be at least 8 characters long')
       .matches(/^(?=.*[A-Za-z])(?=.*\d)/)
       .withMessage('New password must contain at least one letter and one number')
-  ],
-
-  sendEmailVerification: [
-    commonValidations.email()
-  ],
-
-  verifyEmailOtp: [
-    commonValidations.email(),
-    body('otp')
-      .isLength({ min: 6, max: 6 })
-      .isNumeric()
-      .withMessage('OTP must be a 6-digit number')
   ]
 };
 

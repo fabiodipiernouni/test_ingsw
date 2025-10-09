@@ -163,42 +163,217 @@ router.post('/refresh-token', authController.refreshToken);
 
 /**
  * @swagger
- * /verify-token:
- *   get:
- *     summary: Verifica validità token
- *     description: Verifica se un token JWT è valido e restituisce i dati dell'utente
+ * /complete-new-password:
+ *   post:
+ *     summary: Completa la challenge NEW_PASSWORD_REQUIRED
+ *     description: Imposta una nuova password quando richiesto da Cognito al primo login
  *     tags:
- *       - Token Management
- *     security:
- *       - bearerAuth: []
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - newPassword
+ *               - session
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 8
+ *               session:
+ *                 type: string
  *     responses:
  *       200:
- *         description: Token valido
+ *         description: Password impostata con successo
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/TokenVerificationResponse'
+ *               $ref: '#/components/schemas/AuthResponse'
+ *       400:
+ *         description: Dati mancanti
  *       401:
- *         description: Token non valido, mancante o scaduto
+ *         description: Session non valida
+ *       500:
+ *         description: Errore interno del server
+ */
+router.post('/complete-new-password', authController.completeNewPassword);
+
+/**
+ * @swagger
+ * /forgot-password:
+ *   post:
+ *     summary: Inizia il processo di recupero password
+ *     description: Invia un codice di verifica via email per il reset della password
+ *     tags:
+ *       - Password Management
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Codice di reset inviato
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: Email mancante
+ *       500:
+ *         description: Errore interno del server
+ */
+router.post('/forgot-password', authController.forgotPassword);
+
+/**
+ * @swagger
+ * /confirm-forgot-password:
+ *   post:
+ *     summary: Conferma il reset della password
+ *     description: Completa il processo di recupero password con il codice ricevuto via email
+ *     tags:
+ *       - Password Management
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - code
+ *               - newPassword
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               code:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 8
+ *     responses:
+ *       200:
+ *         description: Password reset completato
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: Dati mancanti
+ *       401:
+ *         description: Codice non valido o scaduto
+ *       500:
+ *         description: Errore interno del server
+ */
+router.post('/confirm-forgot-password', authController.confirmForgotPassword);
+
+/**
+ * @swagger
+ * /confirm-email:
+ *   post:
+ *     summary: Conferma email con codice di verifica
+ *     description: Verifica l'indirizzo email dell'utente utilizzando il codice ricevuto via email dopo la registrazione
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - code
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email dell'utente da verificare
+ *               code:
+ *                 type: string
+ *                 description: Codice di verifica ricevuto via email
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: Email verificata con successo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: Codice non valido o scaduto
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Errore interno del server
+ */
+router.post('/confirm-email', authController.confirmEmail);
+
+/**
+ * @swagger
+ * /resend-verification-code:
+ *   post:
+ *     summary: Reinvia codice di verifica email
+ *     description: Reinvia il codice di verifica via email se l'utente non l'ha ricevuto o è scaduto
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email dell'utente
+ *     responses:
+ *       200:
+ *         description: Codice di verifica inviato
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: Utente già verificato o troppi tentativi
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Utente non trovato
+ *       429:
+ *         description: Troppi tentativi, riprova più tardi
+ *       500:
+ *         description: Errore interno del server
  */
-router.get('/verify-token', authController.verifyToken);
+router.post('/resend-verification-code', authController.resendVerificationCode);
 
 /**
  * @swagger
  * /change-password:
  *   post:
- *     summary: Cambia password utente
- *     description: Consente all'utente autenticato di cambiare la propria password
+ *     summary: Cambia password utente autenticato
+ *     description: Permette all'utente autenticato di cambiare la propria password fornendo quella attuale
  *     tags:
  *       - Password Management
  *     security:
@@ -208,7 +383,18 @@ router.get('/verify-token', authController.verifyToken);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/ChangePasswordRequest'
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 format: password
+ *               newPassword:
+ *                 type: string
+ *                 format: password
+ *                 minLength: 8
  *     responses:
  *       200:
  *         description: Password cambiata con successo
@@ -217,140 +403,123 @@ router.get('/verify-token', authController.verifyToken);
  *             schema:
  *               $ref: '#/components/schemas/SuccessResponse'
  *       400:
- *         description: Dati di input non validi o password non conforme ai requisiti
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *         description: Dati mancanti o password non valida
  *       401:
- *         description: Token non valido o password attuale errata
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       404:
- *         description: Utente non trovato
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *         description: Password attuale errata o token non valido
  *       500:
  *         description: Errore interno del server
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post('/change-password', authenticateToken as any, validate(authValidations.changePassword), authController.changePassword);
 
 /**
  * @swagger
- * /send-email-verification:
- *   post:
- *     summary: Invia codice verifica email
- *     description: Invia un codice OTP a 6 cifre all'indirizzo email specificato per la verifica
+ * /oauth/authorize:
+ *   get:
+ *     summary: Inizia autenticazione OAuth
+ *     description: |
+ *       Reindirizza l'utente direttamente al Cognito Hosted UI per l'autenticazione con Google.
+ *       
+ *       **Questo endpoint NON restituisce JSON**, ma effettua un redirect HTTP 302.
+ *       
+ *       Il frontend può semplicemente usare un link diretto:
+ *       ```html
+ *       <a href="http://localhost:3001/api/oauth/authorize?provider=google">Login con Google</a>
+ *       ```
+ *       
+ *       O programmaticamente:
+ *       ```typescript
+ *       window.location.href = 'http://localhost:3001/api/oauth/authorize?provider=google';
+ *       ```
  *     tags:
- *       - Email Verification
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/EmailVerificationRequest'
+ *       - Authentication
+ *       - OAuth
+ *     parameters:
+ *       - in: query
+ *         name: provider
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [google]
+ *         description: Provider OAuth da utilizzare (attualmente solo "google")
+ *       - in: query
+ *         name: state
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: State parameter opzionale per prevenire CSRF attacks
  *     responses:
- *       200:
- *         description: Codice di verifica inviato con successo
- *         content:
- *           application/json:
+ *       302:
+ *         description: |
+ *           Redirect al Cognito Hosted UI per l'autenticazione.
+ *           
+ *           L'utente verrà reindirizzato a:
+ *           `https://dietiestates25.auth.eu-central-1.amazoncognito.com/oauth2/authorize?...`
+ *           
+ *           Dopo il login, Cognito reindirizza a `/api/oauth/callback?code=...`
+ *         headers:
+ *           Location:
+ *             description: URL del Cognito Hosted UI
  *             schema:
- *               $ref: '#/components/schemas/SuccessResponse'
- *       400:
- *         description: Email non fornita
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       404:
- *         description: Email non trovata nel sistema
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       409:
- *         description: Email già verificata
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       500:
- *         description: Errore interno del server
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               type: string
+ *               example: https://dietiestates25.auth.eu-central-1.amazoncognito.com/oauth2/authorize?client_id=xxx&response_type=code&scope=openid+email+profile&redirect_uri=http://localhost:3001/api/oauth/callback&identity_provider=Google
  */
-router.post('/send-email-verification', validate(authValidations.sendEmailVerification), authController.sendEmailVerification);
+router.get('/oauth/authorize', authController.getOAuthUrl);
 
 /**
  * @swagger
- * /verify-email-otp:
- *   post:
- *     summary: Verifica codice OTP email
- *     description: Verifica il codice OTP ricevuto via email e conferma la verifica dell'indirizzo email
+ * /oauth/callback:
+ *   get:
+ *     summary: Gestisci callback OAuth
+ *     description: |
+ *       Endpoint di callback per completare l'autenticazione OAuth. 
+ *       Cognito reindirizza qui dopo il login social.
+ *       
+ *       **Questo endpoint NON restituisce JSON**, ma effettua un redirect al frontend con i token nei query params.
+ *       
+ *       Il frontend deve gestire il redirect alla pagina `/auth/callback` per estrarre i token dall'URL e salvarli in localStorage.
  *     tags:
- *       - Email Verification
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/VerifyOtpRequest'
+ *       - Authentication
+ *       - OAuth
+ *     parameters:
+ *       - in: query
+ *         name: code
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Authorization code ricevuto da Cognito
+ *       - in: query
+ *         name: state
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: State parameter per verifica CSRF
+ *       - in: query
+ *         name: error
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Codice errore se l'autenticazione OAuth è fallita
+ *       - in: query
+ *         name: error_description
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Descrizione dell'errore OAuth
  *     responses:
- *       200:
- *         description: Email verificata con successo
- *         content:
- *           application/json:
+ *       302:
+ *         description: |
+ *           Redirect al frontend con i token nei query params.
+ *           
+ *           **Successo**: Redirect a `{FRONTEND_URL}/auth/callback?access_token=xxx&id_token=xxx&refresh_token=xxx&token_type=Bearer&email=user@example.com&is_new_user=false`
+ *           
+ *           **Errore**: Redirect a `{FRONTEND_URL}/auth/error?message=Error+description`
+ *         headers:
+ *           Location:
+ *             description: URL del frontend con token o messaggio di errore
  *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/SuccessResponse'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       type: object
- *                       properties:
- *                         user:
- *                           $ref: '#/components/schemas/User'
- *       400:
- *         description: Email o codice OTP non forniti o non validi
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       401:
- *         description: Codice OTP non valido o scaduto
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       404:
- *         description: Email non trovata nel sistema
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       409:
- *         description: Email già verificata
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       500:
- *         description: Errore interno del server
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               type: string
+ *               example: http://localhost:3000/auth/callback?access_token=eyJra...&refresh_token=eyJra...
  */
-router.post('/verify-email-otp', validate(authValidations.verifyEmailOtp), authController.verifyEmailOtp);
+router.get('/oauth/callback', authController.handleOAuthCallback);
 
 export default router;

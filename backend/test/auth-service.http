@@ -1,25 +1,35 @@
 ### Test dell'API Auth Service
 
 ### Login Admin
-POST http://localhost:3001/login
+POST http://localhost:3001/api/login
 Content-Type: application/json
 
 {
-  "email": "giuseppe@tecnocasa.it",
-  "password": "GSDe=&pd#HKg"
+  "email": "dieti25estates@gmail.com",
+  "password": "7Bk9R|wb"
+}
+
+### Challenge new password
+POST http://localhost:3001/api/complete-new-password
+Content-Type: application/json
+
+{
+  "email": "dieti25estates@gmail.com",
+  "newPassword": "Password123!",
+  "session": "AYABeODfq4quo5pu7fNz33dji5cAHQABAAdTZXJ2aWNlABBDb2duaXRvVXNlclBvb2xzAAEAB2F3cy1rbXMATmFybjphd3M6a21zOmV1LWNlbnRyYWwtMTo1OTA0OTA4MDk4NTg6a2V5LzRkMmU1YTdmLTFjZDctNDljOS04ZmFjLTJkOWRjYjVjZWY5ZgC4AQIBAHgRL4c_4W9Vu4fFMmzdTWjBEVweoWl7Fk3AkJ0zJNpnWQFJhz1TdN7XrjNOZRZ6_UaMAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQM1B7UK3H_N3Tx6lJKAgEQgDvtg_mR23TTCqsPAoWPXHb5uMF42Myy3npSevm_GLmD4uxqKYv3pwf0mUJlJ74wFGlmiX9fY7IUEBWHDwIAAAAADAAAEAAAAAAAAAAAAAAAAAA_X0b04hRRw_XbEXeqyrzZ_____wAAAAEAAAAAAAAAAAAAAAEAAADxson6kxoC2VMhrHd3YchkZ5ZtNtpw1Y_bdU9J9qFbhmLy0pR1CHOpn31CXGIMTGoG6B_zVscZoF1xoA_n_fGMOXcSnWFq0Q0IJCjiIbNCnCHQANKWhoJnRrKH1U77zgp7rt4xuaYYP4o4FThuBf5QJno0gVgQSlZTt4UnZesiPNqBs5e82-rRdkuOXproOoNbxyO0wRkk6yql_Fs7I-JRQE3vHulTdu03x7HsN07lO1qXN3YodFCp26k4TX5k6TTzcmrHtoKICw_AC2Vj3Xy5lkIjXp4IkWNHtyoRB0dkbBEPDe7xr6QskImWGMxLZRNQ3h0V28eJa2w6CCV8W7HKH30"
 }
 
 ### Login Agent
-POST http://localhost:3001/login
+POST http://localhost:3001/api/login
 Content-Type: application/json
 
 {
-  "email": "fabio@tecnocasa.it",
-  "password": "sPWIAD&C5ucX"
+  "email": "agent@lartediabitarebolognanavilebologna.it",
+  "password": "LartediabitarebolognanavileBologna123!"
 }
 
 ### Register New User
-POST http://localhost:3001/register
+POST http://localhost:3001/api/register
 Content-Type: application/json
 
 {
@@ -33,7 +43,7 @@ Content-Type: application/json
 }
 
 ### Login User
-POST http://localhost:3001/login
+POST http://localhost:3001/api/login
 Content-Type: application/json
 
 {
@@ -42,21 +52,17 @@ Content-Type: application/json
   "rememberMe": true
 }
 
-### Verify Token
-GET http://localhost:3001/verify-token
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyOWU5MGY5Yi0wNGE0LTQ1ZGItODFhZi00NzhiZTRkOWI5YmIiLCJlbWFpbCI6ImZhYmlvQHRlY25vY2FzYS5pdCIsInJvbGUiOiJhZ2VudCIsImlhdCI6MTc1ODkwNjc0MSwiZXhwIjoxNzU4OTEwMzQxfQ.vhUhT5yCwoim3LfkvwdhOVZxAtNDchh_My2oBqAuHTo
-
 ### Refresh Token
-POST http://localhost:3001/refresh-token
+POST http://localhost:3001/api/refresh-token
 Content-Type: application/json
 
 {
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJlYzkwNGUyMS1hNDQwLTRjNDMtYjk1OS01NTIyMWNlYjViMjUiLCJlbWFpbCI6Imx1Y2EuYmlhbmNvQGV4YW1wbGUuY29tIiwicm9sZSI6ImNsaWVudCIsImlhdCI6MTc1ODk5MTA0NiwiZXhwIjoxNzU5NTk1ODQ2fQ.lvrqIRXn3hHabTr-i6ectLAzPyfQrJlAZeqZgs4125I"
+  "refreshToken": "eyJjdHkiOiJKV1QiLCJlbmMiOiJBMjU2R0NNIiwiYWxnIjoiUlNBLU9BRVAifQ.OhtieqDd9xjIUOXldgrMsJ-NMYIxC7vKYKtRjFKcnthM_7sVUXeErSgH5Dx-3RoM87oGVP3wrJz-FDuNoC1ETm7fxmqAj1XJATx9Qjvjkb_DBhlCQBoy-dZXUffXvBLuCrUWn64lHJ4IheHzT7968S9ZZ7S_0XXdsuKPkDkm1KLu1GoUR1RpYOwMgkJsLlW-H5kiLmIobh21zASsF58LYhcfTsDNHpPdDnlu5ZRy2b1jIinexOnCtbXGVQXKG3IMx5TFgAP1tVojuG6fu0TlfHkAWic3tV0sp7ykrIFeBwrZOvGSscOd1AR_UtDg5DJVKEUzvz6su9yiuKFfKvgVzA.oQ48gwEJB2ytEUqy.xG_SaXd_FXzCHJvWgPhyXAD3S7tdEBuEO7M46Vc1P801fsGCxuV1F6BqtqlZHrutabnbav4e2h7GbwIOrYy524j_fZF-cJofIqEiWaA5Nmknc3AoXyRJnXqZZpP9Yl1cXaVlSo1EOdpOvvo9hYqIaYdiNijWvYlaLkdhNJ_7bS73sHfbG1N7kEzbG6dUmJp4PTrRnD1Bes6KRPFw47t8saSyiWU8MIuw_9s3zvCAipx-y3XAPyjvdvhxGhu4I9ihQwUZ-rzR5B2H-jlsPhnjKQhTho4BMStAY-fKxT6pfJXH5GwLm3y6Ofd2kCQzvS038pJW_mz-FmfcRd2EMzC1sP1BFiVZzayvZnGEA0NL4HCwnSvMMIzfMUjVM1O6f2ke0D0qlr1f_Zq2ZjE43E8OyPGr9parEz5Ot1rmxnByZQjC1XbOt0m3TkeeYta4Q9RsJrsisn9fs3UqJ23ZbLMylCuwTpN058mg673b9j75KmG4EFtfW2Fasc4BWDWC1Wx9Q85Ye5DMXRW_AD77NpNFAas58xVu3tZDj5Eyi18TF_p6uMc3wWEVET55wY29itbItThvd6UrO0jeYyLYLUPBXB7S2DYVP21vFaajnEdy-sl-L45xhVQG9KdfcTx0uCX6LcW7P3nWk7sOFfpjqX6mw1mUnDMp9gtqZ31Eu8OuMYd1utLlnMbumGujL0-ReX4KRUnpVeZKbLlsA-zpjk_aZrigXDWIQ0nGW4i8fHZMK5YkKtA8U7FEl-0PUE91V0bC55RcoFPEZGPdsm_M7xWM0tbXY2jLrpP6YAp_TH9bQmFYYArnC7NuEy80X_oUdsq4zbjQD9iiR-ihYP6nb8fP86inwRMtfwqZ57Qq70anrbdlFEAwXMaDdWSbyTSjNzVJXJNf7_o33_L0iEpQiUnDiCVcfJ8fK0kSuzxdhs0XqHQgeG0WfRBovpUfxW9HWgmLED7w7OpaSwu64RCAwEPMN2QUBlnoWmLNsU47lF4vUCWnERFgflVQ27bXA6ccpUN6FMeiWKDwuLmHzD2w5Ky9XnLcO7zpIxKni4InzvrIq4AIWroLAN5EjU48wEVanJtpfXFORGxsztmYLQsQ9oMLen3wTXCVgOmLQT3E1rh_mdwnJx1fkVexqsFBhzyh8d8wjyUsocDzfphu127t-nb_8L6iB2hmXD_OFwwXgW3n5mWLhOG_t9ryq_LVqIPXDYGaUdg64snLpW_Ui8CwL_QZFhOzM01AOgo2FYuTssVRMm2mQiVC7Wf7dxXGy3Lu3lQlbqg6zVJURylg0jlBckoZWCWOlI7r03o5EM61HSd4wbbaD4CEGQfMnU-ViPiS7riJKnmb.22Bf8YCXJ2bZfiOusC6ciQ"
 }
 
 ### Change Password
-POST http://localhost:3001/change-password
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJlYzkwNGUyMS1hNDQwLTRjNDMtYjk1OS01NTIyMWNlYjViMjUiLCJlbWFpbCI6Imx1Y2EuYmlhbmNvQGV4YW1wbGUuY29tIiwicm9sZSI6ImNsaWVudCIsImlhdCI6MTc1ODk4NzgwNywiZXhwIjoxNzU4OTkxNDA3fQ.4pzXoxq5pcSCZIhMZuM9jas1mQOAba4ybMZGU7dVHBQ
+POST http://localhost:3001/api/change-password
+Authorization: Bearer eyJraWQiOiJzb25HS0xQQXlUdjYyVG12cGVWeXJoQWp3aEthWDFPMnE4S0V6aGRITjR3PSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJmMzc0Mzg2Mi1jMDYxLTcwOGMtNDMwNS01NTkwNTE3YjBmM2UiLCJjb2duaXRvOmdyb3VwcyI6WyJvd25lcnMiXSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLmV1LWNlbnRyYWwtMS5hbWF6b25hd3MuY29tXC9ldS1jZW50cmFsLTFfYXhodWpOejdBIiwiY2xpZW50X2lkIjoiM3RlbHJocHFmcDMxNDlzYjlnaTdxNjFuNGUiLCJvcmlnaW5fanRpIjoiNDdkZTUwMDAtZDQxYy00YzcwLWEzMTYtMzNiOGRlZjUxNTUzIiwiZXZlbnRfaWQiOiJhZDkzZWNmYi1mNzgyLTQ1MTEtODNhNC1jNDNjN2U2YWQ4OGMiLCJ0b2tlbl91c2UiOiJhY2Nlc3MiLCJzY29wZSI6ImF3cy5jb2duaXRvLnNpZ25pbi51c2VyLmFkbWluIiwiYXV0aF90aW1lIjoxNzU5NjkxNjg0LCJleHAiOjE3NTk2OTUzMTgsImlhdCI6MTc1OTY5MTcxOCwianRpIjoiZTkxYjE1NzYtZTY4Ni00ZTYzLTg5MjMtZDJkM2FkODFjOGQ5IiwidXNlcm5hbWUiOiJmMzc0Mzg2Mi1jMDYxLTcwOGMtNDMwNS01NTkwNTE3YjBmM2UifQ.An3hm1QoFTAPIuORpS44c_nMI9iDqznML0qntHvexs30H46HvAQztlbG_cgXAWODGQ18TObD_UuF0Sdlw3-FCsF27zSApOK-9fZuQBs0e_1H09XnQUxRVRocA1QEIn3hR8rH9Q0XFLAL2E6Dg-u9jgsAK3zm8qKepGucBDmNuhCx94PDxvd6u4MtkndYgV5OQM2EIVucgLTLcWAP16OFftpd7awKCNxJgZrVsg-3dBKBVaNjOylrT77aWOALwSg-57UKuMIiVbqcxANLbz1wm9-L4wTkVHeFfDduuwYrZ7dJ4b7qBx_9a-a9vY1IMVmz65i77DhW8CjVdYKVE-EZEw
 Content-Type: application/json
 
 {
@@ -64,19 +70,37 @@ Content-Type: application/json
   "newPassword": "NewPassword123!"
 }
 
-### Send Email Verification
-POST http://localhost:3001/send-email-verification
+### Forgot Password
+POST http://localhost:3001/api/forgot-password
 Content-Type: application/json
 
 {
-  "email": "luca.bianco@example.com"
+  "email": "dieti25estates@gmail.com"
 }
 
-### Verify Email OTP
-POST http://localhost:3001/verify-email-otp
+### Confirm Forgot Password
+POST http://localhost:3001/api/confirm-forgot-password
+Content-Type: application/json
+
+{
+  "email": "dieti25estates@gmail.com",
+  "code": "556500",
+  "newPassword": "Password123!"
+}
+
+### Confirm Email (Verifica codice di registrazione)
+POST http://localhost:3001/api/confirm-email
 Content-Type: application/json
 
 {
   "email": "luca.bianco@example.com",
-  "otp": "123456"
+  "code": "123456"
+}
+
+### Resend Verification Code
+POST http://localhost:3001/api/resend-verification-code
+Content-Type: application/json
+
+{
+  "email": "luca.bianco@example.com"
 }

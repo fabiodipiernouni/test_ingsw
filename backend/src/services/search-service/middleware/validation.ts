@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationErrorResponse } from '@shared/utils/helpers';
+import { isValidGeoJSONPoint } from '@shared/types/geojson.types';
 import { SearchRequest } from '../models/types';
 
 /**
@@ -75,23 +76,41 @@ export const validateSearchRequest = (
     }
   }
 
-  // Validazione coordinate geografiche
-  if (data.centerLat !== undefined && (data.centerLat < -90 || data.centerLat > 90)) {
-    errors.push('Latitude must be between -90 and 90');
-  }
-  if (data.centerLng !== undefined && (data.centerLng < -180 || data.centerLng > 180)) {
-    errors.push('Longitude must be between -180 and 180');
-  }
-  if (data.radius !== undefined && (data.radius < 0.1 || data.radius > 100)) {
-    errors.push('Radius must be between 0.1 and 100 km');
+  // Validazione ricerca geografica per raggio
+  if (data.radiusSearch) {
+    if (!data.radiusSearch.center || !data.radiusSearch.radius) {
+      errors.push('Radius search requires both center (GeoJSON Point) and radius (in km)');
+    } else {
+      // Validazione del centro usando la funzione di utilità
+      if (!isValidGeoJSONPoint(data.radiusSearch.center)) {
+        errors.push('Center must be a valid GeoJSON Point with coordinates [longitude, latitude]');
+      }
+      // Validazione del raggio
+      if (typeof data.radiusSearch.radius !== 'number' || data.radiusSearch.radius < 0.1 || data.radiusSearch.radius > 500) {
+        errors.push('Radius must be between 0.1 and 500 km');
+      }
+    }
   }
 
-  // Validazione ricerca geografica (tutti i parametri devono essere presenti)
-  const hasGeoParams = data.centerLat !== undefined || data.centerLng !== undefined || data.radius !== undefined;
-  if (hasGeoParams) {
-    if (data.centerLat === undefined || data.centerLng === undefined || data.radius === undefined) {
-      errors.push('Geographic search requires centerLat, centerLng, and radius');
+  // Validazione ricerca geografica per poligono
+  if (data.polygon) {
+    if (!Array.isArray(data.polygon) || data.polygon.length < 3) {
+      errors.push('Polygon must be an array of at least 3 GeoJSON Points');
+    } else if (data.polygon.length > 100) {
+      errors.push('Polygon cannot have more than 100 points');
+    } else {
+      // Valida ogni punto del poligono usando la funzione di utilità
+      data.polygon.forEach((point, index) => {
+        if (!isValidGeoJSONPoint(point)) {
+          errors.push(`Polygon point at index ${index} must be a valid GeoJSON Point with coordinates [longitude, latitude]`);
+        }
+      });
     }
+  }
+
+  // Non permettere ricerca per raggio E poligono simultaneamente
+  if (data.radiusSearch && data.polygon) {
+    errors.push('Cannot use both radius search and polygon search simultaneously');
   }
 
   // Validazione sortBy

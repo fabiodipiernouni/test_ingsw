@@ -31,6 +31,7 @@ import {
   OAuthUrlParams
 } from '@auth/services/serviceTypes';
 
+// Cognito Client
 const cognitoClient = new CognitoIdentityProviderClient({
   region: config.cognito.region,
   credentials: {
@@ -38,6 +39,33 @@ const cognitoClient = new CognitoIdentityProviderClient({
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
   }
 });
+
+
+// Types
+interface CompleteNewPasswordData {
+  email: string;
+  newPassword: string;
+  session: string;
+}
+
+interface OAuthUrlParams {
+  provider: 'google' | 'facebook' | 'apple';
+  state?: string;
+}
+
+interface OAuthCallbackData {
+  code: string;
+  state?: string;
+}
+
+interface OAuthTokenResponse {
+  access_token: string;
+  id_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
+}
+
 
 // Custom error classes
 class ValidationError extends Error {
@@ -72,7 +100,7 @@ class ConflictError extends Error {
 
 export class AuthService {
   /**
-   * Registrazione nuovo utente
+   * Registrazione nuovo utente con Cognito
    */
   async register(registerData: RegisterDto): Promise<AuthResponse> {
     try {
@@ -170,7 +198,7 @@ export class AuthService {
   }
 
   /**
-   * Login utente
+   * Login utente con Cognito
    */
   async login(credentials: LoginDto): Promise<AuthResponse> {
     try {
@@ -372,7 +400,6 @@ export class AuthService {
     }
   }
 
-
   /**
    * Logout globale (invalida tutti i token dell'utente)
    */
@@ -493,7 +520,6 @@ export class AuthService {
 
       // Costruisci l'URL per l'authorization endpoint di Cognito
       const authUrl = new URL(`https://${domain}/oauth2/authorize`);
-
       authUrl.searchParams.append('client_id', config.cognito.clientId);
       authUrl.searchParams.append('response_type', responseType);
       authUrl.searchParams.append('scope', scope.join(' '));
@@ -590,7 +616,6 @@ export class AuthService {
     }
 
     const tokenData = await response.json() as OAuthTokenResponse;
-
     if (!tokenData.access_token || !tokenData.id_token) {
       throw new AuthenticationError('Invalid token response from OAuth provider');
     }
@@ -614,7 +639,7 @@ export class AuthService {
 
     if (user) {
       // Utente OAuth già registrato - assicurati che linkedProviders sia aggiornato
-      if (!(user.linkedProviders?.includes('google'))) {
+      if (!user.linkedProviders || !user.linkedProviders.includes('google')) {
         const currentProviders = user.linkedProviders || [];
         await user.update({
           linkedProviders: [...currentProviders, 'google'],
@@ -622,7 +647,7 @@ export class AuthService {
         });
         logger.info('Updated linkedProviders for existing OAuth user', {
           email: user.email,
-          linkedProviders: user.linkedProviders
+          linkedProviders: user.linkedProviders 
         });
       }
       return user;
@@ -642,7 +667,7 @@ export class AuthService {
     // 3. Nessun utente trovato: crea nuovo utente OAuth con findOrCreate
     const [newUser, created] = await User.findOrCreate({
       where: {
-        cognitoSub: cognitoSub
+        cognitoSub: cognitoSub 
       },
       defaults: {
         email: email,
@@ -695,7 +720,7 @@ export class AuthService {
     idTokenDecoded: any
   ): Promise<User> {
     logger.info('Linking OAuth account to existing email/password account', {
-      email: existingUser.email,
+      email: existingUser.email, 
       existingCognitoSub: existingUser.cognitoSub,
       newCognitoSub: cognitoSub,
       hasAvatar: !!idTokenDecoded.picture,
@@ -705,7 +730,7 @@ export class AuthService {
     // Aggiungi 'google' a linkedProviders se non è già presente
     const currentProviders = existingUser.linkedProviders || [];
     const updatedProviders = currentProviders.includes('google')
-      ? currentProviders
+      ? currentProviders 
       : [...currentProviders, 'google'];
 
     await existingUser.update({
