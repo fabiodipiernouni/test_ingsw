@@ -389,61 +389,6 @@ export class AuthController {
   }
 
   /**
-   * Completa la challenge NEW_PASSWORD_REQUIRED
-   */
-  async completeNewPassword(req: Request, res: Response) {
-    try {
-      const { email, newPassword, session } = req.body;
-
-      if (!email || !newPassword || !session) {
-        errorResponse(res, 'BAD_REQUEST', 'Email, new password and session are required', 400);
-        return;
-      }
-
-      logger.info('Complete new password challenge', { email });
-
-      const result = await authService.completeNewPasswordChallenge({ email, newPassword, session });
-
-      successResponse(
-        res,
-        {
-          user: result.user,
-          accessToken: result.accessToken,
-          refreshToken: result.refreshToken,
-          idToken: result.idToken,
-          tokenType: result.tokenType || 'Bearer'
-        },
-        'Password updated successfully'
-      );
-
-    } catch (error: any) {
-      logger.error('Error in completeNewPassword controller:', error);
-
-      if (error.name === 'AuthenticationError') {
-        errorResponse(res, 'UNAUTHORIZED', error.message, 401);
-        return;
-      }
-
-      // Check for session expired or invalid session errors from Cognito
-      if (error.name === 'NotAuthorizedException' ||
-        (error.message && (
-          error.message.includes('session is expired') ||
-          error.message.includes('Invalid session')
-        ))) {
-        errorResponse(res, 'SESSION_EXPIRED', 'Session has expired. Please login again to get a new session.', 401);
-        return;
-      }
-
-      if (error.name === 'ValidationError') {
-        errorResponse(res, 'BAD_REQUEST', error.message, 400);
-        return;
-      }
-
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to complete password challenge', 500);
-    }
-  }
-
-  /**
    * Inizia il processo di recupero password
    */
   async forgotPassword(req: Request, res: Response) {
