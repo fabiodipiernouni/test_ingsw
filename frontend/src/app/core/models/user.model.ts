@@ -10,7 +10,7 @@ export interface User {
   phone?: string;
   isVerified: boolean;
   isActive: boolean;
-  linkedProviders?: ('google' | 'github')[];
+  linkedProviders?: ('google' | 'github' | 'facebook')[];
   lastLoginAt?: Date;
   acceptedTermsAt?: Date;
   acceptedPrivacyAt?: Date;

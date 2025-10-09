@@ -1,4 +1,5 @@
 import {Property} from '@features/properties/models/property';
+import {PropertyCard} from '@features/properties/property-card/property-card';
 
 export interface SearchFilters {
   location?: string;
@@ -21,7 +22,7 @@ export interface SearchFilters {
 }
 
 export interface SearchResult {
-  properties: Property[];
+  properties: PropertyCard[];
   totalCount: number;
   currentPage: number;
   totalPages: number;
