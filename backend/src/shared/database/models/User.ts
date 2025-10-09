@@ -9,12 +9,9 @@ import {
   Unique,
   HasMany,
   ForeignKey,
-  BelongsTo,
-  BeforeCreate,
-  BeforeUpdate
+  BelongsTo
 } from 'sequelize-typescript';
 import { v4 as uuidv4 } from 'uuid';
-import bcrypt from 'bcrypt';
 import { Agency } from './Agency';
 import { Property } from './Property';
 import { SearchHistory } from './SearchHistory';
@@ -40,9 +37,15 @@ export class User extends Model {
   @Column(DataType.STRING(255))
   email!: string;
 
-  @AllowNull(true)
+  // Cognito Integration - NUOVO
+  @AllowNull(false)
+  @Unique
   @Column(DataType.STRING(255))
-  password?: string;
+  cognitoSub!: string;
+
+  @AllowNull(false)
+  @Column(DataType.STRING(255))
+  cognitoUsername!: string;
 
   @AllowNull(false)
   @Column(DataType.STRING(100))
@@ -54,8 +57,8 @@ export class User extends Model {
 
   @AllowNull(false)
   @Default('client')
-  @Column(DataType.ENUM('client', 'agent', 'admin'))
-  role!: 'client' | 'agent' | 'admin';
+  @Column(DataType.ENUM('client', 'agent', 'admin', 'owner'))
+  role!: 'client' | 'agent' | 'admin' | 'owner';
 
   @AllowNull(true)
   @Column(DataType.STRING(2000))
@@ -77,7 +80,7 @@ export class User extends Model {
 
   @AllowNull(true)
   @Column(DataType.JSON)
-  linkedProviders?: Array<'google' | 'github' | 'facebook'>;
+  linkedProviders?: Array<'google' | 'github'>;
 
   @AllowNull(true)
   @Column(DataType.DATE)
@@ -91,12 +94,6 @@ export class User extends Model {
   @AllowNull(false)
   @Column(DataType.DATE)
   acceptedPrivacyAt!: Date;
-
-  // Password management
-  @AllowNull(false)
-  @Default(false)
-  @Column(DataType.BOOLEAN)
-  shouldChangePassword!: boolean;
 
   // Agency association
   @AllowNull(true)
@@ -125,27 +122,6 @@ export class User extends Model {
   @AllowNull(true)
   @Column(DataType.JSON)
   specializations?: string[];
-
-  // Authentication tokens
-  @AllowNull(true)
-  @Column(DataType.STRING(2000))
-  refreshToken?: string;
-
-  @AllowNull(true)
-  @Column(DataType.STRING(255))
-  emailVerificationToken?: string;
-
-  @AllowNull(true)
-  @Column(DataType.DATE)
-  emailVerificationExpires?: Date;
-
-  @AllowNull(true)
-  @Column(DataType.STRING(255))
-  passwordResetToken?: string;
-
-  @AllowNull(true)
-  @Column(DataType.DATE)
-  passwordResetExpires?: Date;
 
   // Associations
   @BelongsTo(() => Agency, { foreignKey: 'agencyId', as: 'agency' })
@@ -176,37 +152,13 @@ export class User extends Model {
   views!: PropertyView[];
 
   // Instance methods
-  async comparePassword(password: string): Promise<boolean> {
-    if (!this.password) return false;
-    return await bcrypt.compare(password, this.password);
-  }
-
-  async hashPassword(password: string): Promise<string> {
-    const saltRounds = 12;
-    return await bcrypt.hash(password, saltRounds);
-  }
-
   get fullName(): string {
     return `${this.firstName} ${this.lastName}`;
   }
 
-  // Hooks
-  @BeforeCreate
-  @BeforeUpdate
-  static async hashPasswordHook(instance: User) {
-    if (instance.changed('password') && instance.password) {
-      const saltRounds = 12;
-      instance.password = await bcrypt.hash(instance.password, saltRounds);
-    }
-  }
-
-  // JSON serialization
+  // JSON serialization (rimuove dati sensibili se presenti)
   toJSON(): any {
     const values = { ...this.get() };
-    delete values.password;
-    delete values.refreshToken;
-    delete values.emailVerificationToken;
-    delete values.passwordResetToken;
     return values;
   }
 }

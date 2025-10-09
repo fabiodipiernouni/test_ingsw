@@ -7,6 +7,7 @@ import { AuthenticatedRequest } from '@shared/types/common.types';
 import { successResponse, errorResponse, validationErrorResponse, notFoundResponse } from '@shared/utils/helpers';
 import { RegisterDto } from '@auth/dto/RegisterDto';
 import { LoginDto } from '@auth/dto/LoginDto';
+import config from '@shared/config';
 
 export class AuthController {
   /**
@@ -20,20 +21,20 @@ export class AuthController {
       if (errors.length > 0) {
         return validationErrorResponse(res, errors.map(e => Object.values(e.constraints || {})).flat());
       }
-      
+
       logger.info('User registration request', { email: registerData.email });
 
       const result = await authService.register(registerData);
 
       successResponse(
-        res, 
+        res,
         {
           user: result.user,
           accessToken: result.accessToken,
           refreshToken: result.refreshToken,
           tokenType: 'Bearer',
           isNewUser: true
-        }, 
+        },
         'User registered successfully',
         201
       );
@@ -51,6 +52,20 @@ export class AuthController {
         return;
       }
 
+      // Handle user already exists
+      if (error.name === 'UsernameExistsException' ||
+        (error.message && error.message.includes('already exists'))) {
+        errorResponse(res, 'USER_ALREADY_EXISTS', 'An account with this email already exists.', 409);
+        return;
+      }
+
+      // Handle invalid password
+      if (error.name === 'InvalidPasswordException' ||
+        (error.message && error.message.includes('password does not conform'))) {
+        errorResponse(res, 'INVALID_PASSWORD', 'Password does not meet security requirements. Must be at least 8 characters with letters and numbers.', 400);
+        return;
+      }
+
       errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Registration failed', 500);
     }
   }
@@ -59,22 +74,37 @@ export class AuthController {
    * Login utente
    */
   async login(req: Request, res: Response) {
-    
+
     try {
       const { email, password } = req.body as LoginDto;
-      
+
       logger.info('User login request', { email });
 
       const result = await authService.login({ email, password });
 
+      // Se c'è una challenge (es. NEW_PASSWORD_REQUIRED)
+      if (result.challenge) {
+        return successResponse(
+          res,
+          {
+            challengeName: result.challenge.name,
+            session: result.challenge.session,
+            message: 'Challenge required'
+          },
+          'Additional authentication step required'
+        );
+      }
+
+      // Login normale completato
       successResponse(
-        res, 
+        res,
         {
           user: result.user,
           accessToken: result.accessToken,
           refreshToken: result.refreshToken,
-          tokenType: 'Bearer'
-        }, 
+          idToken: result.idToken,
+          tokenType: result.tokenType || 'Bearer'
+        },
         'Login successful'
       );
 
@@ -86,7 +116,275 @@ export class AuthController {
         return;
       }
 
+      // Handle user not found
+      if (error.name === 'UserNotFoundException' || error.name === 'NotFoundError') {
+        errorResponse(res, 'UNAUTHORIZED', 'Invalid email or password', 401);
+        return;
+      }
+
+      // Handle user not confirmed
+      if (error.name === 'UserNotConfirmedException') {
+        errorResponse(res, 'USER_NOT_CONFIRMED', 'User email not verified. Please verify your email first.', 403);
+        return;
+      }
+
+      // Handle too many failed attempts
+      if (error.name === 'TooManyRequestsException' ||
+        (error.message && error.message.includes('too many'))) {
+        errorResponse(res, 'TOO_MANY_ATTEMPTS', 'Too many failed login attempts. Please try again later.', 429);
+        return;
+      }
+
+      if (error.name === 'ValidationError') {
+        errorResponse(res, 'BAD_REQUEST', error.message, 400);
+        return;
+      }
+
       errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Login failed', 500);
+    }
+  }
+
+  /**
+   * Completa la challenge NEW_PASSWORD_REQUIRED
+   */
+  async completeNewPassword(req: Request, res: Response) {
+    try {
+      const { email, newPassword, session } = req.body;
+
+      if (!email || !newPassword || !session) {
+        errorResponse(res, 'BAD_REQUEST', 'Email, new password and session are required', 400);
+        return;
+      }
+
+      logger.info('Complete new password challenge', { email });
+
+      const result = await authService.completeNewPasswordChallenge({ email, newPassword, session });
+
+      successResponse(
+        res,
+        {
+          user: result.user,
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+          idToken: result.idToken,
+          tokenType: result.tokenType || 'Bearer'
+        },
+        'Password updated successfully'
+      );
+
+    } catch (error: any) {
+      logger.error('Error in completeNewPassword controller:', error);
+
+      if (error.name === 'AuthenticationError') {
+        errorResponse(res, 'UNAUTHORIZED', error.message, 401);
+        return;
+      }
+
+      // Check for session expired or invalid session errors from Cognito
+      if (error.name === 'NotAuthorizedException' ||
+        (error.message && (
+          error.message.includes('session is expired') ||
+          error.message.includes('Invalid session')
+        ))) {
+        errorResponse(res, 'SESSION_EXPIRED', 'Session has expired. Please login again to get a new session.', 401);
+        return;
+      }
+
+      if (error.name === 'ValidationError') {
+        errorResponse(res, 'BAD_REQUEST', error.message, 400);
+        return;
+      }
+
+      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to complete password challenge', 500);
+    }
+  }
+
+  /**
+   * Inizia il processo di recupero password
+   */
+  async forgotPassword(req: Request, res: Response) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        errorResponse(res, 'BAD_REQUEST', 'Email is required', 400);
+        return;
+      }
+
+      logger.info('Forgot password request', { email });
+
+      await authService.forgotPassword(email);
+
+      successResponse(res, { message: 'Password reset code sent to your email' });
+
+    } catch (error: any) {
+      logger.error('Error in forgotPassword controller:', error);
+
+      if (error.name === 'NotFoundError') {
+        // Per sicurezza, non rivelare se l'utente esiste o meno
+        successResponse(res, { message: 'If an account exists, a password reset code has been sent' });
+        return;
+      }
+
+      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to initiate password reset', 500);
+    }
+  }
+
+  /**
+   * Conferma il reset della password con il codice
+   */
+  async confirmForgotPassword(req: Request, res: Response) {
+    try {
+      const { email, code, newPassword } = req.body;
+
+      if (!email || !code || !newPassword) {
+        errorResponse(res, 'BAD_REQUEST', 'Email, code and new password are required', 400);
+        return;
+      }
+
+      logger.info('Confirm forgot password', { email });
+
+      await authService.confirmForgotPassword(email, code, newPassword);
+
+      successResponse(res, { message: 'Password reset successful. You can now login with your new password.' });
+
+    } catch (error: any) {
+      logger.error('Error in confirmForgotPassword controller:', error);
+
+      if (error.name === 'AuthenticationError') {
+        errorResponse(res, 'UNAUTHORIZED', error.message, 401);
+        return;
+      }
+
+      // Handle invalid or expired verification code
+      if (error.name === 'CodeMismatchException' ||
+        (error.message && error.message.includes('Invalid code provided'))) {
+        errorResponse(res, 'INVALID_CODE', 'Invalid or expired verification code. Please request a new code.', 400);
+        return;
+      }
+
+      if (error.name === 'ExpiredCodeException' ||
+        (error.message && error.message.includes('code has expired'))) {
+        errorResponse(res, 'CODE_EXPIRED', 'Verification code has expired. Please request a new code.', 400);
+        return;
+      }
+
+      // Handle invalid password format
+      if (error.name === 'InvalidPasswordException' ||
+        (error.message && error.message.includes('password does not conform'))) {
+        errorResponse(res, 'INVALID_PASSWORD', 'Password does not meet security requirements. Must be at least 8 characters with letters and numbers.', 400);
+        return;
+      }
+
+      if (error.name === 'ValidationError') {
+        errorResponse(res, 'BAD_REQUEST', error.message, 400);
+        return;
+      }
+
+      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to reset password', 500);
+    }
+  }
+
+  /**
+   * Conferma email con codice di verifica
+   */
+  async confirmEmail(req: Request, res: Response) {
+    try {
+      const { email, code } = req.body;
+
+      if (!email || !code) {
+        validationErrorResponse(res, ['Email and verification code are required']);
+        return;
+      }
+
+      logger.info('Email confirmation request', { email });
+
+      const result = await authService.confirmEmail(email, code);
+
+      successResponse(res, { message: result.message }, 'Email verified successfully', 200);
+
+    } catch (error: any) {
+      logger.error('Error in confirmEmail controller:', error);
+
+      if (error.name === 'ValidationError') {
+        errorResponse(res, 'INVALID_CODE', error.message, 400);
+        return;
+      }
+
+      if (error.name === 'CodeMismatchException') {
+        errorResponse(res, 'INVALID_CODE', 'Invalid verification code. Please check and try again.', 400);
+        return;
+      }
+
+      if (error.name === 'ExpiredCodeException') {
+        errorResponse(res, 'CODE_EXPIRED', 'Verification code has expired. Please request a new code.', 400);
+        return;
+      }
+
+      if (error.name === 'NotAuthorizedException') {
+        errorResponse(res, 'ALREADY_VERIFIED', 'User is already verified.', 400);
+        return;
+      }
+
+      if (error.name === 'NotFoundError' ||
+        error.name === 'UserNotFoundException' ||
+        (error.message && error.message.includes('Username/client id combination not found')) ||
+        (error.message && error.message.includes('User not found'))) {
+        notFoundResponse(res, 'User not found. Please check your email or register first.');
+        return;
+      }
+
+      if (error.name === 'InvalidParameterException') {
+        errorResponse(res, 'BAD_REQUEST', error.message || 'Invalid parameters provided.', 400);
+        return;
+      }
+
+      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to verify email', 500);
+    }
+  }
+
+  /**
+   * Reinvia codice di verifica email
+   */
+  async resendVerificationCode(req: Request, res: Response) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        validationErrorResponse(res, ['Email is required']);
+        return;
+      }
+
+      logger.info('Resend verification code request', { email });
+
+      const result = await authService.resendVerificationCode(email);
+
+      successResponse(res, { message: result.message }, 'Verification code sent', 200);
+
+    } catch (error: any) {
+      logger.error('Error in resendVerificationCode controller:', error);
+
+      if (error.name === 'NotFoundError' || error.name === 'UserNotFoundException') {
+        notFoundResponse(res, 'User not found');
+        return;
+      }
+
+      if (error.name === 'ValidationError') {
+        errorResponse(res, 'BAD_REQUEST', error.message, 400);
+        return;
+      }
+
+      if (error.name === 'InvalidParameterException') {
+        errorResponse(res, 'ALREADY_VERIFIED', 'User is already verified.', 400);
+        return;
+      }
+
+      if (error.name === 'LimitExceededException') {
+        errorResponse(res, 'TOO_MANY_REQUESTS', 'Too many requests. Please try again later.', 429);
+        return;
+      }
+
+      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to resend verification code', 500);
     }
   }
 
@@ -106,7 +404,7 @@ export class AuthController {
 
       successResponse(res, {
         accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
+        idToken: result.idToken,
         tokenType: 'Bearer'
       });
 
@@ -115,6 +413,14 @@ export class AuthController {
 
       if (error.name === 'AuthenticationError') {
         errorResponse(res, 'UNAUTHORIZED', error.message, 401);
+        return;
+      }
+
+      // Handle invalid or expired refresh token
+      if (error.name === 'NotAuthorizedException' ||
+        (error.message && (error.message.includes('Refresh Token has expired') ||
+          error.message.includes('Invalid Refresh Token')))) {
+        errorResponse(res, 'TOKEN_EXPIRED', 'Refresh token has expired or is invalid. Please login again.', 401);
         return;
       }
 
@@ -127,45 +433,62 @@ export class AuthController {
    */
   async changePassword(req: AuthenticatedRequest, res: Response) {
     try {
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          message: 'User not authenticated'
-        });
+      const authHeader = req.headers.authorization;
+      const accessToken = authHeader?.split(' ')[1];
+
+      if (!accessToken) {
+        errorResponse(res, 'UNAUTHORIZED', 'Access token is required', 401);
+        return;
       }
 
       const { currentPassword, newPassword } = req.body;
 
       if (!currentPassword || !newPassword) {
-        return res.status(400).json({
-          success: false,
-          message: 'Current password and new password are required'
-        });
+        validationErrorResponse(res, ['Current password and new password are required']);
+        return;
       }
 
-      // Validazione password: almeno 8 caratteri, almeno un numero, una lettera
       const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/;
       if (!passwordRegex.test(newPassword)) {
-        return res.status(400).json({
-          success: false,
-          message: 'New password must be at least 8 characters long and contain at least one letter and one number'
-        });
+        validationErrorResponse(res, ['New password must be at least 8 characters long and contain at least one letter and one number']);
+        return;
       }
 
-      await authService.changePassword(req.user.id, { currentPassword, newPassword });
+      await authService.changePassword(accessToken, currentPassword, newPassword);
 
       successResponse(res, { message: 'Password changed successfully' });
 
     } catch (error: any) {
       logger.error('Error in changePassword controller:', error);
 
-      if (error.name === 'NotFoundError') {
-        notFoundResponse(res, error.message);
+      if (error.name === 'AuthenticationError') {
+        errorResponse(res, 'UNAUTHORIZED', error.message, 401);
         return;
       }
 
-      if (error.name === 'AuthenticationError') {
-        errorResponse(res, 'UNAUTHORIZED', error.message, 401);
+      if (error.name === 'ValidationError') {
+        validationErrorResponse(res, [error.message]);
+        return;
+      }
+
+      // Handle incorrect current password
+      if (error.name === 'NotAuthorizedException' ||
+        (error.message && error.message.includes('Incorrect username or password'))) {
+        errorResponse(res, 'INCORRECT_PASSWORD', 'Current password is incorrect.', 401);
+        return;
+      }
+
+      // Handle invalid new password
+      if (error.name === 'InvalidPasswordException' ||
+        (error.message && error.message.includes('password does not conform'))) {
+        errorResponse(res, 'INVALID_PASSWORD', 'New password does not meet security requirements. Must be at least 8 characters with letters and numbers.', 400);
+        return;
+      }
+
+      // Handle attempt limit exceeded
+      if (error.name === 'LimitExceededException' ||
+        (error.message && error.message.includes('Attempt limit exceeded'))) {
+        errorResponse(res, 'TOO_MANY_ATTEMPTS', 'Too many password change attempts. Please try again later.', 429);
         return;
       }
 
@@ -174,108 +497,83 @@ export class AuthController {
   }
 
   /**
-   * Invia codice OTP per verifica email
+   * Inizia il flusso OAuth con redirect diretto al provider
    */
-  async sendEmailVerification(req: Request, res: Response) {
+  async getOAuthUrl(req: Request, res: Response) {
     try {
-      const { email } = req.body;
+      const { provider, state } = req.query;
 
-      if (!email) {
-        return res.status(400).json({
-          success: false,
-          message: 'Email is required'
-        });
+      logger.info('OAuth authorization request', { provider });
+
+      // Valida provider
+      if (!provider || provider !== 'google') {
+        // Redirect al frontend con errore
+        const errorUrl = `${config.frontendUrl}/auth/error?message=${encodeURIComponent('Invalid OAuth provider. Only Google is currently supported')}`;
+        return res.redirect(errorUrl);
       }
 
-      await authService.sendEmailVerification(email);
-
-      successResponse(res, { message: 'Verification code sent to your email' });
-
-    } catch (error: any) {
-      logger.error('Error in sendEmailVerification controller:', error);
-
-      if (error.name === 'NotFoundError') {
-        notFoundResponse(res, error.message);
-        return;
-      }
-
-      if (error.name === 'ConflictError') {
-        errorResponse(res, 'CONFLICT', error.message, 409);
-        return;
-      }
-
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to send verification code', 500);
-    }
-  }
-
-  /**
-   * Verifica email con codice OTP
-   */
-  async verifyEmailOtp(req: Request, res: Response) {
-    try {
-      const { email, otp } = req.body;
-
-      if (!email || !otp) {
-        return res.status(400).json({
-          success: false,
-          message: 'Email and OTP code are required'
-        });
-      }
-
-      const user = await authService.verifyEmailOtp({ email, otp });
-
-      successResponse(res, { 
-        user,
-        message: 'Email verified successfully' 
+      const authUrl = authService.getOAuthUrl({
+        provider: 'google',
+        state: state as string
       });
 
+      logger.info('Redirecting to OAuth provider', { provider });
+
+      // Redirect diretto al Cognito Hosted UI
+      res.redirect(authUrl);
+
     } catch (error: any) {
-      logger.error('Error in verifyEmailOtp controller:', error);
-
-      if (error.name === 'NotFoundError') {
-        notFoundResponse(res, error.message);
-        return;
-      }
-
-      if (error.name === 'AuthenticationError') {
-        errorResponse(res, 'UNAUTHORIZED', error.message, 401);
-        return;
-      }
-
-      if (error.name === 'ConflictError') {
-        errorResponse(res, 'CONFLICT', error.message, 409);
-        return;
-      }
-
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to verify email', 500);
+      logger.error('Error in getOAuthUrl controller:', error);
+      const errorUrl = `${config.frontendUrl}/auth/error?message=${encodeURIComponent('Failed to start OAuth authentication')}`;
+      res.redirect(errorUrl);
     }
   }
 
   /**
-   * Verifica token JWT
+   * Gestisci il callback OAuth e completa l'autenticazione
    */
-  async verifyToken(req: Request, res: Response) {
+  async handleOAuthCallback(req: Request, res: Response) {
     try {
-      const authHeader = req.headers.authorization;
-      const token = authHeader && authHeader.split(' ')[1];
+      const { code, state, error, error_description } = req.query;
 
-      if (!token) {
-        errorResponse(res, 'UNAUTHORIZED', 'No token provided', 401);
-        return;
+      // Gestisci errori dal provider OAuth
+      if (error) {
+        logger.error('OAuth error from provider:', { error, error_description });
+        // Redirect al frontend con errore
+        const errorUrl = `${config.frontendUrl}/auth/error?message=${encodeURIComponent(error_description as string || 'OAuth authentication failed')}`;
+        return res.redirect(errorUrl);
       }
 
-      const user = await authService.verifyToken(token);
-      successResponse(res, { user, valid: true });
+      if (!code) {
+        const errorUrl = `${config.frontendUrl}/auth/error?message=${encodeURIComponent('Authorization code is required')}`;
+        return res.redirect(errorUrl);
+      }
+
+      logger.info('OAuth callback received', { state });
+
+      const result = await authService.handleOAuthCallback({
+        code: code as string,
+        state: state as string
+      });
+
+      // Redirect al frontend con token nei query params
+      const callbackUrl = new URL(`${config.frontendUrl}/auth/callback`);
+      callbackUrl.searchParams.append('access_token', result.accessToken);
+      callbackUrl.searchParams.append('id_token', result.idToken);
+      callbackUrl.searchParams.append('refresh_token', result.refreshToken);
+      callbackUrl.searchParams.append('token_type', result.tokenType);
+      callbackUrl.searchParams.append('email', result.user.email);
+      callbackUrl.searchParams.append('is_new_user', (!result.user.emailVerified).toString());
+
+      logger.info('OAuth login successful, redirecting to frontend', { email: result.user.email });
+
+      res.redirect(callbackUrl.toString());
 
     } catch (error: any) {
-      logger.error('Error in verifyToken controller:', error);
+      logger.error('Error in handleOAuthCallback controller:', error);
 
-      if (error.name === 'AuthenticationError') {
-        errorResponse(res, 'UNAUTHORIZED', error.message, 401);
-        return;
-      }
-
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to verify token', 500);
+      const errorUrl = `${config.frontendUrl}/auth/error?message=${encodeURIComponent(error.message || 'OAuth authentication failed')}`;
+      res.redirect(errorUrl);
     }
   }
 }

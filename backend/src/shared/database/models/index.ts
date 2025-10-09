@@ -10,3 +10,6 @@ export { UserPreferences } from './UserPreferences';
 export { PropertyFavorite } from './PropertyFavorite';
 export { PropertyView } from './PropertyView';
 export { Agency } from './Agency';
+
+// Re-export shared GeoJSON types for convenience
+export { GeoJSONPoint, GeoCoordinates, isValidGeoJSONPoint, createGeoJSONPoint, extractCoordinates } from '@shared/types/geojson.types';

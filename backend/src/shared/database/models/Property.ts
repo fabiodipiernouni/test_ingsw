@@ -135,14 +135,14 @@ export class Property extends Model {
   // GeoJSON location field per query geospaziali con Oracle Spatial
   // Formato: {"type":"Point","coordinates":[longitude,latitude]}
   @AllowNull(false)
-  @Column({
+  @Column({ 
     type: DataType.STRING(4000),
     field: 'geo_location',
     // Getter: converte stringa JSON → oggetto JavaScript
     get() {
       const rawValue = this.getDataValue('location' as any);
       if (!rawValue) return null;
-
+      
       if (typeof rawValue === 'string') {
         try {
           return JSON.parse(rawValue);
@@ -158,7 +158,7 @@ export class Property extends Model {
         this.setDataValue('location' as any, null);
         return;
       }
-
+      
       // Supporta sia formato GeoJSON che oggetto semplice
       if ('type' in value && value.type === 'Point') {
         // È già GeoJSON
@@ -260,11 +260,11 @@ export class Property extends Model {
   // JSON serialization
   toJSON(): any {
     const values = { ...this.get() };
-
+    
     // Add computed fields
     values.address = this.address;
     values.primaryImage = this.primaryImage;
-
+    
     return values;
   }
 }

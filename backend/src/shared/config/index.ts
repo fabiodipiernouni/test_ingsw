@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { AppConfig, DatabaseConfig, JWTConfig, EmailConfig, RedisConfig, UploadConfig, S3Config } from '@shared/types/config.types';
+import { AppConfig, DatabaseConfig, CognitoConfig, EmailConfig, RedisConfig, UploadConfig, S3Config } from '@shared/types/config.types';
 
 dotenv.config();
 
@@ -17,11 +17,24 @@ const databaseConfig: DatabaseConfig = {
   logging: process.env.NODE_ENV === 'development' ? console.log : false
 };
 
-const jwtConfig: JWTConfig = {
-  secret: process.env.JWT_SECRET || 'your-secret-key',
-  refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
-  expiresIn: process.env.JWT_EXPIRES_IN || '1h',
-  refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d'
+const cognitoConfig: CognitoConfig = {
+  region: process.env.AWS_COGNITO_REGION || 'eu-south-1',
+  userPoolId: process.env.AWS_COGNITO_USER_POOL_ID || '',
+  clientId: process.env.AWS_COGNITO_CLIENT_ID || '',
+  issuer: `https://cognito-idp.${process.env.AWS_COGNITO_REGION || 'eu-south-1'}.amazonaws.com/${process.env.AWS_COGNITO_USER_POOL_ID || ''}`,
+  groups: {
+    clients: 'clients',
+    agents: 'agents',
+    admins: 'admins',
+    owners: 'owners'
+  },
+  oauth: {
+    domain: process.env.AWS_COGNITO_DOMAIN || '',
+    callbackUrl: process.env.AWS_COGNITO_CALLBACK_URL || 'http://localhost:3001/auth/callback',
+    logoutUrl: process.env.AWS_COGNITO_LOGOUT_URL || 'http://localhost:4200',
+    scope: (process.env.AWS_COGNITO_OAUTH_SCOPE || 'openid,email,profile').split(','),
+    responseType: process.env.AWS_COGNITO_RESPONSE_TYPE || 'code'
+  }
 };
 
 const emailConfig: EmailConfig = {
@@ -61,7 +74,7 @@ const config: AppConfig = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '3000'),
   database: databaseConfig,
-  jwt: jwtConfig,
+  cognito: cognitoConfig,
   email: emailConfig,
   redis: redisConfig,
   upload: uploadConfig,

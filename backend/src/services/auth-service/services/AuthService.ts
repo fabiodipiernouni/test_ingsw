@@ -13,7 +13,6 @@ import {
   AuthFlowType,
   ChallengeNameType
 } from '@aws-sdk/client-cognito-identity-provider';
-import jwt, { SignOptions } from 'jsonwebtoken';
 import { User } from '@shared/database/models/User';
 import { Agency } from '@shared/database/models/Agency';
 import { UserPreferences } from '@shared/database/models/UserPreferences';
@@ -25,6 +24,12 @@ import { LoginDto } from '@auth/dto/LoginDto';
 import { AuthResponse } from '@auth/dto/AuthResponse';
 import { UserResponse } from '@auth/dto/UserResponse';
 import { AgencyResponse } from '@auth/dto/AgencyResponse';
+import {
+  CompleteNewPasswordData,
+  OAuthCallbackData,
+  OAuthTokenResponse,
+  OAuthUrlParams
+} from '@auth/services/serviceTypes';
 
 const cognitoClient = new CognitoIdentityProviderClient({
   region: config.cognito.region,
@@ -33,17 +38,6 @@ const cognitoClient = new CognitoIdentityProviderClient({
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
   }
 });
-
-
-interface ChangePasswordData {
-  currentPassword: string;
-  newPassword: string;
-}
-
-interface EmailVerificationData {
-  email: string;
-  otp: string;
-}
 
 // Custom error classes
 class ValidationError extends Error {
@@ -92,7 +86,7 @@ export class AuthService {
       }
 
       // Verifica se l'utente esiste già nel DB locale
-      const existingUser = await User.findOne({ where: { registerData.email } });
+      const existingUser = await User.findOne({ where: { email: registerData.email } });
       if (existingUser) {
         throw new ConflictError('User with this email already exists');
       }
@@ -197,7 +191,7 @@ export class AuthService {
         // Utente deve cambiare password (creato da admin)
         if (authResponse.ChallengeName === ChallengeNameType.NEW_PASSWORD_REQUIRED) {
           // Recupera utente dal DB
-          const user = await User.findOne({ where: { credentials.email } });
+          const user = await User.findOne({ where: { email: credentials.email } });
 
           return {
             user: user ? this.formatUserResponse(user) : ({} as UserResponse),
@@ -534,7 +528,7 @@ export class AuthService {
       const email = idTokenDecoded.email;
 
       // 3. CERCA O CREA UTENTE (con account linking)
-      let user = await this.findOrCreateOAuthUser(cognitoSub, email, idTokenDecoded);
+      const user = await this.findOrCreateOAuthUser(cognitoSub, email, idTokenDecoded);
 
       // 4. VERIFICA CHE L'ACCOUNT SIA ATTIVO
       if (!user.isActive) {
@@ -613,14 +607,14 @@ export class AuthService {
     idTokenDecoded: any
   ): Promise<User> {
     // 1. Cerca utente per cognitoSub (utente OAuth già esistente)
-    let user = await User.findOne({
+    const user = await User.findOne({
       where: { cognitoSub },
       include: [{ model: Agency, as: 'agency' }]
     });
 
     if (user) {
       // Utente OAuth già registrato - assicurati che linkedProviders sia aggiornato
-      if (!user.linkedProviders || !user.linkedProviders.includes('google')) {
+      if (!(user.linkedProviders?.includes('google'))) {
         const currentProviders = user.linkedProviders || [];
         await user.update({
           linkedProviders: [...currentProviders, 'google'],
@@ -868,144 +862,6 @@ export class AuthService {
       throw error;
     }
   }
-
-
-
-
-
-  /**
-   * Refresh token
-   */
-  async refreshToken(token: string): Promise<{ accessToken: string; refreshToken: string }> {
-    try {
-      // Verifica il refresh token
-      const decoded = jwt.verify(token, config.jwt.refreshSecret) as any;
-
-      // Trova l'utente
-      const user = await User.findByPk(decoded.userId);
-      if (!user?.isActive) {
-        throw new AuthenticationError('Invalid refresh token');
-      }
-
-      // Genera nuovi token
-      return this.generateTokens(user);
-    } catch (error) {
-      logger.error('Error in refreshToken service:', error);
-      if (error instanceof jwt.JsonWebTokenError) {
-        throw new AuthenticationError('Invalid refresh token');
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Verifica token
-   */
-  async verifyToken(token: string): Promise<UserResponse> {
-    try {
-      const decoded = jwt.verify(token, config.jwt.secret) as any;
-
-      const user = await User.findByPk(decoded.userId, {
-        include: [
-          {
-            model: Agency,
-            as: 'agency',
-            attributes: ['id', 'name', 'street', 'city', 'province', 'zipCode', 'country', 'phone', 'email', 'website']
-          }
-        ]
-      });
-
-      if (!user || !user.isActive) {
-        throw new AuthenticationError('Invalid token');
-      }
-
-      return this.formatUserResponse(user);
-    } catch (error) {
-      logger.error('Error in verifyToken service:', error);
-      if (error instanceof jwt.JsonWebTokenError) {
-        throw new AuthenticationError('Invalid token');
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Cambio password
-   */
-  async changePassword(userId: string, passwordData: ChangePasswordData): Promise<void> {
-    try {
-      const { currentPassword, newPassword } = passwordData;
-
-      const user = await User.findByPk(userId);
-      if (!user) {
-        throw new NotFoundError('User not found');
-      }
-
-      // Verifica password corrente
-      const isCurrentPasswordValid = await user.comparePassword(currentPassword);
-      if (!isCurrentPasswordValid) {
-        throw new AuthenticationError('Current password is incorrect');
-      }
-
-      // Aggiorna password (sarà hashata automaticamente dal modello)
-      await user.update({ password: newPassword });
-    } catch (error) {
-      logger.error('Error in changePassword service:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Invio verifica email
-   */
-  async sendEmailVerification(email: string): Promise<void> {
-    try {
-      const user = await User.findOne({ where: { email } });
-      if (!user) {
-        throw new NotFoundError('User not found');
-      }
-
-      if (user.isVerified) {
-        throw new ConflictError('Email already verified');
-      }
-
-      // TODO: Implementare invio OTP via email
-      // Per ora logghiamo soltanto
-      logger.info('Email verification requested for user:', { email, userId: user.id });
-    } catch (error) {
-      logger.error('Error in sendEmailVerification service:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Verifica OTP email
-   */
-  async verifyEmailOtp(verificationData: EmailVerificationData): Promise<UserResponse> {
-    try {
-      const { email, otp } = verificationData;
-
-      const user = await User.findOne({ where: { email } });
-      if (!user) {
-        throw new NotFoundError('User not found');
-      }
-
-      // TODO: Implementare verifica OTP
-      // Per ora accettiamo sempre "123456" come OTP valido
-      if (otp !== '123456') {
-        throw new AuthenticationError('Invalid OTP');
-      }
-
-      // Marca email come verificata
-      await user.update({ isVerified: true });
-
-      return this.formatUserResponse(user);
-    } catch (error) {
-      logger.error('Error in verifyEmailOtp service:', error);
-      throw error;
-    }
-  }
-
 
   /**
    * Formatta la risposta utente

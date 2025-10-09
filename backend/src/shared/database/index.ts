@@ -26,7 +26,6 @@ class Database {
       dialectOptions: {
         connectString: config.database.connectString
       },
-      quoteIdentifiers: false,
       pool: config.database.pool,
       logging: config.database.logging,
       models: [
@@ -55,32 +54,16 @@ class Database {
 
   async connect(): Promise<void> {
     try {
-      // Initialize Oracle client only if not already initialized
-      try {
-        // console.log('Initializing Oracle client...');
-        oracledb.initOracleClient();
-        // console.log('Oracle client initialized successfully');
-      } catch (error: any) {
-        // initOracleClient can only be called once per process
-        if (error.message && error.message.includes('already been initialized')) {
-          // console.log('Oracle client already initialized');
-        } else {
-          console.error('Error initializing Oracle client:', error);
-          throw error;
-        }
-      }
-
-      // console.log('Authenticating with database...');
+      // Initialize Oracle client
+      oracledb.initOracleClient();
+      
       await this.sequelize.authenticate();
-      // console.log('Database connection established successfully');
-
+      console.log('Database connection established successfully');
+      
       // Sync models in development
       if (config.nodeEnv === 'development') {
-        // console.log('Syncing database models...');
         await this.sequelize.sync({ force: false });
-        // console.log('Adding creator foreign key to Agency...');
         await Agency.addCreatorForeignKey(this.sequelize);
-        // console.log('Database sync completed');
       }
     } catch (error) {
       console.error('Unable to connect to the database:', error);
@@ -91,7 +74,7 @@ class Database {
   async disconnect(): Promise<void> {
     try {
       await this.sequelize.close();
-      // console.log('Database connection closed');
+      console.log('Database connection closed');
     } catch (error) {
       console.error('Error closing database connection:', error);
       throw error;
