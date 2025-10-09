@@ -131,7 +131,7 @@ router.get('/cards', optionalAuth, propertyController.getPropertiesCards.bind(pr
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/', optionalAuth, propertyController.getProperties.bind(propertyController));
+//router.get('/', optionalAuth, propertyController.getProperties.bind(propertyController));
 
 /**
  * @swagger

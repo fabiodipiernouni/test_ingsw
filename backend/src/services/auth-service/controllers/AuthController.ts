@@ -61,11 +61,11 @@ export class AuthController {
   async login(req: Request, res: Response) {
     
     try {
-      const loginData: LoginDto = req.body;
+      const { email, password } = req.body as LoginDto;
       
-      logger.info('User login request', { loginData.email });
+      logger.info('User login request', { email });
 
-      const result = await authService.login({ loginData.email, loginData.password });
+      const result = await authService.login({ email, password });
 
       successResponse(
         res, 

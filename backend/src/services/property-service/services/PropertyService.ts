@@ -1,10 +1,14 @@
 import { Property, PropertyImage } from '@shared/database/models';
-import { PropertyCreateRequest, PropertyResponse, CreatePropertyResponse, SearchResult } from '../models/types';
+
 import logger from '@shared/utils/logger';
 import { imageService } from '@shared/services/ImageService';
 import config from '@shared/config';
 import { PropertyCard } from '@property/models/PropertyCard';
-import { pagedResult } from '@shared/models/PagedResult';
+import { PagedResult } from '@shared/models/pagedResult';
+import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequest';
+import { CreatePropertyResponse } from '@property/dto/CreatePropertyResponse';
+import { PropertyDto } from '@property/dto/PropertyDto';
+import { isValidGeoJSONPoint } from '@shared/types/geojson.types';
 
 // Custom error classes for better error handling
 class ValidationError extends Error {
@@ -34,12 +38,17 @@ export class PropertyService {
   /**
    * Crea una nuova proprietà
    */
-  async createProperty(propertyData: PropertyCreateRequest, agentId: string): Promise<CreatePropertyResponse> {
+  async createProperty(propertyData: CreatePropertyRequest, agentId: string): Promise<CreatePropertyResponse> {
     try {
       logger.info(`Creating property for agent ${agentId}`, { title: propertyData.title });
 
       // Validazione base dei dati
       this.validatePropertyData(propertyData);
+
+      // Normalizza features: lowercase e trim
+      const normalizedFeatures = propertyData.features
+        ? propertyData.features.map(f => f.trim().toLowerCase())
+        : undefined;
 
       // Crea la proprietà nel database
       const property = await Property.create({
@@ -50,9 +59,10 @@ export class PropertyService {
         province: propertyData.address.province,
         zipCode: propertyData.address.zipCode,
         country: propertyData.address.country || 'Italy',
-        // Location fields
-        latitude: propertyData.location.latitude,
-        longitude: propertyData.location.longitude,
+        // Location field (GeoJSON)
+        location: propertyData.location,
+        // Normalized features
+        features: normalizedFeatures,
         // Agent
         agentId: agentId,
         // Defaults
@@ -89,9 +99,68 @@ export class PropertyService {
   }
 
   /**
+   * Formatta la risposta della proprietà per l'API
+   */
+  private async formatPropertyCardResponse(property: Property): Promise<PropertyCard> {
+    // Generate signed URLs for images
+    const imagesWithUrls = await Promise.all(
+      (property.images || []).map(async (image) => {
+        // If image has S3 keys, generate signed URLs using getImageVariants()
+        if (image.s3KeyOriginal) {
+          const variants = image.getImageVariants();
+          const urls = await imageService.getImageUrls(variants);
+
+          return {
+            id: image.id,
+            fileName: image.fileName,
+            contentType: image.contentType,
+            fileSize: image.fileSize,
+            width: image.width,
+            height: image.height,
+            caption: image.caption,
+            alt: image.alt,
+            isPrimary: image.isPrimary,
+            order: image.order,
+            uploadDate: image.uploadDate,
+            urls
+          };
+        }
+        return undefined; // Should not happen since all images should have S3 keys
+      })
+    );
+
+    return {
+      id: property.id,
+      title: property.title,
+      description: property.description,
+      price: property.price,
+      propertyType: property.propertyType,
+      listingType: property.listingType,
+      status: property.status,
+      bedrooms: property.bedrooms,
+      bathrooms: property.bathrooms,
+      area: property.area,
+      floor: property.floor,
+      city: property.city,
+      province: property.province,
+      primaryImage: imagesWithUrls.find(img => img?.isPrimary),
+      energyClass: property.energyClass,
+      hasElevator: property.hasElevator,
+      hasBalcony: property.hasBalcony,
+      hasGarden: property.hasGarden,
+      hasParking: property.hasParking,
+      //images: imagesWithUrls as any,
+      agentId: property.agentId,
+      views: property.views,
+      createdAt: property.createdAt.toISOString(),
+      updatedAt: property.updatedAt.toISOString()
+    };
+  }
+
+  /**
    * Ottiene una proprietà per ID con tutte le associazioni
    */
-  async getPropertyById(propertyId: string): Promise<PropertyResponse> {
+  async getPropertyById(propertyId: string): Promise<PropertyDto> {
     const property = await Property.findByPk(propertyId, {
       include: [
         {
@@ -114,10 +183,12 @@ export class PropertyService {
     return await this.formatPropertyResponse(property);
   }
 
+
+
   /**
    * Formatta la risposta della proprietà per l'API
    */
-  private async formatPropertyResponse(property: Property): Promise<PropertyResponse> {
+  private async formatPropertyResponse(property: Property): Promise<PropertyDto> {
     // Generate signed URLs for images
     const imagesWithUrls = await Promise.all(
       (property.images || []).map(async (image) => {
@@ -170,10 +241,7 @@ export class PropertyService {
         zipCode: property.zipCode,
         country: property.country
       },
-      location: {
-        latitude: property.latitude,
-        longitude: property.longitude
-      },
+      location: property.location,  // GeoJSON Point format
       images: imagesWithUrls as any,
       agentId: property.agentId,
       agent: property.agent ? {
@@ -194,7 +262,7 @@ export class PropertyService {
   /**
    * Validazione dei dati della proprietà
    */
-  private validatePropertyData(data: PropertyCreateRequest): void {
+  private validatePropertyData(data: CreatePropertyRequest): void {
     const errors: string[] = [];
 
     // Validazione titolo
@@ -245,16 +313,9 @@ export class PropertyService {
       }
     }
 
-    // Validazione location
-    if (!data.location) {
-      errors.push('Location is required');
-    } else {
-      if (data.location.latitude < -90 || data.location.latitude > 90) {
-        errors.push('Latitude must be between -90 and 90');
-      }
-      if (data.location.longitude < -180 || data.location.longitude > 180) {
-        errors.push('Longitude must be between -180 and 180');
-      }
+    // Validazione location (GeoJSON Point)
+    if (!isValidGeoJSONPoint(data.location)) {
+      errors.push('Location must be a valid GeoJSON Point with coordinates [longitude, latitude]');
     }
 
     // Validazione features
@@ -274,7 +335,7 @@ export class PropertyService {
     page: number;
     limit: number;
     filters: any;
-  }): Promise<pagedResult<PropertyCard>> {
+  }): Promise<PagedResult<PropertyCard>> {
     try {
       const { page, limit, filters } = options;
       const offset = (page - 1) * limit;
@@ -333,18 +394,17 @@ export class PropertyService {
 
       // Formatta le proprietà per la risposta (gestisce Promise.all per gli URL S3)
       const formattedProperties = await Promise.all(
-        properties.map(property => this.formatPropertyResponse(property))
+        properties.map(property => this.formatPropertyCardResponse(property))
       );
 
       return {
-        properties: formattedProperties,
+        data: formattedProperties,
         totalCount,
         currentPage: page,
         totalPages,
         hasNextPage: page < totalPages,
         hasPreviousPage: page > 1
       };
-
     } catch (error) {
       logger.error('Error getting properties:', error);
       throw error;
@@ -355,7 +415,7 @@ export class PropertyService {
   /**
    * Ottiene lista proprietà con filtri e paginazione
    */
-  async getProperties(options: {
+  /*async getProperties(options: {
     page: number;
     limit: number;
     filters: any;

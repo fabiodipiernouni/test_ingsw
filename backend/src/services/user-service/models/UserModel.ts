@@ -1,6 +1,6 @@
 import { Agency } from 'src/services/agency-service/models/Agency';
 
-export interface User {
+export interface UserModel {
   id: string;
   email: string;
   firstName: string;
@@ -12,6 +12,7 @@ export interface User {
   isActive: boolean;
   linkedProviders: Array<'google' | 'github' | 'facebook'>;
   lastLoginAt?: Date;
+  agencyId?: string;
   Agency?: Agency;
   createdAt: Date;
   updatedAt: Date;

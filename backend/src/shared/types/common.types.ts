@@ -1,70 +1,36 @@
 import { Request } from 'express';
+import { UserModel } from '@user/models/UserModel';
+import { EnergyClass, ListingType, PropertyType } from '@property/models/types';
+
+
 
 export interface AuthenticatedRequest extends Request {
-  user?: User;
+  user?: UserModel;
+  userAgency?: any;
 }
 
-export interface PropertyAddress {
-  street: string;
-  city: string;
-  province: string;
-  zipCode: string;
-  country: string;
+export interface UploadedFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  buffer?: Buffer;
+  path?: string;
 }
 
-export interface PropertyLocation {
-  latitude: number;
-  longitude: number;
-}
-
-export interface PropertyImage {
-  id: string;
-  url: string;
-  alt?: string;
-  isPrimary: boolean;
-  order: number;
-}
-
-export interface Property {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  propertyType: 'apartment' | 'villa' | 'house' | 'loft' | 'office' | 'commercial' | 'land';
-  listingType: 'sale' | 'rent';
-  status: 'active' | 'pending' | 'sold' | 'rented' | 'withdrawn';
-  bedrooms: number;
-  bathrooms: number;
-  area: number;
-  floor?: string;
-  energyClass?: 'A+' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
-  hasElevator: boolean;
-  hasBalcony: boolean;
-  hasGarden: boolean;
-  hasParking: boolean;
-  features: string[];
-  address: PropertyAddress;
-  location: PropertyLocation;
-  images: PropertyImage[];
-  agentId: string;
-  isActive: boolean;
-  views: number;
-  favorites: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 export interface SearchFilters {
   location?: string;
-  propertyType?: Property['propertyType'];
-  listingType?: Property['listingType'];
+  propertyType?: PropertyType;
+  listingType?: ListingType;
   priceMin?: number;
   priceMax?: number;
   bedrooms?: number;
   bathrooms?: number;
   areaMin?: number;
   areaMax?: number;
-  energyClass?: Property['energyClass'];
+  energyClass?: EnergyClass;
   hasElevator?: boolean;
   hasBalcony?: boolean;
   hasGarden?: boolean;

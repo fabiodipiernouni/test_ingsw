@@ -1,4 +1,10 @@
-import { Agency } from 'src/services/agency-service/models/Agency';
+import { Address } from '@shared/models/address';
+import { Contacts } from '@shared/models/contacts';
 
 
-export interface AgencyResponse extends Agency {}
+export interface AgencyResponse {
+  id: string;
+  name: string;
+  address?: Address;
+  contacts: Contacts;
+}

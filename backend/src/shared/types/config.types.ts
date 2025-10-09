@@ -12,11 +12,25 @@ export interface DatabaseConfig {
   logging?: boolean | ((sql: string) => void);
 }
 
-export interface JWTConfig {
-  secret: string;
-  refreshSecret: string;
-  expiresIn: string;
-  refreshExpiresIn: string;
+export interface CognitoConfig {
+  region: string;
+  userPoolId: string;
+  clientId: string;
+  clientSecret?: string;
+  issuer: string;
+  groups: {
+    clients: string;
+    agents: string;
+    admins: string;
+    owners: string;
+  };
+  oauth: {
+    domain: string; // es: your-domain.auth.eu-south-1.amazoncognito.com
+    callbackUrl: string; // es: http://localhost:3000/auth/callback
+    logoutUrl: string; // es: http://localhost:3000
+    scope: string[]; // es: ['openid', 'email', 'profile']
+    responseType: string; // es: 'code'
+  };
 }
 
 export interface EmailConfig {
@@ -56,7 +70,7 @@ export interface AppConfig {
   nodeEnv: string;
   port: number;
   database: DatabaseConfig;
-  jwt: JWTConfig;
+  cognito: CognitoConfig;
   email: EmailConfig;
   redis: RedisConfig;
   upload: UploadConfig;

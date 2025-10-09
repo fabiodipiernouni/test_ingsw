@@ -1,6 +1,6 @@
-import { Address } from "@shared/models/Address";
-import { Location } from "@shared/models/Location";
-import { EnergyClass, ListingType, PropertyType } from '@search/models/types';
+import { Address } from '@shared/models/address';
+import { EnergyClass, ListingType, PropertyType } from '@property/models/types';
+import { GeoJSONPoint } from '@shared/types/geojson.types';
 
 export interface CreatePropertyRequest {
   title: string;
@@ -19,5 +19,5 @@ export interface CreatePropertyRequest {
   hasParking?: boolean;
   features?: string[];
   address: Address;
-  location: Location;
+  location: GeoJSONPoint;
 }

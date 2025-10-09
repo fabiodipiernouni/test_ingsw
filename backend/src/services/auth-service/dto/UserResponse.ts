@@ -1,4 +1,4 @@
-import { AgencyResponse } from "./AgencyResponse";
+import { AgencyResponse } from './AgencyResponse';
 
 export interface UserResponse {
   id: string;

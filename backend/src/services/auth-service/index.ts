@@ -12,55 +12,29 @@ import { specs } from './config/swagger';
 const app = express();
 const PORT = config.auth.port || 3001;
 
+console.log('Avvio Auth Service...');
+
 // Middleware
 app.use(cors({
   origin: config.app.cors.origins,
   credentials: true
 }));
+console.log('CORS configurato:', config.app.cors.origins);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+console.log('Middleware JSON e URL encoded configurati');
 
-// OpenAPI file downloads - DEVONO essere prima del middleware Swagger UI
-/**
- * @swagger
- * /docs/openapi.json:
- *   get:
- *     summary: Download OpenAPI specification in JSON format
- *     description: Scarica la specifica OpenAPI del servizio di autenticazione in formato JSON
- *     tags:
- *       - Documentation
- *     responses:
- *       200:
- *         description: Specifica OpenAPI in formato JSON
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- */
+// OpenAPI file downloads
 app.get('/docs/openapi.json', (req, res) => {
+  console.log('Richiesta OpenAPI JSON');
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Content-Disposition', 'attachment; filename="auth-service-openapi.json"');
   res.json(specs);
 });
 
-/**
- * @swagger
- * /docs/openapi.yaml:
- *   get:
- *     summary: Download OpenAPI specification in YAML format
- *     description: Scarica la specifica OpenAPI del servizio di autenticazione in formato YAML
- *     tags:
- *       - Documentation
- *     responses:
- *       200:
- *         description: Specifica OpenAPI in formato YAML
- *         content:
- *           application/x-yaml:
- *             schema:
- *               type: string
- */
 app.get('/docs/openapi.yaml', (req, res) => {
+  console.log('Richiesta OpenAPI YAML');
   try {
     const yamlStr = yaml.dump(specs, {
       indent: 2,
@@ -94,27 +68,14 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs, {
     showCommonExtensions: true
   }
 }));
+console.log('Swagger UI configurato');
 
 // Routes
 app.use('/api', authRoutes);
+console.log('Route /api configurata');
 
-/**
- * @swagger
- * /api/health:
- *   get:
- *     summary: Health check del servizio
- *     description: Endpoint per verificare lo stato di salute del servizio di autenticazione
- *     tags:
- *       - Health
- *     responses:
- *       200:
- *         description: Servizio funzionante correttamente
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/HealthResponse'
- */
 app.get('/api/health', (req, res) => {
+  console.log('Health check richiesto');
   res.json({
     service: 'auth-service',
     status: 'healthy',
@@ -124,23 +85,60 @@ app.get('/api/health', (req, res) => {
 
 // 404 handler for undefined routes
 app.use(notFoundHandler);
+console.log('Gestore 404 configurato');
 
 // Global error handler
 app.use(errorHandler);
+console.log('Gestore errori globali configurato');
 
 async function startServer() {
   try {
-    // Connessione al database
-    await connectToDatabase();
-    
+    logger.info('Starting Auth Service...');
+    logger.info(`Environment: ${config.app.env}`);
+    logger.info(`Port: ${PORT}`);
+
+    // Try to connect to database
+    logger.info('Attempting database connection...');
+    try {
+      await connectToDatabase();
+      logger.info('Database connection established successfully');
+    } catch (dbError: any) {
+      logger.error('Database connection failed:', dbError);
+      logger.error('Database error details:', {
+        message: dbError.message,
+        code: dbError.code,
+        stack: dbError.stack
+      });
+      // Continue without database for now - log the error but don't crash
+      logger.warn('Continuing without database connection...');
+    }
+
     app.listen(PORT, () => {
       logger.info(`Auth Service running on port ${PORT}`);
+      logger.info(`API Documentation available at http://localhost:${PORT}/docs`);
+      logger.info(`Health check available at http://localhost:${PORT}/api/health`);
     });
-  } catch (error) {
+  } catch (error: any) {
     logger.error('Failed to start Auth Service:', error);
+    logger.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
     process.exit(1);
   }
 }
+
+// Catch unhandled promise rejections
+process.on('unhandledRejection', (reason: any, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Catch uncaught exceptions
+process.on('uncaughtException', (error: Error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
 
 startServer();
 

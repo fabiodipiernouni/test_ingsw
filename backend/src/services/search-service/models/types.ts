@@ -1,9 +1,8 @@
 // Types per il Search Service basati sullo schema OpenAPI
 
-export type PropertyType = 'apartment' | 'villa' | 'house' | 'loft' | 'office' | 'commercial' | 'land';
-export type ListingType = 'sale' | 'rent';
-export type PropertyStatus = 'active' | 'pending' | 'sold' | 'rented' | 'withdrawn';
-export type EnergyClass = 'A+' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
+import { EnergyClass, ListingType, PropertyStatus, PropertyType } from '@property/models/types';
+import { PropertyCard } from '@property/models/PropertyCard';
+
 export type SortBy = 'price_asc' | 'price_desc' | 'area_asc' | 'area_desc' | 'date_desc' | 'relevance';
 export type SearchSource = 'web' | 'mobile' | 'api';
 export type SuggestionType = 'location' | 'property_type' | 'feature';
@@ -54,90 +53,11 @@ export interface SearchRequest extends SearchFilters {
   limit?: number;
 }
 
-export interface PropertyAddress {
-  street: string;
-  city: string;
-  province: string;
-  zipCode: string;
-  country: string;
-}
 
-export interface PropertyLocation {
-  latitude: number;
-  longitude: number;
-}
 
-export interface PropertyImage {
-  id: string;
-  // File metadata
-  fileName?: string;
-  contentType?: string;
-  fileSize?: number;
-  width?: number;
-  height?: number;
-  uploadDate?: Date | string;
-  // Display properties
-  caption?: string;
-  alt?: string;
-  isPrimary?: boolean;
-  order?: number;
-  // Pre-signed URLs (generated on-the-fly)
-  urls?: {
-    original?: string;
-    small?: string;
-    medium?: string;
-    large?: string;
-  };
-}
-
-export interface Agent {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  avatar?: string;
-  agencyName?: string;
-  licenseNumber?: string;
-  rating?: number;
-  reviewsCount?: number;
-}
-
-export interface PropertyResult {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  propertyType: PropertyType;
-  listingType: ListingType;
-  status: PropertyStatus;
-  bedrooms: number;
-  bathrooms: number;
-  area: number;
-  floor?: string;
-  energyClass?: EnergyClass;
-  hasElevator: boolean;
-  hasBalcony: boolean;
-  hasGarden: boolean;
-  hasParking: boolean;
-  features?: string[];
-  address: PropertyAddress;
-  location: PropertyLocation;
-  images: PropertyImage[];
-  agentId: string;
-  agent?: Agent;
-  isActive: boolean;
-  views: number;
-  favorites: number;
-  createdAt: string;
-  updatedAt: string;
-  // Search specific fields
-  relevanceScore?: number;
-  distance?: number; // in kilometers from search center
-}
 
 export interface SearchResult {
-  properties: PropertyResult[];
+  properties: PropertyCard[];
   totalCount: number;
   currentPage: number;
   totalPages: number;

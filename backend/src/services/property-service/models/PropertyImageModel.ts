@@ -1,4 +1,4 @@
-export interface PropertyImage {
+export interface PropertyImageModel {
   id?: string;
   // File metadata
   fileName?: string;

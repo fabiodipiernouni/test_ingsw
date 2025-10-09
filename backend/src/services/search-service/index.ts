@@ -130,17 +130,52 @@ app.use(errorHandler);
 
 async function startServer() {
   try {
-    // Connessione al database
-    await connectToDatabase();
-    
+    logger.info('Starting Search Service...');
+    logger.info(`Environment: ${config.app.env}`);
+    logger.info(`Port: ${PORT}`);
+
+    // Try to connect to database
+    logger.info('Attempting database connection...');
+    try {
+      await connectToDatabase();
+      logger.info('Database connection established successfully');
+    } catch (dbError: any) {
+      logger.error('Database connection failed:', dbError);
+      logger.error('Database error details:', {
+        message: dbError.message,
+        code: dbError.code,
+        stack: dbError.stack
+      });
+      // Continue without database for now - log the error but don't crash
+      logger.warn('Continuing without database connection...');
+    }
+
     app.listen(PORT, () => {
       logger.info(`Search Service running on port ${PORT}`);
+      logger.info(`API Documentation available at http://localhost:${PORT}/docs`);
+      logger.info(`Health check available at http://localhost:${PORT}/api/health`);
     });
-  } catch (error) {
+  } catch (error: any) {
     logger.error('Failed to start Search Service:', error);
+    logger.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
     process.exit(1);
   }
 }
+
+// Catch unhandled promise rejections
+process.on('unhandledRejection', (reason: any, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Catch uncaught exceptions
+process.on('uncaughtException', (error: Error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
 
 startServer();
 

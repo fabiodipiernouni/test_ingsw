@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationErrorResponse } from '@shared/utils/helpers';
-import { PropertyCreateRequest } from '../models/types';
+import { isValidGeoJSONPoint } from '@shared/types/geojson.types';
+import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequest';
 
 /**
  * Middleware per validare i dati di creazione proprietà
@@ -10,7 +11,7 @@ export const validatePropertyCreate = (
   res: Response,
   next: NextFunction
 ): void => {
-  const data: PropertyCreateRequest = req.body;
+  const data: CreatePropertyRequest = req.body;
   const errors: string[] = [];
 
   // Validazione campi obbligatori
@@ -77,13 +78,12 @@ export const validatePropertyCreate = (
   }
 
   // Validazione features
-  const validFeatures = ['aria condizionata', 'balcone', 'giardino', 'piscina', 'garage', 'ascensore', 'ristrutturato'];
   if (data.features && data.features.length > 20) {
     errors.push('Maximum 20 features allowed');
   } else if (data.features) {
     for (const feature of data.features) {
-      if (!validFeatures.includes(feature)) {
-        errors.push(`Invalid feature: ${feature}`);
+      if (typeof feature !== 'string' || feature.trim().length < 2) {
+        errors.push(`Feature must be a string with at least 2 characters: ${feature}`);
       }
     }
   }
@@ -118,22 +118,10 @@ export const validatePropertyCreate = (
     }
   }
 
-  // Validazione location
+  // Validazione location (GeoJSON Point)
   //TODO: la location potrebbe essere prelevata dall'indirizzo tramite geocoding?
-  if (!data.location) {
-    errors.push('Location is required');
-  } else {
-    if (data.location.latitude === undefined || data.location.latitude === null) {
-      errors.push('Latitude is required');
-    } else if (data.location.latitude < -90 || data.location.latitude > 90) {
-      errors.push('Latitude must be between -90 and 90');
-    }
-
-    if (data.location.longitude === undefined || data.location.longitude === null) {
-      errors.push('Longitude is required');
-    } else if (data.location.longitude < -180 || data.location.longitude > 180) {
-      errors.push('Longitude must be between -180 and 180');
-    }
+  if (!isValidGeoJSONPoint(data.location)) {
+    errors.push('Location must be a valid GeoJSON Point with coordinates [longitude, latitude]');
   }
 
   // Se ci sono errori, restituisce una risposta di errore

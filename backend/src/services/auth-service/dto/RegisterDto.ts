@@ -29,6 +29,6 @@ export class RegisterDto {
 
   @IsOptional()
   @IsString({ message: 'Il numero di telefono deve essere una stringa' })
-  @Matches(/^[\d\s\+\-\(\)]+$/, { message: 'Formato numero di telefono non valido' })
+  @Matches(/^[\d\s()+-]+$/, { message: 'Formato numero di telefono non valido' })
   phone?: string;
 }

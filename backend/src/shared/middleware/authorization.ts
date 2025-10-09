@@ -88,7 +88,7 @@ export const requireAgencyCreator = async (
       }]
     });
 
-    if (!user || !user.agency) {
+    if (!user?.agency) {
       return res.status(403).json({
         success: false,
         message: 'User not found or not associated with an agency'

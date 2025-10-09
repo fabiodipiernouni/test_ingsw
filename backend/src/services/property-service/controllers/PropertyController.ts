@@ -95,8 +95,8 @@ export class PropertyController {
    */
   async getPropertiesCards(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+      const page = Number.parseInt(req.query.page as string) || 1;
+      const limit = Math.min(Number.parseInt(req.query.limit as string) || 20, 100);
       const status = req.query.status as string;
       const requestedAgentId = req.query.agentId as string;
 
@@ -166,7 +166,7 @@ export class PropertyController {
       }
 
       // Chiama il service per ottenere le proprietà
-      const result = await propertyService.getProperties({
+      const result = await propertyService.getPropertiesCards({
         page,
         limit,
         filters
@@ -175,7 +175,7 @@ export class PropertyController {
       successResponse(res, result);
 
     } catch (error: any) {
-      logger.error('Error in getProperties controller:', error);
+      logger.error('Error in getPropertiesCards PropertyController:', error);
       errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to get properties', 500);
     }
   }
@@ -184,7 +184,7 @@ export class PropertyController {
    * Lista proprietà con paginazione - logica basata su ruoli
    * GET /properties
    */
-  async getProperties(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+  /*async getProperties(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       
       const page = parseInt(req.query.page as string) || 1;
@@ -270,7 +270,7 @@ export class PropertyController {
       logger.error('Error in getProperties controller:', error);
       errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to get properties', 500);
     }
-  }
+  }*/
 
   /**
    * Registra visualizzazione proprietà

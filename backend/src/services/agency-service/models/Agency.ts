@@ -1,5 +1,5 @@
-import { Address } from "@shared/models/address";
-import { Contacts } from "@shared/models/contacts";
+import { Address } from '@shared/models/address';
+import { Contacts } from '@shared/models/contacts';
 
 export interface Agency {
   // Identificativo univoco

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/AuthController';
-import { validate, authValidations } from '../../../shared/middleware/validation';
-import { authenticateToken } from '../../../shared/middleware/auth';
+import { validate, authValidations } from '@shared/middleware/validation';
+import { authenticateToken } from '@shared/middleware/auth';
 
 const router = Router();
 const authController = new AuthController();
@@ -116,7 +116,8 @@ router.post('/login', validate(authValidations.login), authController.login);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/logout', authenticateToken as any, authController.logout);
+
+//router.post('/logout', authenticateToken as any, authController.logout);
 
 /**
  * @swagger

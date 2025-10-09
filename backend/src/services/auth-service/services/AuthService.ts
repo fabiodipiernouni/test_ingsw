@@ -1,3 +1,18 @@
+import {
+  CognitoIdentityProviderClient,
+  SignUpCommand,
+  InitiateAuthCommand,
+  RespondToAuthChallengeCommand,
+  AdminAddUserToGroupCommand,
+  ChangePasswordCommand,
+  ForgotPasswordCommand,
+  ConfirmForgotPasswordCommand,
+  ConfirmSignUpCommand,
+  ResendConfirmationCodeCommand,
+  GlobalSignOutCommand,
+  AuthFlowType,
+  ChallengeNameType
+} from '@aws-sdk/client-cognito-identity-provider';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { User } from '@shared/database/models/User';
 import { Agency } from '@shared/database/models/Agency';
@@ -8,6 +23,16 @@ import logger from '@shared/utils/logger';
 import { RegisterDto } from '@auth/dto/RegisterDto';
 import { LoginDto } from '@auth/dto/LoginDto';
 import { AuthResponse } from '@auth/dto/AuthResponse';
+import { UserResponse } from '@auth/dto/UserResponse';
+import { AgencyResponse } from '@auth/dto/AgencyResponse';
+
+const cognitoClient = new CognitoIdentityProviderClient({
+  region: config.cognito.region,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
+  }
+});
 
 
 interface ChangePasswordData {
@@ -57,55 +82,95 @@ export class AuthService {
    */
   async register(registerData: RegisterDto): Promise<AuthResponse> {
     try {
-      const { email, password, firstName, lastName, acceptTerms, acceptPrivacy, phone } = registerData;
-
       // Validazione accettazione termini e privacy
-      if (!acceptTerms) {
+      if (!registerData.acceptTerms) {
         throw new ValidationError('Terms and conditions acceptance is required');
       }
 
-      if (!acceptPrivacy) {
+      if (!registerData.acceptPrivacy) {
         throw new ValidationError('Privacy policy acceptance is required');
       }
 
-      // Verifica se l'utente esiste già
-      const existingUser = await User.findOne({ where: { email } });
+      // Verifica se l'utente esiste già nel DB locale
+      const existingUser = await User.findOne({ where: { registerData.email } });
       if (existingUser) {
         throw new ConflictError('User with this email already exists');
       }
 
-      // Crea l'utente
-      const userData = {
-        email,
-        password,
-        firstName,
-        lastName,
-        phone,
-        role: 'client' as const,
-        acceptTerms,
-        acceptPrivacy,
-        acceptedTermsAt: acceptTerms ? new Date() : null,
-        acceptedPrivacyAt: acceptPrivacy ? new Date() : null,
+      // 1. REGISTRA UTENTE IN COGNITO
+      const signUpCommand = new SignUpCommand({
+        ClientId: config.cognito.clientId,
+        Username: registerData.email,
+        Password: registerData.password,
+        UserAttributes: [
+          { Name: 'email', Value: registerData.email },
+          { Name: 'given_name', Value: registerData.firstName },
+          { Name: 'family_name', Value: registerData.lastName },
+          ...(registerData.phone ? [{ Name: 'phone_number', Value: registerData.phone }] : [])
+        ]
+      });
+
+      const signUpResponse = await cognitoClient.send(signUpCommand);
+      const cognitoSub = signUpResponse.UserSub;
+
+      if (!cognitoSub) {
+        throw new Error('Failed to create user in Cognito');
+      }
+
+      // 2. AGGIUNGI AL GRUPPO 'clients' (ruolo default)
+      const addToGroupCommand = new AdminAddUserToGroupCommand({
+        UserPoolId: config.cognito.userPoolId,
+        Username: registerData.email,
+        GroupName: config.cognito.groups.clients
+      });
+
+      await cognitoClient.send(addToGroupCommand);
+
+      // 3. CREA UTENTE NEL DB LOCALE
+      const user = await User.create({
+        email: registerData.email,
+        cognitoSub,
+        cognitoUsername: registerData.email,
+        firstName: registerData.firstName,
+        lastName: registerData.lastName,
+        phone: registerData.phone,
+        role: 'client',
+        acceptedTermsAt: registerData.acceptTerms ? new Date() : undefined,
+        acceptedPrivacyAt: registerData.acceptPrivacy ? new Date() : undefined,
         isActive: true,
-        isVerified: false
-      };
+        isVerified: false // Sarà true dopo conferma email
+      });
 
-      const user = await User.create(userData);
-
-      // Crea preferenze predefinite
+      // 4. CREA PREFERENZE PREDEFINITE
       await UserPreferences.create({ userId: user.id });
       await NotificationPreferences.create({ userId: user.id });
 
-      // Genera token
-      const { accessToken, refreshToken } = this.generateTokens(user);
+      logger.info('User registered successfully', { email: registerData.email, cognitoSub });
 
+      // 5. RITORNA INFORMAZIONI (nessun token ancora - deve confermare email)
       return {
         user: this.formatUserResponse(user),
-        accessToken,
-        refreshToken
+        accessToken: '',
+        idToken: '',
+        refreshToken: '',
+        tokenType: 'Bearer',
+        challenge: {
+          name: 'EMAIL_VERIFICATION_REQUIRED',
+          session: ''
+        }
       };
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Error in register service:', error);
+
+      // Gestione errori Cognito
+      if (error.name === 'UsernameExistsException') {
+        throw new ConflictError('User already exists in authentication system');
+      }
+
+      if (error.name === 'InvalidPasswordException') {
+        throw new ValidationError('Password does not meet requirements');
+      }
+
       throw error;
     }
   }
@@ -115,28 +180,66 @@ export class AuthService {
    */
   async login(credentials: LoginDto): Promise<AuthResponse> {
     try {
-      const { email, password } = credentials;
+      // 1. AUTENTICA CON COGNITO
+      const authCommand = new InitiateAuthCommand({
+        AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
+        ClientId: config.cognito.clientId,
+        AuthParameters: {
+          USERNAME: credentials.email,
+          PASSWORD: credentials.password
+        }
+      });
 
-      // Trova l'utente con le associazioni
-      const user = await User.findOne({ 
-        where: { email },
+      const authResponse = await cognitoClient.send(authCommand);
+
+      // 2. GESTISCI CHALLENGE (se presente)
+      if (authResponse.ChallengeName) {
+        // Utente deve cambiare password (creato da admin)
+        if (authResponse.ChallengeName === ChallengeNameType.NEW_PASSWORD_REQUIRED) {
+          // Recupera utente dal DB
+          const user = await User.findOne({ where: { credentials.email } });
+
+          return {
+            user: user ? this.formatUserResponse(user) : ({} as UserResponse),
+            accessToken: '',
+            idToken: '',
+            refreshToken: '',
+            tokenType: 'Bearer',
+            challenge: {
+              name: authResponse.ChallengeName,
+              session: authResponse.Session || ''
+            }
+          };
+        }
+
+        throw new AuthenticationError(`Challenge not supported: ${authResponse.ChallengeName}`);
+      }
+
+      // 3. OTTIENI TOKEN DA COGNITO
+      const { AccessToken, IdToken, RefreshToken } = authResponse.AuthenticationResult || {};
+
+      if (!AccessToken || !IdToken || !RefreshToken) {
+        throw new AuthenticationError('Failed to obtain tokens from Cognito');
+      }
+
+      // 4. DECODIFICA ID TOKEN PER OTTENERE cognitoSub
+      const idTokenDecoded = this.decodeToken(IdToken);
+      const cognitoSub = idTokenDecoded.sub;
+
+      // 5. TROVA UTENTE NEL DB LOCALE
+      const user = await User.findOne({
+        where: { cognitoSub },
         include: [
           {
             model: Agency,
             as: 'agency',
-            attributes: ['id', 'name', 'address', 'phone', 'email', 'website']
+            attributes: ['id', 'name', 'street', 'city', 'province', 'zipCode', 'country', 'phone', 'email', 'website']
           }
         ]
       });
 
       if (!user) {
-        throw new AuthenticationError('Invalid email or password');
-      }
-
-      // Verifica la password
-      const isPasswordValid = await user.comparePassword(password);
-      if (!isPasswordValid) {
-        throw new AuthenticationError('Invalid email or password');
+        throw new NotFoundError('User not found in local database');
       }
 
       // Verifica che l'utente sia attivo
@@ -144,19 +247,631 @@ export class AuthService {
         throw new AuthenticationError('Account is disabled');
       }
 
-      // Genera token
-      const { accessToken, refreshToken } = this.generateTokens(user);
+      // 6. AGGIORNA lastLoginAt
+      await user.update({ lastLoginAt: new Date() });
+
+      logger.info('User logged in successfully', { email: credentials.email, cognitoSub });
 
       return {
         user: this.formatUserResponse(user),
-        accessToken,
-        refreshToken
+        accessToken: AccessToken,
+        idToken: IdToken,
+        refreshToken: RefreshToken,
+        tokenType: 'Bearer'
       };
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Error in login service:', error);
+
+      // Gestione errori Cognito
+      if (error.name === 'NotAuthorizedException') {
+        throw new AuthenticationError('Invalid email or password');
+      }
+
+      if (error.name === 'UserNotConfirmedException') {
+        throw new AuthenticationError('Email not verified. Please check your email.');
+      }
+
       throw error;
     }
   }
+
+  /**
+   * Completa il cambio password obbligatorio (NEW_PASSWORD_REQUIRED challenge)
+   */
+  async completeNewPasswordChallenge(data: CompleteNewPasswordData): Promise<AuthResponse> {
+    try {
+      const { email, newPassword, session } = data;
+
+      // 1. RISPONDI AL CHALLENGE COGNITO
+      const respondCommand = new RespondToAuthChallengeCommand({
+        ChallengeName: ChallengeNameType.NEW_PASSWORD_REQUIRED,
+        ClientId: config.cognito.clientId,
+        Session: session,
+        ChallengeResponses: {
+          USERNAME: email,
+          NEW_PASSWORD: newPassword
+        }
+      });
+
+      const response = await cognitoClient.send(respondCommand);
+
+      const { AccessToken, IdToken, RefreshToken } = response.AuthenticationResult || {};
+
+      if (!AccessToken || !IdToken || !RefreshToken) {
+        throw new AuthenticationError('Failed to complete password challenge');
+      }
+
+      // 2. DECODIFICA TOKEN E RECUPERA UTENTE
+      const idTokenDecoded = this.decodeToken(IdToken);
+      const cognitoSub = idTokenDecoded.sub;
+
+      const user = await User.findOne({
+        where: { cognitoSub },
+        include: [{ model: Agency, as: 'agency' }]
+      });
+
+      if (!user) {
+        throw new NotFoundError('User not found');
+      }
+
+      // 3. AGGIORNA isVerified (primo login completato)
+      if (!user.isVerified) {
+        await user.update({ isVerified: true });
+      }
+
+      logger.info('Password challenge completed', { email, cognitoSub });
+
+      return {
+        user: this.formatUserResponse(user),
+        accessToken: AccessToken,
+        idToken: IdToken,
+        refreshToken: RefreshToken,
+        tokenType: 'Bearer'
+      };
+    } catch (error: any) {
+      logger.error('Error in completeNewPasswordChallenge:', error);
+
+      if (error.name === 'InvalidPasswordException') {
+        throw new ValidationError('Password does not meet requirements');
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Refresh token con Cognito
+   */
+  async refreshToken(refreshToken: string): Promise<{ accessToken: string; idToken: string }> {
+    try {
+      // 1. RICHIEDI NUOVI TOKEN A COGNITO
+      const refreshCommand = new InitiateAuthCommand({
+        AuthFlow: AuthFlowType.REFRESH_TOKEN_AUTH,
+        ClientId: config.cognito.clientId,
+        AuthParameters: {
+          REFRESH_TOKEN: refreshToken
+        }
+      });
+
+      const response = await cognitoClient.send(refreshCommand);
+
+      const { AccessToken, IdToken } = response.AuthenticationResult || {};
+
+      if (!AccessToken || !IdToken) {
+        throw new AuthenticationError('Failed to refresh tokens');
+      }
+
+      logger.info('Tokens refreshed successfully');
+
+      return {
+        accessToken: AccessToken,
+        idToken: IdToken
+      };
+    } catch (error: any) {
+      logger.error('Error in refreshToken service:', error);
+
+      if (error.name === 'NotAuthorizedException') {
+        throw new AuthenticationError('Invalid or expired refresh token');
+      }
+
+      throw error;
+    }
+  }
+
+
+  /**
+   * Logout globale (invalida tutti i token dell'utente)
+   */
+  async logout(accessToken: string): Promise<void> {
+    try {
+      const signOutCommand = new GlobalSignOutCommand({
+        AccessToken: accessToken
+      });
+
+      await cognitoClient.send(signOutCommand);
+
+      logger.info('User logged out successfully');
+    } catch (error) {
+      logger.error('Error in logout service:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cambia password utente autenticato
+   */
+  async changePassword(accessToken: string, oldPassword: string, newPassword: string): Promise<void> {
+    try {
+      const changePasswordCommand = new ChangePasswordCommand({
+        AccessToken: accessToken,
+        PreviousPassword: oldPassword,
+        ProposedPassword: newPassword
+      });
+
+      await cognitoClient.send(changePasswordCommand);
+
+      logger.info('Password changed successfully');
+    } catch (error: any) {
+      logger.error('Error in changePassword service:', error);
+
+      if (error.name === 'NotAuthorizedException') {
+        throw new AuthenticationError('Current password is incorrect');
+      }
+
+      if (error.name === 'InvalidPasswordException') {
+        throw new ValidationError('New password does not meet requirements');
+      }
+
+      if (error.name === 'LimitExceededException') {
+        throw new ValidationError('Too many password change attempts. Please try again later.');
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Forgot password - Invia codice di reset via email
+   */
+  async forgotPassword(email: string): Promise<void> {
+    try {
+      const forgotPasswordCommand = new ForgotPasswordCommand({
+        ClientId: config.cognito.clientId,
+        Username: email
+      });
+
+      await cognitoClient.send(forgotPasswordCommand);
+
+      logger.info('Password reset code sent', { email });
+    } catch (error: any) {
+      logger.error('Error in forgotPassword service:', error);
+
+      if (error.name === 'UserNotFoundException') {
+        // Per sicurezza, non rivelare che l'utente non esiste
+        logger.warn('Password reset requested for non-existent user', { email });
+        return; // Silenzioso
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Conferma reset password con codice
+   */
+  async confirmForgotPassword(email: string, code: string, newPassword: string): Promise<void> {
+    try {
+      const confirmCommand = new ConfirmForgotPasswordCommand({
+        ClientId: config.cognito.clientId,
+        Username: email,
+        ConfirmationCode: code,
+        Password: newPassword
+      });
+
+      await cognitoClient.send(confirmCommand);
+
+      logger.info('Password reset completed', { email });
+    } catch (error: any) {
+      logger.error('Error in confirmForgotPassword service:', error);
+
+      if (error.name === 'CodeMismatchException') {
+        throw new ValidationError('Invalid or expired verification code');
+      }
+
+      if (error.name === 'InvalidPasswordException') {
+        throw new ValidationError('Password does not meet requirements');
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Ottieni l'URL per iniziare il flusso OAuth con un provider social
+   */
+  getOAuthUrl(params: OAuthUrlParams): string {
+    try {
+      const { provider, state } = params;
+      const { domain, callbackUrl, scope, responseType } = config.cognito.oauth;
+
+      // Genera state casuale se non fornito (per sicurezza CSRF)
+      const oauthState = state || this.generateRandomState();
+
+      // Costruisci l'URL per l'authorization endpoint di Cognito
+      const authUrl = new URL(`https://${domain}/oauth2/authorize`);
+
+      authUrl.searchParams.append('client_id', config.cognito.clientId);
+      authUrl.searchParams.append('response_type', responseType);
+      authUrl.searchParams.append('scope', scope.join(' '));
+      authUrl.searchParams.append('redirect_uri', callbackUrl);
+      authUrl.searchParams.append('identity_provider', this.mapProviderName(provider));
+      authUrl.searchParams.append('state', oauthState);
+
+      logger.info('Generated OAuth URL', { provider });
+
+      return authUrl.toString();
+    } catch (error: any) {
+      logger.error('Error generating OAuth URL:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gestisci il callback OAuth e scambia il codice di autorizzazione per i token
+   */
+  async handleOAuthCallback(data: OAuthCallbackData): Promise<AuthResponse> {
+    try {
+      const { code } = data;
+      const { domain, callbackUrl } = config.cognito.oauth;
+
+      // 1. SCAMBIA IL CODICE DI AUTORIZZAZIONE CON I TOKEN
+      const tokenData = await this.exchangeCodeForTokens(code, callbackUrl, domain);
+      const { access_token, id_token, refresh_token, token_type } = tokenData;
+
+      // 2. DECODIFICA ID TOKEN PER OTTENERE INFO UTENTE
+      const idTokenDecoded = this.decodeToken(id_token);
+      const cognitoSub = idTokenDecoded.sub;
+      const email = idTokenDecoded.email;
+
+      // 3. CERCA O CREA UTENTE (con account linking)
+      let user = await this.findOrCreateOAuthUser(cognitoSub, email, idTokenDecoded);
+
+      // 4. VERIFICA CHE L'ACCOUNT SIA ATTIVO
+      if (!user.isActive) {
+        throw new AuthenticationError('Account is disabled');
+      }
+
+      // 5. AGGIORNA ULTIMO LOGIN
+      await user.update({ lastLoginAt: new Date() });
+
+      logger.info('OAuth login successful', { email, cognitoSub });
+
+      return {
+        user: this.formatUserResponse(user),
+        accessToken: access_token,
+        idToken: id_token,
+        refreshToken: refresh_token,
+        tokenType: token_type || 'Bearer'
+      };
+
+    } catch (error: any) {
+      logger.error('Error in handleOAuthCallback:', error);
+
+      if (error.name === 'AuthenticationError') {
+        throw error;
+      }
+
+      throw new AuthenticationError('OAuth authentication failed');
+    }
+  }
+
+  /**
+   * Scambia authorization code per token OAuth
+   */
+  private async exchangeCodeForTokens(
+    code: string,
+    callbackUrl: string,
+    domain: string
+  ): Promise<OAuthTokenResponse> {
+    const tokenUrl = `https://${domain}/oauth2/token`;
+
+    const params = new URLSearchParams();
+    params.append('grant_type', 'authorization_code');
+    params.append('client_id', config.cognito.clientId);
+    params.append('code', code);
+    params.append('redirect_uri', callbackUrl);
+
+    const response = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: params.toString()
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      logger.error('Token exchange failed:', { status: response.status, error: errorData });
+      throw new AuthenticationError('Failed to exchange authorization code for tokens');
+    }
+
+    const tokenData = await response.json() as OAuthTokenResponse;
+
+    if (!tokenData.access_token || !tokenData.id_token) {
+      throw new AuthenticationError('Invalid token response from OAuth provider');
+    }
+
+    return tokenData;
+  }
+
+  /**
+   * Trova utente esistente o crea nuovo utente OAuth (con account linking)
+   */
+  private async findOrCreateOAuthUser(
+    cognitoSub: string,
+    email: string,
+    idTokenDecoded: any
+  ): Promise<User> {
+    // 1. Cerca utente per cognitoSub (utente OAuth già esistente)
+    let user = await User.findOne({
+      where: { cognitoSub },
+      include: [{ model: Agency, as: 'agency' }]
+    });
+
+    if (user) {
+      // Utente OAuth già registrato - assicurati che linkedProviders sia aggiornato
+      if (!user.linkedProviders || !user.linkedProviders.includes('google')) {
+        const currentProviders = user.linkedProviders || [];
+        await user.update({
+          linkedProviders: [...currentProviders, 'google'],
+          isVerified: true
+        });
+        logger.info('Updated linkedProviders for existing OAuth user', {
+          email: user.email,
+          linkedProviders: user.linkedProviders
+        });
+      }
+      return user;
+    }
+
+    // 2. Se non trovato per cognitoSub, cerca per email (possibile account linking)
+    const existingUser = await User.findOne({
+      where: { email },
+      include: [{ model: Agency, as: 'agency' }]
+    });
+
+    if (existingUser) {
+      // ACCOUNT LINKING: utente registrato con email/password, aggiungi OAuth
+      return await this.linkOAuthToExistingUser(existingUser, cognitoSub, idTokenDecoded);
+    }
+
+    // 3. Nessun utente trovato: crea nuovo utente OAuth con findOrCreate
+    const [newUser, created] = await User.findOrCreate({
+      where: {
+        cognitoSub: cognitoSub
+      },
+      defaults: {
+        email: email,
+        cognitoSub: cognitoSub,
+        cognitoUsername: email,
+        firstName: idTokenDecoded.given_name || '',
+        lastName: idTokenDecoded.family_name || '',
+        phone: idTokenDecoded.phone_number || undefined,
+        avatar: idTokenDecoded.picture || undefined,
+        role: 'client',
+        isActive: true,
+        isVerified: true, // OAuth providers verificano sempre l'email
+        linkedProviders: ['google'],
+        acceptedTermsAt: new Date(),
+        acceptedPrivacyAt: new Date()
+      }
+    });
+
+    if (created) {
+      logger.info('Creating new user from OAuth login', {
+        email,
+        cognitoSub,
+        hasAvatar: !!idTokenDecoded.picture
+      });
+
+      // Crea preferenze per nuovo utente
+      await Promise.all([
+        UserPreferences.create({ userId: newUser.id }),
+        NotificationPreferences.create({ userId: newUser.id })
+      ]);
+
+      // Aggiungi a gruppo Cognito
+      await this.addUserToGroup(cognitoSub, config.cognito.groups.clients);
+    }
+
+    // Ricarica con include per avere la struttura completa
+    const userWithRelations = await User.findByPk(newUser.id, {
+      include: [{ model: Agency, as: 'agency' }]
+    });
+
+    return userWithRelations!;
+  }
+
+  /**
+   * Collega OAuth a un account esistente (account linking)
+   */
+  private async linkOAuthToExistingUser(
+    existingUser: User,
+    cognitoSub: string,
+    idTokenDecoded: any
+  ): Promise<User> {
+    logger.info('Linking OAuth account to existing email/password account', {
+      email: existingUser.email,
+      existingCognitoSub: existingUser.cognitoSub,
+      newCognitoSub: cognitoSub,
+      hasAvatar: !!idTokenDecoded.picture,
+      existingProviders: existingUser.linkedProviders
+    });
+
+    // Aggiungi 'google' a linkedProviders se non è già presente
+    const currentProviders = existingUser.linkedProviders || [];
+    const updatedProviders = currentProviders.includes('google')
+      ? currentProviders
+      : [...currentProviders, 'google'];
+
+    await existingUser.update({
+      cognitoSub: cognitoSub,
+      cognitoUsername: existingUser.email,
+      isVerified: true, // OAuth providers verificano l'email
+      linkedProviders: updatedProviders,
+      firstName: existingUser.firstName || idTokenDecoded.given_name || '',
+      lastName: existingUser.lastName || idTokenDecoded.family_name || '',
+      avatar: existingUser.avatar || idTokenDecoded.picture || undefined
+    });
+
+    // Aggiungi a gruppo Cognito
+    await this.addUserToGroup(cognitoSub, config.cognito.groups.clients);
+
+    return existingUser;
+  }
+
+  /**
+   * Aggiunge utente a gruppo Cognito
+   */
+  private async addUserToGroup(username: string, groupName: string): Promise<void> {
+    try {
+      const addToGroupCommand = new AdminAddUserToGroupCommand({
+        UserPoolId: config.cognito.userPoolId,
+        Username: username,
+        GroupName: groupName
+      });
+      await cognitoClient.send(addToGroupCommand);
+    } catch (groupError) {
+      logger.warn('Could not add user to Cognito group:', { username, groupName, error: groupError });
+    }
+  }
+
+  /**
+   * Genera uno state casuale per protezione CSRF
+   */
+  private generateRandomState(): string {
+    return Buffer.from(Math.random().toString()).toString('base64').substring(0, 32);
+  }
+
+  /**
+   * Mappa il nome del provider al formato richiesto da Cognito
+   */
+  private mapProviderName(provider: string): string {
+    const providerMap: { [key: string]: string } = {
+      'google': 'Google'
+    };
+
+    return providerMap[provider.toLowerCase()] || provider;
+  }
+
+  /**
+   * Decodifica token JWT (senza validazione - solo per lettura claims)
+   */
+  private decodeToken(token: string): any {
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      throw new Error('Invalid token format');
+    }
+
+    const payload = parts[1];
+    const decoded = Buffer.from(payload, 'base64').toString('utf-8');
+    return JSON.parse(decoded);
+  }
+
+  /**
+   * Conferma email con codice di verifica
+   */
+  async confirmEmail(email: string, code: string): Promise<{ message: string }> {
+    try {
+      logger.info('Confirming email', { email });
+
+      // Conferma registrazione in Cognito
+      const confirmCommand = new ConfirmSignUpCommand({
+        ClientId: config.cognito.clientId,
+        Username: email,
+        ConfirmationCode: code
+      });
+
+      await cognitoClient.send(confirmCommand);
+
+      // Aggiorna stato verifica nel database locale
+      const user = await User.findOne({ where: { email } });
+      if (user) {
+        await user.update({ isVerified: true });
+        logger.info('User email verified in database', { userId: user.id });
+      }
+
+      logger.info('Email confirmed successfully', { email });
+
+      return {
+        message: 'Email verified successfully. You can now login.'
+      };
+    } catch (error: any) {
+      logger.error('Error confirming email:', error);
+
+      if (error.name === 'CodeMismatchException') {
+        throw new ValidationError('Invalid verification code. Please check and try again.');
+      }
+
+      if (error.name === 'ExpiredCodeException') {
+        throw new ValidationError('Verification code has expired. Please request a new code.');
+      }
+
+      if (error.name === 'NotAuthorizedException') {
+        throw new ValidationError('User is already verified.');
+      }
+
+      if (error.name === 'UserNotFoundException' ||
+        (error.message && error.message.includes('Username/client id combination not found'))) {
+        throw new NotFoundError('User not found. Please check your email or register first.');
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Reinvia codice di verifica email
+   */
+  async resendVerificationCode(email: string): Promise<{ message: string }> {
+    try {
+      logger.info('Resending verification code', { email });
+
+      // Reinvia codice in Cognito
+      const resendCommand = new ResendConfirmationCodeCommand({
+        ClientId: config.cognito.clientId,
+        Username: email
+      });
+
+      await cognitoClient.send(resendCommand);
+
+      logger.info('Verification code resent successfully', { email });
+
+      return {
+        message: 'Verification code sent to your email. Please check your inbox.'
+      };
+    } catch (error: any) {
+      logger.error('Error resending verification code:', error);
+
+      if (error.name === 'UserNotFoundException') {
+        throw new NotFoundError('User not found.');
+      }
+
+      if (error.name === 'InvalidParameterException') {
+        throw new ValidationError('User is already verified.');
+      }
+
+      if (error.name === 'LimitExceededException') {
+        throw new ValidationError('Too many requests. Please try again later.');
+      }
+
+      throw error;
+    }
+  }
+
+
+
+
 
   /**
    * Refresh token
@@ -165,10 +880,10 @@ export class AuthService {
     try {
       // Verifica il refresh token
       const decoded = jwt.verify(token, config.jwt.refreshSecret) as any;
-      
+
       // Trova l'utente
       const user = await User.findByPk(decoded.userId);
-      if (!user || !user.isActive) {
+      if (!user?.isActive) {
         throw new AuthenticationError('Invalid refresh token');
       }
 
@@ -189,13 +904,13 @@ export class AuthService {
   async verifyToken(token: string): Promise<UserResponse> {
     try {
       const decoded = jwt.verify(token, config.jwt.secret) as any;
-      
+
       const user = await User.findByPk(decoded.userId, {
         include: [
           {
             model: Agency,
             as: 'agency',
-            attributes: ['id', 'name', 'address', 'phone', 'email', 'website']
+            attributes: ['id', 'name', 'street', 'city', 'province', 'zipCode', 'country', 'phone', 'email', 'website']
           }
         ]
       });
@@ -291,29 +1006,6 @@ export class AuthService {
     }
   }
 
-  /**
-   * Genera token JWT
-   */
-  private generateTokens(user: User): { accessToken: string; refreshToken: string } {
-    const payload = {
-      userId: user.id,
-      email: user.email,
-      role: user.role
-    };
-
-    const accessTokenOptions: SignOptions = {
-      expiresIn: (config.jwt.expiresIn || '15m') as any
-    };
-
-    const refreshTokenOptions: SignOptions = {
-      expiresIn: (config.jwt.refreshExpiresIn || '7d') as any
-    };
-
-    const accessToken = jwt.sign(payload, config.jwt.secret, accessTokenOptions);
-    const refreshToken = jwt.sign(payload, config.jwt.refreshSecret, refreshTokenOptions);
-
-    return { accessToken, refreshToken };
-  }
 
   /**
    * Formatta la risposta utente
@@ -342,15 +1034,17 @@ export class AuthService {
       id: agency.id,
       name: agency.name,
       address: {
-        street: agency.street,
-        city: agency.city,
-        province: agency.province,
-        zipCode: agency.zipCode,
-        country: agency.country
+        street: agency.street ?? '',
+        city: agency.city ?? '',
+        province: agency.province ?? '',
+        zipCode: agency.zipCode ?? '',
+        country: agency.country ?? ''
       },
-      phone: agency.phone,
-      email: agency.email,
-      website: agency.website
+      contacts: {
+        phone: agency.phone ?? '',
+        email: agency.email ?? '',
+        website: agency.website ?? ''
+      }
     };
   }
 }

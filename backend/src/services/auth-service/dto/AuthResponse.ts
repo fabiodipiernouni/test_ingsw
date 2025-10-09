@@ -1,8 +1,13 @@
-import { User } from '@user/models/user';
+import { UserResponse } from './UserResponse';
 
 export interface AuthResponse {
-  user: User;
+  user: UserResponse;
   accessToken: string;
+  idToken: string;
   refreshToken: string;
   tokenType: string;
+  challenge?: {
+    name: string;
+    session: string;
+  };
 }
