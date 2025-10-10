@@ -65,10 +65,6 @@ export interface SearchRequest extends SearchFilters {
 }
 
 
-// PropertyLocation usa GeoJSONPoint condiviso
-export type PropertyLocation = GeoJSONPoint;
-
-
 export interface SearchResult {
   properties: PropertyCard[];
   totalCount: number;

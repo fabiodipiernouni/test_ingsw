@@ -12,29 +12,29 @@ import { specs } from './config/swagger';
 const app = express();
 const PORT = config.auth.port || 3001;
 
-console.log('Avvio Auth Service...');
+logger.info('Avvio Auth Service...');
 
 // Middleware
 app.use(cors({
   origin: config.app.cors.origins,
   credentials: true
 }));
-console.log('CORS configurato:', config.app.cors.origins);
+logger.debug('CORS configurato:', config.app.cors.origins);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-console.log('Middleware JSON e URL encoded configurati');
+logger.debug('Middleware JSON e URL encoded configurati');
 
 // OpenAPI file downloads
 app.get('/docs/openapi.json', (req, res) => {
-  console.log('Richiesta OpenAPI JSON');
+  logger.debug('Richiesta OpenAPI JSON');
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Content-Disposition', 'attachment; filename="auth-service-openapi.json"');
   res.json(specs);
 });
 
 app.get('/docs/openapi.yaml', (req, res) => {
-  console.log('Richiesta OpenAPI YAML');
+  logger.debug('Richiesta OpenAPI YAML');
   try {
     const yamlStr = yaml.dump(specs, {
       indent: 2,
@@ -68,14 +68,14 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs, {
     showCommonExtensions: true
   }
 }));
-console.log('Swagger UI configurato');
+logger.debug('Swagger UI configurato');
 
 // Routes
 app.use('/api', authRoutes);
-console.log('Route /api configurata');
+logger.debug('Route /api configurata');
 
 app.get('/api/health', (req, res) => {
-  console.log('Health check richiesto');
+  logger.debug('Health check richiesto');
   res.json({
     service: 'auth-service',
     status: 'healthy',
@@ -85,11 +85,11 @@ app.get('/api/health', (req, res) => {
 
 // 404 handler for undefined routes
 app.use(notFoundHandler);
-console.log('Gestore 404 configurato');
+logger.debug('Gestore 404 configurato');
 
 // Global error handler
 app.use(errorHandler);
-console.log('Gestore errori globali configurato');
+logger.debug('Gestore errori globali configurato');
 
 async function startServer() {
   try {

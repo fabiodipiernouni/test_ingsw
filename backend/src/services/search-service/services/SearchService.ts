@@ -1,11 +1,11 @@
 import { Op, Sequelize } from 'sequelize';
 import { Property, SearchHistory, SavedSearch } from '@shared/database/models';
 import { isValidGeoJSONPoint, extractCoordinates } from '@shared/types/geojson.types';
+
 import {
   SearchFilters, 
   SearchRequest, 
   SearchResult, 
-  PropertyResult,
   SavedSearch as SavedSearchType,
   SavedSearchCreate,
   SavedSearchUpdate,
@@ -322,7 +322,7 @@ export class SearchService {
   /**
    * Calcola le distanze geografiche se è una ricerca per raggio
    */
-  private async calculateDistances(properties: Property[], filters: SearchRequest): Promise<PropertyResult[]> {
+  private async calculateDistances(properties: Property[], filters: SearchRequest): Promise<PropertyModel[]> {
     const formattedProperties = await Promise.all(
       properties.map(async (property) => {
         const propertyData = await this.formatPropertyResult(property);
@@ -729,7 +729,7 @@ export class SearchService {
 
         case 'feature': {
           // Cerca nelle features più comuni
-          suggestions = await this.getFeatureSuggestions()
+          suggestions = await this.getFeatureSuggestions();
           break;
         }
       }

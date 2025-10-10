@@ -1,7 +1,4 @@
 
-// Import necessario per SearchResult
-import { PropertyDto } from '../dto/PropertyDto';
-
 // Types per il Property Service basati sullo schema OpenAPI
 
 export type PropertyType = 'apartment' | 'villa' | 'house' | 'loft' | 'office' | 'commercial' | 'land';

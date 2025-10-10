@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import logger from '../src/shared/utils/logger';
 
 // Tipi di contratto
 const tipiContratto = {
@@ -26,14 +27,14 @@ async function scrapeRegione(regione: string, tipoContratto: keyof typeof tipiCo
         fs.mkdirSync(regioneDir, { recursive: true });
     }
 
-    console.log(`\nInizio scraping ${tipoContratto} per ${regione} (${regione})`);
+    logger.info(`\nInizio scraping ${tipoContratto} per ${regione} (${regione})`);
     let pagineSalvate = 0;
 
     for (let page = 1; page <= numPagine; page++) {
         const url = `${baseUrl}&pag=${page}`;
         
         try {
-            console.log(`📄 ${tipoContratto} - ${regione} - Pagina ${page}`);
+            logger.debug(`📄 ${tipoContratto} - ${regione} - Pagina ${page}`);
 
             const response = await fetch(url, {
                 method: 'GET',
@@ -46,8 +47,8 @@ async function scrapeRegione(regione: string, tipoContratto: keyof typeof tipiCo
             });
 
             if (response.status !== 200) {
-                console.error(`${regione} - Errore HTTP sulla pagina ${page}: status ${response.status}`);
-                console.log(`${regione} - Scraping interrotto alla pagina ${page}`);
+                logger.error(`${regione} - Errore HTTP sulla pagina ${page}: status ${response.status}`);
+                logger.info(`${regione} - Scraping interrotto alla pagina ${page}`);
                 break;
             }
 
@@ -59,19 +60,19 @@ async function scrapeRegione(regione: string, tipoContratto: keyof typeof tipiCo
             fs.writeFileSync(filepath, JSON.stringify(data, null, 2), 'utf-8');
             
             pagineSalvate++;
-            console.log(`${tipoContratto} - ${regione} - Pagina ${page} salvata.`);
+            logger.debug(`${tipoContratto} - ${regione} - Pagina ${page} salvata.`);
 
             // Pausa di 300ms tra le richieste per non sovraccaricare il server
             await new Promise(resolve => setTimeout(resolve, 300));
             
         } catch (error) {
-            console.error(`${regione} - Errore durante il scraping della pagina ${page}:`, error);
-            console.log(`${regione} - Scraping interrotto alla pagina ${page}`);
+            logger.error(`${regione} - Errore durante il scraping della pagina ${page}:`, error);
+            logger.info(`${regione} - Scraping interrotto alla pagina ${page}`);
             break;
         }
     }
 
-    console.log(`${tipoContratto} - ${regione} completata: ${pagineSalvate} pagine salvate`);
+    logger.info(`${tipoContratto} - ${regione} completata: ${pagineSalvate} pagine salvate`);
     return pagineSalvate;
 }
 
@@ -87,9 +88,9 @@ if (require.main === module) {
     });
 
     Promise.all(jobs)
-        .then(() => console.log('Script completato con successo'))
+        .then(() => logger.info('Script completato con successo'))
         .catch(error => {
-            console.error('Script fallito:', error);
+            logger.error('Script fallito:', error);
             process.exit(1);
         });
 }

@@ -6,7 +6,7 @@ import { PropertyCard } from '@property/models/PropertyCard';
 import { PagedResult } from '@shared/models/pagedResult';
 import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequest';
 import { CreatePropertyResponse } from '@property/dto/CreatePropertyResponse';
-import { PropertyDto } from '@property/dto/PropertyDto';
+import { PropertyModel } from '@property/models/PropertyDto';
 import { isValidGeoJSONPoint } from '@shared/types/geojson.types';
 
 // Custom error classes for better error handling
@@ -159,7 +159,7 @@ export class PropertyService {
   /**
    * Ottiene una proprietà per ID con tutte le associazioni
    */
-  async getPropertyById(propertyId: string): Promise<PropertyDto> {
+  async getPropertyById(propertyId: string): Promise<PropertyModel> {
     const property = await Property.findByPk(propertyId, {
       include: [
         {
@@ -187,7 +187,7 @@ export class PropertyService {
   /**
    * Formatta la risposta della proprietà per l'API
    */
-  private async formatPropertyResponse(property: Property): Promise<PropertyDto> {
+  private async formatPropertyResponse(property: Property): Promise<PropertyModel> {
     // Generate signed URLs for images
     const imagesWithUrls = await Promise.all(
       (property.images || []).map(async (image) => {

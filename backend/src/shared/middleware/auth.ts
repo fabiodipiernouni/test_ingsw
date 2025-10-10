@@ -5,6 +5,8 @@ import { User, Agency } from '@shared/database/models';
 import { AuthenticatedRequest } from '@shared/types/common.types';
 import { unauthorizedResponse, forbiddenResponse } from '@shared/utils/helpers';
 import appConfig from '@shared/config';
+import { UserRole } from '@user/models/UserRole';
+import logger from '@shared/utils/logger';
 
 // JWKS Client per validare token Cognito
 const jwksClient = jwksRsa({
@@ -64,7 +66,7 @@ export const authenticateToken = async (
         try {
           // Estrai dati da token Cognito
           const cognitoSub = decoded.sub;
-          const cognitoUsername = decoded.username || decoded['cognito:username'];
+          //const cognitoUsername = decoded.username || decoded['cognito:username'];
           const cognitoGroups: string[] = decoded['cognito:groups'] || [];
 
           // Recupera utente dal DB locale
@@ -109,13 +111,13 @@ export const authenticateToken = async (
           req.user = user.toJSON();
           next();
         } catch (dbError) {
-          console.error('Database error in auth middleware:', dbError);
+          logger.error('Database error in auth middleware:', dbError);
           return unauthorizedResponse(res, 'Authentication failed');
         }
       }
     );
   } catch (error) {
-    console.error('Authentication error:', error);
+    logger.error('Authentication error:', error);
     return unauthorizedResponse(res, 'Authentication failed');
   }
 };
@@ -154,7 +156,7 @@ export const optionalAuth = async (
 
               if (user && user.isActive) {
                 // Determina ruolo
-                let role: 'client' | 'agent' | 'admin' | 'owner' = 'client';
+                let role: UserRole = 'client';
                 if (cognitoGroups.includes(appConfig.cognito.groups.owners)) {
                   role = 'owner';
                 } else if (cognitoGroups.includes(appConfig.cognito.groups.admins)) {
@@ -173,7 +175,7 @@ export const optionalAuth = async (
               }
             } catch (dbError) {
               // Ignora errori DB in optionalAuth
-              console.warn('DB error in optionalAuth:', dbError);
+              logger.warn('DB error in optionalAuth:', dbError);
             }
           }
           next();
@@ -230,7 +232,7 @@ export const requireOwnership = (
       }
 
       // Owners and admins can access any resource
-      if (req.user.role === 'admin' || req.user.role === 'owner') {
+      if (req.user.role === 'admin') { // || req.user.role === 'owner') {
         return next();
       }
 

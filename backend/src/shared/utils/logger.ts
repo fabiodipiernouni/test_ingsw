@@ -53,7 +53,7 @@ const logger = winston.createLogger({
 // Handle uncaught exceptions and rejections
 logger.exceptions.handle(
   new winston.transports.File({ 
-    filename: path.join(logsDir, 'exceptions.log') 
+    filename: path.join(logsDir, 'exceptions.log')
   })
 );
 

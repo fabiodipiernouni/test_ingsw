@@ -21,6 +21,7 @@ import {
   AdminAddUserToGroupCommand
 } from '@aws-sdk/client-cognito-identity-provider';
 import config from '../src/shared/config';
+import logger from '../src/shared/utils/logger';
 
 // Cognito Client
 const cognitoClient = new CognitoIdentityProviderClient({
@@ -54,18 +55,18 @@ function isValidEmail(email: string): boolean {
 
 // Funzione principale
 async function createAgencyAndAdmin() {
-  console.log('Script di creazione nuova agenzia immobiliare\n');
-  console.log('=' .repeat(50));
-  
+  logger.info('Script di creazione nuova agenzia immobiliare\n');
+  logger.info('=' .repeat(50));
+
   try {
     // Inizializza database
     await database.connect();
-    console.log('Connessione al database riuscita\n');
+    logger.info('Connessione al database riuscita\n');
 
     // Raccolta dati agenzia
-    console.log('DATI AGENZIA');
-    console.log('-'.repeat(20));
-    
+    logger.info('DATI AGENZIA');
+    logger.info('-'.repeat(20));
+
     const agencyName = await askQuestion('Nome agenzia (obbligatorio): ');
     if (!agencyName) {
       throw new Error('Il nome dell\'agenzia è obbligatorio');
@@ -110,9 +111,9 @@ async function createAgencyAndAdmin() {
     const website = await askQuestion('Sito web (opzionale): ');
     const licenseNumber = await askQuestion('Numero licenza (opzionale): ');
 
-    console.log('\nDATI UTENTE ADMIN');
-    console.log('-'.repeat(20));
-    
+    logger.info('\nDATI UTENTE ADMIN');
+    logger.info('-'.repeat(20));
+
     const adminEmail = await askQuestion('Email utente admin (obbligatorio): ');
     if (!adminEmail || !isValidEmail(adminEmail)) {
       throw new Error('Email admin non valida');
@@ -136,22 +137,22 @@ async function createAgencyAndAdmin() {
 
     const ownerPhone = await askQuestion('Telefono owner (opzionale): ');
     
-    console.log('\n🔧 RIEPILOGO');
-    console.log('-'.repeat(20));
-    console.log(`Agenzia: ${agencyName}`);
-    console.log(`Owner: ${firstName} ${lastName} (${adminEmail})`);
-    console.log('\nL\'owner sarà creato in Cognito e riceverà una email con le credenziali temporanee');
-    
+    logger.info('\n🔧 RIEPILOGO');
+    logger.info('-'.repeat(20));
+    logger.info(`Agenzia: ${agencyName}`);
+    logger.info(`Owner: ${firstName} ${lastName} (${adminEmail})`);
+    logger.info('\nL\'owner sarà creato in Cognito e riceverà una email con le credenziali temporanee');
+
     const confirm = await askQuestion('\nConfermi la creazione? (s/N): ');
     if (confirm.toLowerCase() !== 's' && confirm.toLowerCase() !== 'si') {
-      console.log('Operazione annullata');
+      logger.info('Operazione annullata');
       process.exit(0);
     }
 
-    console.log('\nCreazione in corso...');
+    logger.info('\nCreazione in corso...');
 
     // 1. Crea l'owner in Cognito
-    console.log('Creazione owner in Cognito...');
+    logger.info('Creazione owner in Cognito...');
     const createUserCommand = new AdminCreateUserCommand({
       UserPoolId: config.cognito.userPoolId,
       Username: adminEmail,
@@ -172,7 +173,7 @@ async function createAgencyAndAdmin() {
       throw new Error('Failed to create owner in Cognito');
     }
 
-    console.log('Owner creato in Cognito:', cognitoSub);
+    logger.info('Owner creato in Cognito:', cognitoSub);
 
     // 2. Aggiungi al gruppo 'owners'
     const addToGroupCommand = new AdminAddUserToGroupCommand({
@@ -182,7 +183,7 @@ async function createAgencyAndAdmin() {
     });
 
     await cognitoClient.send(addToGroupCommand);
-    console.log('Owner aggiunto al gruppo owners');
+    logger.info('Owner aggiunto al gruppo owners');
 
     // Inizio transazione DB
     const transaction = await database.getInstance().transaction();
@@ -207,7 +208,7 @@ async function createAgencyAndAdmin() {
         acceptedTermsAt: new Date()
       }, { transaction });
 
-      console.log('Record utente owner creato nel DB');
+      logger.info('Record utente owner creato nel DB');
 
       // 4. Crea l'agenzia con createdBy = ownerUser.id
       const agency = await Agency.create({
@@ -227,28 +228,28 @@ async function createAgencyAndAdmin() {
         createdBy: ownerUser.id
       }, { transaction });
 
-      console.log('Agenzia creata');
+      logger.info('Agenzia creata');
 
       // 5. Aggiorna l'utente owner con agencyId
       await ownerUser.update({
         agencyId: agency.id
       }, { transaction });
 
-      console.log('Associazione owner-agenzia completata');
+      logger.info('Associazione owner-agenzia completata');
 
       // Commit transazione
       await transaction.commit();
 
-      console.log('\nCREAZIONE COMPLETATA!');
-      console.log('=' .repeat(50));
-      console.log(`Agenzia "${agencyName}" creata con ID: ${agency.id}`);
-      console.log(`Owner "${firstName} ${lastName}" creato con ID: ${ownerUser.id}`);
-      console.log(`Email: ${adminEmail}`);
-      console.log(`Cognito Sub: ${cognitoSub}`);
-      console.log('\nIMPORTANTE:');
-      console.log('   - L\'owner è stato creato in AWS Cognito');
-      console.log('   - Una email con le credenziali temporanee è stata inviata a: ' + adminEmail);
-      console.log('   - Al primo accesso sarà richiesto di cambiare la password');
+      logger.info('\nCREAZIONE COMPLETATA!');
+      logger.info('=' .repeat(50));
+      logger.info(`Agenzia "${agencyName}" creata con ID: ${agency.id}`);
+      logger.info(`Owner "${firstName} ${lastName}" creato con ID: ${ownerUser.id}`);
+      logger.info(`Email: ${adminEmail}`);
+      logger.info(`Cognito Sub: ${cognitoSub}`);
+      logger.info('\nIMPORTANTE:');
+      logger.info('   - L\'owner è stato creato in AWS Cognito');
+      logger.info('   - Una email con le credenziali temporanee è stata inviata a: ' + adminEmail);
+      logger.info('   - Al primo accesso sarà richiesto di cambiare la password');
 
     } catch (error) {
       await transaction.rollback();
@@ -256,7 +257,7 @@ async function createAgencyAndAdmin() {
     }
 
   } catch (error) {
-    console.error('\nERRORE:', error instanceof Error ? error.message : error);
+    logger.error('\nERRORE:', error instanceof Error ? error.message : error);
     process.exit(1);
   } finally {
     rl.close();
@@ -266,13 +267,13 @@ async function createAgencyAndAdmin() {
 
 // Gestione segnali di interruzione
 process.on('SIGINT', () => {
-  console.log('\n\nOperazione interrotta dall\'utente');
+  logger.info('\n\nOperazione interrotta dall\'utente');
   rl.close();
   process.exit(1);
 });
 
 process.on('SIGTERM', () => {
-  console.log('\n\nOperazione terminata');
+  logger.info('\n\nOperazione terminata');
   rl.close();
   process.exit(1);
 });
@@ -280,7 +281,7 @@ process.on('SIGTERM', () => {
 // Avvia lo script
 if (require.main === module) {
   createAgencyAndAdmin().catch((error) => {
-    console.error('Errore fatale:', error);
+    logger.error('Errore fatale:', error);
     process.exit(1);
   });
 }

@@ -10,6 +10,7 @@ import { Upload } from '@aws-sdk/lib-storage';
 import config from '@shared/config';
 import { v4 as uuidv4 } from 'uuid';
 import sharp from 'sharp';
+import logger from '@shared/utils/logger';
 
 export interface ImageVariant {
   key: string;
@@ -176,7 +177,7 @@ export class ImageService {
         variants
       };
     } catch (error) {
-      console.error('Error uploading image to S3:', error);
+      logger.error('Error uploading image to S3:', error);
       throw new Error(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -224,7 +225,7 @@ export class ImageService {
 
       await Promise.all(deletePromises);
     } catch (error) {
-      console.error('Error deleting image from S3:', error);
+      logger.error('Error deleting image from S3:', error);
       throw new Error(`Failed to delete image: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -248,7 +249,7 @@ export class ImageService {
 
       return url;
     } catch (error) {
-      console.error('Error generating signed URL:', error);
+      logger.error('Error generating signed URL:', error);
       throw new Error(`Failed to generate signed URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -314,7 +315,7 @@ export class ImageService {
 
       return response.Contents?.map(obj => obj.Key!).filter(Boolean) || [];
     } catch (error) {
-      console.error('Error listing property images:', error);
+      logger.error('Error listing property images:', error);
       throw new Error(`Failed to list property images: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -341,7 +342,7 @@ export class ImageService {
         lastModified: response.LastModified
       };
     } catch (error) {
-      console.error('Error getting image metadata:', error);
+      logger.error('Error getting image metadata:', error);
       throw new Error(`Failed to get image metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -377,7 +378,7 @@ export class ImageService {
         sourceObject.ContentType || 'application/octet-stream'
       );
     } catch (error) {
-      console.error('Error copying image:', error);
+      logger.error('Error copying image:', error);
       throw new Error(`Failed to copy image: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -419,7 +420,7 @@ export class ImageService {
 
       return deletedCount;
     } catch (error) {
-      console.error('Error deleting agency images:', error);
+      logger.error('Error deleting agency images:', error);
       throw new Error(`Failed to delete agency images: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -481,7 +482,7 @@ export class ImageService {
         byListingType
       };
     } catch (error) {
-      console.error('Error getting agency storage usage:', error);
+      logger.error('Error getting agency storage usage:', error);
       throw new Error(`Failed to get agency storage usage: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -529,7 +530,7 @@ export class ImageService {
 
       return Array.from(propertyIds);
     } catch (error) {
-      console.error('Error listing agency properties:', error);
+      logger.error('Error listing agency properties:', error);
       throw new Error(`Failed to list agency properties: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -575,7 +576,7 @@ export class ImageService {
 
       return deletedCount;
     } catch (error) {
-      console.error('Error deleting property images:', error);
+      logger.error('Error deleting property images:', error);
       throw new Error(`Failed to delete property images: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }

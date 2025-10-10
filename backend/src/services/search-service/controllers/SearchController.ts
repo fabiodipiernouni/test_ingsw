@@ -179,6 +179,7 @@ export class SearchController {
 
       const updatedSearch = await searchService.updateSavedSearch(req.user.id, searchId, updateData);
       successResponse(res, updatedSearch, 'Search updated successfully');
+      next();
 
     } catch (error: any) {
       logger.error('Error in updateSavedSearch controller:', error);
