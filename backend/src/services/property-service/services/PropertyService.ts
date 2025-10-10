@@ -6,7 +6,7 @@ import { PropertyCard } from '@property/models/PropertyCard';
 import { PagedResult } from '@shared/models/pagedResult';
 import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequest';
 import { CreatePropertyResponse } from '@property/dto/CreatePropertyResponse';
-import { PropertyModel } from '@property/models/PropertyDto';
+import { PropertyModel } from '@property/models/PropertyModel';
 import { isValidGeoJSONPoint } from '@shared/types/geojson.types';
 
 // Custom error classes for better error handling
@@ -179,7 +179,7 @@ export class PropertyService {
       throw new NotFoundError('Property not found');
     }
 
-    return await this.formatPropertyResponse(property);
+    return await this.formatPropertyToModel(property);
   }
 
 
@@ -187,7 +187,7 @@ export class PropertyService {
   /**
    * Formatta la risposta della proprietà per l'API
    */
-  private async formatPropertyResponse(property: Property): Promise<PropertyModel> {
+  private async formatPropertyToModel(property: Property): Promise<PropertyModel> {
     // Generate signed URLs for images
     const imagesWithUrls = await Promise.all(
       (property.images || []).map(async (image) => {
@@ -243,13 +243,7 @@ export class PropertyService {
       location: property.location,  // GeoJSON Point format
       images: imagesWithUrls as any,
       agentId: property.agentId,
-      agent: property.agent ? {
-        id: property.agent.id,
-        firstName: property.agent.firstName,
-        lastName: property.agent.lastName,
-        email: property.agent.email,
-        phone: property.agent.phone
-      } : undefined,
+      agent: property.agent,
       isActive: property.isActive,
       views: property.views,
       favorites: property.favorites,
@@ -477,7 +471,7 @@ export class PropertyService {
 
       // Formatta le proprietà per la risposta (gestisce Promise.all per gli URL S3)
       const formattedProperties = await Promise.all(
-        properties.map(property => this.formatPropertyResponse(property))
+        properties.map(property => this.formatPropertyToModel(property))
       );
 
       return {
