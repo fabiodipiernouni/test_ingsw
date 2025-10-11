@@ -2,7 +2,7 @@
 
 import { GeoJSONPoint } from '@shared/types/geojson.types';
 import { EnergyClass, ListingType, PropertyStatus, PropertyType } from '@property/models/types';
-import { PropertyCard } from '@property/models/PropertyCard';
+import { PropertyCardDto } from '@property/dto/PropertyCardDto';
 
 
 export type SortBy = 'price_asc' | 'price_desc' | 'area_asc' | 'area_desc' | 'date_desc' | 'relevance';
@@ -66,7 +66,7 @@ export interface SearchRequest extends SearchFilters {
 
 
 export interface SearchResult {
-  properties: PropertyCard[];
+  properties: PropertyCardDto[];
   totalCount: number;
   currentPage: number;
   totalPages: number;

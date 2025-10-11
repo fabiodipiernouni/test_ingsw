@@ -1,8 +1,8 @@
-import { PropertyImageModel } from './PropertyImageModel';
+import { PropertyImageModel } from '../models/PropertyImageModel';
 import { EnergyClass, ListingType, PropertyStatus, PropertyType } from '@property/models/types';
 
 
-export interface PropertyCard {
+export interface PropertyCardDto {
   id: string;
   title: string;
   description: string;

@@ -1,42 +1,46 @@
-//TODO: cancellare elementi non usati
 import { Request, Response, NextFunction } from 'express';
-import { ApiResponse, ErrorResponse } from '@shared/types/common.types';
+import { ApiResponse } from '@shared/types/common.types';
 
 /**
  * Success response helper
  */
-export const successResponse = <T>(
+export const setResponseAsSuccess = <T>(
   res: Response,
   data: T,
   message?: string,
   statusCode: number = 200
-): Response<ApiResponse<T>> => {
-  return res.status(statusCode).json({
+): void => {
+  const apiResponse: ApiResponse<T> = {
     success: true,
     data,
     message,
-    timestamp: new Date()
-  });
+    timestamp: new Date(),
+    path: res.req?.originalUrl || ''
+  };
+
+  res.status(statusCode).json(apiResponse);
 };
 
 /**
  * Error response helper
  */
-export const errorResponse = (
+export const setResponseAsError = (
   res: Response,
   error: string,
   message: string,
   statusCode: number = 500,
-  details?: any
-): Response<ErrorResponse> => {
-  return res.status(statusCode).json({
+  details?: string[]
+): void => {
+  const errorResponse: ApiResponse<never> = {
     success: false,
     error,
     message,
-    details,
     timestamp: new Date(),
-    path: res.req?.originalUrl || ''
-  });
+    path: res.req?.originalUrl || '',
+    ...(details && { details })
+  };
+
+  res.status(statusCode).json(errorResponse);
 };
 
 /**
@@ -44,16 +48,16 @@ export const errorResponse = (
  */
 export const validationErrorResponse = (
   res: Response,
-  errors: any[]
-): Response<ErrorResponse> => {
-  return errorResponse(
+  errors: string[]
+): void =>
+  setResponseAsError(
     res,
     'VALIDATION_ERROR',
     'Validation failed',
     400,
-    { errors }
+    errors
   );
-};
+
 
 /**
  * Not found error response
@@ -61,14 +65,13 @@ export const validationErrorResponse = (
 export const notFoundResponse = (
   res: Response,
   resource: string = 'Resource'
-): Response<ErrorResponse> => {
-  return errorResponse(
+): void =>
+  setResponseAsError(
     res,
     'NOT_FOUND',
     `${resource} not found`,
     404
   );
-};
 
 /**
  * Unauthorized error response
@@ -76,124 +79,29 @@ export const notFoundResponse = (
 export const unauthorizedResponse = (
   res: Response,
   message: string = 'Unauthorized'
-): Response<ErrorResponse> => {
-  return errorResponse(
+): void =>
+  setResponseAsError(
     res,
     'UNAUTHORIZED',
     message,
     401
   );
-};
+
 
 /**
  * Forbidden error response
  */
-export const forbiddenResponse = (
+export const setResponseAsForbidden = (
   res: Response,
   message: string = 'Forbidden'
-): Response<ErrorResponse> => {
-  return errorResponse(
+): void =>
+  setResponseAsError(
     res,
     'FORBIDDEN',
     message,
     403
   );
-};
 
-/**
- * Conflict error response
- */
-export const conflictResponse = (
-  res: Response,
-  message: string = 'Resource already exists'
-): Response<ErrorResponse> => {
-  return errorResponse(
-    res,
-    'CONFLICT',
-    message,
-    409
-  );
-};
-
-/**
- * Internal server error response
- */
-export const internalServerErrorResponse = (
-  res: Response,
-  message: string = 'Internal server error'
-): Response<ErrorResponse> => {
-  return errorResponse(
-    res,
-    'INTERNAL_SERVER_ERROR',
-    message,
-    500
-  );
-};
-
-/**
- * Pagination helper for query results
- */
-export const paginateResults = <T>(
-  data: T[],
-  totalCount: number,
-  page: number,
-  limit: number
-) => {
-  const totalPages = Math.ceil(totalCount / limit);
-  
-  return {
-    data,
-    pagination: {
-      totalCount,
-      currentPage: page,
-      totalPages,
-      hasNextPage: page < totalPages,
-      hasPreviousPage: page > 1,
-      limit
-    }
-  };
-};
-
-/**
- * Async handler wrapper to catch errors
- */
-export const asyncHandler = (
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<any>
-) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-};
-
-/**
- * Generate unique filename for uploads
- */
-export const generateUniqueFilename = (originalName: string): string => {
-  const timestamp = Date.now();
-  const randomString = Math.random().toString(36).substring(2, 8);
-  const extension = originalName.split('.').pop();
-  return `${timestamp}-${randomString}.${extension}`;
-};
-
-/**
- * Calculate distance between two coordinates (Haversine formula)
- */
-export const calculateDistance = (
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-): number => {
-  const R = 6371; // Earth's radius in kilometers
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
 
 function toRad(deg: number): number {
   return deg * (Math.PI / 180);
@@ -243,7 +151,7 @@ export const formatFileSize = (bytes: number): string => {
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
 /**

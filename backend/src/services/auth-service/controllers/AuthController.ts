@@ -4,7 +4,7 @@ import { validate } from 'class-validator';
 import { authService } from '../services/AuthService';
 import logger from '@shared/utils/logger';
 import { AuthenticatedRequest } from '@shared/types/common.types';
-import { successResponse, errorResponse, validationErrorResponse, notFoundResponse } from '@shared/utils/helpers';
+import { setResponseAsSuccess, setResponseAsError, validationErrorResponse, notFoundResponse } from '@shared/utils/helpers';
 import { RegisterDto } from '@auth/dto/RegisterDto';
 import { LoginDto } from '@auth/dto/LoginDto';
 import config from '@shared/config';
@@ -27,7 +27,7 @@ export class AuthController {
 
       const result = await authService.register(registerData);
 
-      successResponse(
+      setResponseAsSuccess(
         res,
         {
           user: result.user,
@@ -49,25 +49,25 @@ export class AuthController {
       }
 
       if (error.name === 'ConflictError') {
-        errorResponse(res, 'CONFLICT', error.message, 409);
+        setResponseAsError(res, 'CONFLICT', error.message, 409);
         return;
       }
 
       // Handle user already exists
       if (error.name === 'UsernameExistsException' ||
           (error.message && error.message.includes('already exists'))) {
-        errorResponse(res, 'USER_ALREADY_EXISTS', 'An account with this email already exists.', 409);
+        setResponseAsError(res, 'USER_ALREADY_EXISTS', 'An account with this email already exists.', 409);
         return;
       }
 
       // Handle invalid password
       if (error.name === 'InvalidPasswordException' ||
           (error.message && error.message.includes('password does not conform'))) {
-        errorResponse(res, 'INVALID_PASSWORD', 'Password does not meet security requirements. Must be at least 8 characters with letters and numbers.', 400);
+        setResponseAsError(res, 'INVALID_PASSWORD', 'Password does not meet security requirements. Must be at least 8 characters with letters and numbers.', 400);
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Registration failed', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Registration failed', 500);
     }
   }
 
@@ -85,7 +85,7 @@ export class AuthController {
 
       // Se c'è una challenge (es. NEW_PASSWORD_REQUIRED)
       if (result.challenge) {
-        return successResponse(
+        return setResponseAsSuccess(
           res,
           {
             challengeName: result.challenge.name,
@@ -97,7 +97,7 @@ export class AuthController {
       }
 
       // Login normale completato
-      successResponse(
+      setResponseAsSuccess(
         res,
         {
           user: result.user,
@@ -113,35 +113,35 @@ export class AuthController {
       logger.error('Error in login controller:', error);
 
       if (error.name === 'AuthenticationError') {
-        errorResponse(res, 'UNAUTHORIZED', error.message, 401);
+        setResponseAsError(res, 'UNAUTHORIZED', error.message, 401);
         return;
       }
 
       // Handle user not found
       if (error.name === 'UserNotFoundException' || error.name === 'NotFoundError') {
-        errorResponse(res, 'UNAUTHORIZED', 'Invalid email or password', 401);
+        setResponseAsError(res, 'UNAUTHORIZED', 'Invalid email or password', 401);
         return;
       }
 
       // Handle user not confirmed
       if (error.name === 'UserNotConfirmedException') {
-        errorResponse(res, 'USER_NOT_CONFIRMED', 'User email not verified. Please verify your email first.', 403);
+        setResponseAsError(res, 'USER_NOT_CONFIRMED', 'User email not verified. Please verify your email first.', 403);
         return;
       }
 
       // Handle too many failed attempts
       if (error.name === 'TooManyRequestsException' ||
           (error.message && error.message.includes('too many'))) {
-        errorResponse(res, 'TOO_MANY_ATTEMPTS', 'Too many failed login attempts. Please try again later.', 429);
+        setResponseAsError(res, 'TOO_MANY_ATTEMPTS', 'Too many failed login attempts. Please try again later.', 429);
         return;
       }
 
       if (error.name === 'ValidationError') {
-        errorResponse(res, 'BAD_REQUEST', error.message, 400);
+        setResponseAsError(res, 'BAD_REQUEST', error.message, 400);
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Login failed', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Login failed', 500);
     }
   }
 
@@ -153,7 +153,7 @@ export class AuthController {
       const { email, newPassword, session } = req.body;
 
       if (!email || !newPassword || !session) {
-        errorResponse(res, 'BAD_REQUEST', 'Email, new password and session are required', 400);
+        setResponseAsError(res, 'BAD_REQUEST', 'Email, new password and session are required', 400);
         return;
       }
 
@@ -161,7 +161,7 @@ export class AuthController {
 
       const result = await authService.completeNewPasswordChallenge({ email, newPassword, session });
 
-      successResponse(
+      setResponseAsSuccess(
         res,
         {
           user: result.user,
@@ -177,7 +177,7 @@ export class AuthController {
       logger.error('Error in completeNewPassword controller:', error);
 
       if (error.name === 'AuthenticationError') {
-        errorResponse(res, 'UNAUTHORIZED', error.message, 401);
+        setResponseAsError(res, 'UNAUTHORIZED', error.message, 401);
         return;
       }
 
@@ -187,16 +187,16 @@ export class AuthController {
             error.message.includes('session is expired') || 
             error.message.includes('Invalid session')
           ))) {
-        errorResponse(res, 'SESSION_EXPIRED', 'Session has expired. Please login again to get a new session.', 401);
+        setResponseAsError(res, 'SESSION_EXPIRED', 'Session has expired. Please login again to get a new session.', 401);
         return;
       }
 
       if (error.name === 'ValidationError') {
-        errorResponse(res, 'BAD_REQUEST', error.message, 400);
+        setResponseAsError(res, 'BAD_REQUEST', error.message, 400);
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to complete password challenge', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to complete password challenge', 500);
     }
   }
 
@@ -208,7 +208,7 @@ export class AuthController {
       const { email, code, newPassword } = req.body;
 
       if (!email || !code || !newPassword) {
-        errorResponse(res, 'BAD_REQUEST', 'Email, code and new password are required', 400);
+        setResponseAsError(res, 'BAD_REQUEST', 'Email, code and new password are required', 400);
         return;
       }
 
@@ -216,42 +216,42 @@ export class AuthController {
 
       await authService.confirmForgotPassword(email, code, newPassword);
 
-      successResponse(res, { message: 'Password reset successful. You can now login with your new password.' });
+      setResponseAsSuccess(res, { message: 'Password reset successful. You can now login with your new password.' });
 
     } catch (error: any) {
       logger.error('Error in confirmForgotPassword controller:', error);
 
       if (error.name === 'AuthenticationError') {
-        errorResponse(res, 'UNAUTHORIZED', error.message, 401);
+        setResponseAsError(res, 'UNAUTHORIZED', error.message, 401);
         return;
       }
 
       // Handle invalid or expired verification code
       if (error.name === 'CodeMismatchException' || 
           (error.message && error.message.includes('Invalid code provided'))) {
-        errorResponse(res, 'INVALID_CODE', 'Invalid or expired verification code. Please request a new code.', 400);
+        setResponseAsError(res, 'INVALID_CODE', 'Invalid or expired verification code. Please request a new code.', 400);
         return;
       }
 
       if (error.name === 'ExpiredCodeException' || 
           (error.message && error.message.includes('code has expired'))) {
-        errorResponse(res, 'CODE_EXPIRED', 'Verification code has expired. Please request a new code.', 400);
+        setResponseAsError(res, 'CODE_EXPIRED', 'Verification code has expired. Please request a new code.', 400);
         return;
       }
 
       // Handle invalid password format
       if (error.name === 'InvalidPasswordException' || 
           (error.message && error.message.includes('password does not conform'))) {
-        errorResponse(res, 'INVALID_PASSWORD', 'Password does not meet security requirements. Must be at least 8 characters with letters and numbers.', 400);
+        setResponseAsError(res, 'INVALID_PASSWORD', 'Password does not meet security requirements. Must be at least 8 characters with letters and numbers.', 400);
         return;
       }
 
       if (error.name === 'ValidationError') {
-        errorResponse(res, 'BAD_REQUEST', error.message, 400);
+        setResponseAsError(res, 'BAD_REQUEST', error.message, 400);
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to reset password', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to reset password', 500);
     }
   }
 
@@ -271,28 +271,28 @@ export class AuthController {
 
       const result = await authService.confirmEmail(email, code);
 
-      successResponse(res, { message: result.message }, 'Email verified successfully', 200);
+      setResponseAsSuccess(res, { message: result.message }, 'Email verified successfully', 200);
 
     } catch (error: any) {
       logger.error('Error in confirmEmail controller:', error);
 
       if (error.name === 'ValidationError') {
-        errorResponse(res, 'INVALID_CODE', error.message, 400);
+        setResponseAsError(res, 'INVALID_CODE', error.message, 400);
         return;
       }
 
       if (error.name === 'CodeMismatchException') {
-        errorResponse(res, 'INVALID_CODE', 'Invalid verification code. Please check and try again.', 400);
+        setResponseAsError(res, 'INVALID_CODE', 'Invalid verification code. Please check and try again.', 400);
         return;
       }
 
       if (error.name === 'ExpiredCodeException') {
-        errorResponse(res, 'CODE_EXPIRED', 'Verification code has expired. Please request a new code.', 400);
+        setResponseAsError(res, 'CODE_EXPIRED', 'Verification code has expired. Please request a new code.', 400);
         return;
       }
 
       if (error.name === 'NotAuthorizedException') {
-        errorResponse(res, 'ALREADY_VERIFIED', 'User is already verified.', 400);
+        setResponseAsError(res, 'ALREADY_VERIFIED', 'User is already verified.', 400);
         return;
       }
 
@@ -305,11 +305,11 @@ export class AuthController {
       }
 
       if (error.name === 'InvalidParameterException') {
-        errorResponse(res, 'BAD_REQUEST', error.message || 'Invalid parameters provided.', 400);
+        setResponseAsError(res, 'BAD_REQUEST', error.message || 'Invalid parameters provided.', 400);
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to verify email', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to verify email', 500);
     }
   }
 
@@ -329,7 +329,7 @@ export class AuthController {
 
       const result = await authService.resendVerificationCode(email);
 
-      successResponse(res, { message: result.message }, 'Verification code sent', 200);
+      setResponseAsSuccess(res, { message: result.message }, 'Verification code sent', 200);
 
     } catch (error: any) {
       logger.error('Error in resendVerificationCode controller:', error);
@@ -340,21 +340,21 @@ export class AuthController {
       }
 
       if (error.name === 'ValidationError') {
-        errorResponse(res, 'BAD_REQUEST', error.message, 400);
+        setResponseAsError(res, 'BAD_REQUEST', error.message, 400);
         return;
       }
 
       if (error.name === 'InvalidParameterException') {
-        errorResponse(res, 'ALREADY_VERIFIED', 'User is already verified.', 400);
+        setResponseAsError(res, 'ALREADY_VERIFIED', 'User is already verified.', 400);
         return;
       }
 
       if (error.name === 'LimitExceededException') {
-        errorResponse(res, 'TOO_MANY_REQUESTS', 'Too many requests. Please try again later.', 429);
+        setResponseAsError(res, 'TOO_MANY_REQUESTS', 'Too many requests. Please try again later.', 429);
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to resend verification code', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to resend verification code', 500);
     }
   }
 
@@ -366,7 +366,7 @@ export class AuthController {
       const { email } = req.body;
 
       if (!email) {
-        errorResponse(res, 'BAD_REQUEST', 'Email is required', 400);
+        setResponseAsError(res, 'BAD_REQUEST', 'Email is required', 400);
         return;
       }
 
@@ -374,18 +374,18 @@ export class AuthController {
 
       await authService.forgotPassword(email);
 
-      successResponse(res, { message: 'Password reset code sent to your email' });
+      setResponseAsSuccess(res, { message: 'Password reset code sent to your email' });
 
     } catch (error: any) {
       logger.error('Error in forgotPassword controller:', error);
 
       if (error.name === 'NotFoundError') {
         // Per sicurezza, non rivelare se l'utente esiste o meno
-        successResponse(res, { message: 'If an account exists, a password reset code has been sent' });
+        setResponseAsSuccess(res, { message: 'If an account exists, a password reset code has been sent' });
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to initiate password reset', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to initiate password reset', 500);
     }
   }
 
@@ -397,13 +397,13 @@ export class AuthController {
       const { refreshToken } = req.body;
 
       if (!refreshToken) {
-        errorResponse(res, 'BAD_REQUEST', 'Refresh token is required', 400);
+        setResponseAsError(res, 'BAD_REQUEST', 'Refresh token is required', 400);
         return;
       }
 
       const result = await authService.refreshToken(refreshToken);
 
-      successResponse(res, {
+      setResponseAsSuccess(res, {
         accessToken: result.accessToken,
         idToken: result.idToken,
         tokenType: 'Bearer'
@@ -413,7 +413,7 @@ export class AuthController {
       logger.error('Error in refreshToken controller:', error);
 
       if (error.name === 'AuthenticationError') {
-        errorResponse(res, 'UNAUTHORIZED', error.message, 401);
+        setResponseAsError(res, 'UNAUTHORIZED', error.message, 401);
         return;
       }
 
@@ -422,11 +422,11 @@ export class AuthController {
       if (error.name === 'NotAuthorizedException' ||
         (error.message && (error.message.includes('Refresh Token has expired') ||
           error.message.includes('Invalid Refresh Token')))) {
-        errorResponse(res, 'TOKEN_EXPIRED', 'Refresh token has expired or is invalid. Please login again.', 401);
+        setResponseAsError(res, 'TOKEN_EXPIRED', 'Refresh token has expired or is invalid. Please login again.', 401);
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Token refresh failed', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Token refresh failed', 500);
     }
   }
 
@@ -439,7 +439,7 @@ export class AuthController {
       const accessToken = authHeader?.split(' ')[1];
 
       if (!accessToken) {
-        errorResponse(res, 'UNAUTHORIZED', 'Access token is required', 401);
+        setResponseAsError(res, 'UNAUTHORIZED', 'Access token is required', 401);
         return;
       }
 
@@ -458,13 +458,13 @@ export class AuthController {
 
       await authService.changePassword(accessToken, currentPassword, newPassword);
 
-      successResponse(res, { message: 'Password changed successfully' });
+      setResponseAsSuccess(res, { message: 'Password changed successfully' });
 
     } catch (error: any) {
       logger.error('Error in changePassword controller:', error);
 
       if (error.name === 'AuthenticationError') {
-        errorResponse(res, 'UNAUTHORIZED', error.message, 401);
+        setResponseAsError(res, 'UNAUTHORIZED', error.message, 401);
         return;
       }
 
@@ -476,7 +476,7 @@ export class AuthController {
       // Handle incorrect current password
       if (error.name === 'NotAuthorizedException' ||
         (error.message && error.message.includes('Incorrect username or password'))) {
-        errorResponse(res, 'INCORRECT_PASSWORD', 'Current password is incorrect.', 401);
+        setResponseAsError(res, 'INCORRECT_PASSWORD', 'Current password is incorrect.', 401);
         return;
       }
 
@@ -484,7 +484,7 @@ export class AuthController {
 
       if (error.name === 'InvalidPasswordException' ||
         (error.message && error.message.includes('password does not conform'))) {
-        errorResponse(res, 'INVALID_PASSWORD', 'New password does not meet security requirements. Must be at least 8 characters with letters and numbers.', 400);
+        setResponseAsError(res, 'INVALID_PASSWORD', 'New password does not meet security requirements. Must be at least 8 characters with letters and numbers.', 400);
         return;
       }
 
@@ -492,11 +492,11 @@ export class AuthController {
 
       if (error.name === 'LimitExceededException' ||
         (error.message && error.message.includes('Attempt limit exceeded'))) {
-        errorResponse(res, 'TOO_MANY_ATTEMPTS', 'Too many password change attempts. Please try again later.', 429);
+        setResponseAsError(res, 'TOO_MANY_ATTEMPTS', 'Too many password change attempts. Please try again later.', 429);
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to change password', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to change password', 500);
     }
   }
 

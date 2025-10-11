@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { propertyService } from '../services/PropertyService';
 import { ApiResponse, AuthenticatedRequest } from '@shared/types/common.types';
-import { successResponse, errorResponse, validationErrorResponse, notFoundResponse } from '@shared/utils/helpers';
+import { setResponseAsSuccess, setResponseAsError, validationErrorResponse, notFoundResponse } from '@shared/utils/helpers';
 import logger from '@shared/utils/logger';
 import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequest';
 import { PagedResult } from '@shared/models/pagedResult';
-import { PropertyCard } from '@property/models/PropertyCard';
+import { PropertyCardDto } from '@property/dto/PropertyCardDto';
 
 export class PropertyController {
   /**
@@ -16,13 +16,13 @@ export class PropertyController {
     try {
       // Verifica che l'utente sia autenticato
       if (!req?.user?.id) {
-        errorResponse(res, 'UNAUTHORIZED', 'User authentication required', 401);
+        setResponseAsError(res, 'UNAUTHORIZED', 'User authentication required', 401);
         return;
       }
 
       // Verifica che l'utente sia un agente
       if (req.user.role !== 'agent') {
-        errorResponse(res, 'FORBIDDEN', 'Only agents can create properties', 403);
+        setResponseAsError(res, 'FORBIDDEN', 'Only agents can create properties', 403);
         return;
       }
 
@@ -36,7 +36,7 @@ export class PropertyController {
       // Crea la proprietà tramite il service
       const result = await propertyService.createProperty(propertyData, req.user.id);
 
-      successResponse(
+      setResponseAsSuccess(
         res, 
         result.data, 
         result.message,
@@ -52,12 +52,12 @@ export class PropertyController {
       }
 
       if (error.name === 'BadRequestError') {
-        errorResponse(res, 'BAD_REQUEST', error.message, 400);
+        setResponseAsError(res, 'BAD_REQUEST', error.message, 400);
         return;
       }
 
       // Errore generico del server
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to create property', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to create property', 500);
     }
   }
 
@@ -70,13 +70,13 @@ export class PropertyController {
       const { propertyId } = req.params;
 
       if (!propertyId) {
-        errorResponse(res, 'BAD_REQUEST', 'Property ID is required', 400);
+        setResponseAsError(res, 'BAD_REQUEST', 'Property ID is required', 400);
         return;
       }
 
       const property = await propertyService.getPropertyById(propertyId);
 
-      successResponse(res, property);
+      setResponseAsSuccess(res, property);
 
     } catch (error: any) {
       logger.error('Error in getPropertyById controller:', error);
@@ -86,7 +86,7 @@ export class PropertyController {
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to get property', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get property', 500);
     }
   }
 
@@ -95,7 +95,7 @@ export class PropertyController {
    * Lista proprietà con paginazione - logica basata su ruoli
    * GET /properties/cards
    */
-  async getPropertiesCards(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<ApiResponse<PagedResult<PropertyCard>> | undefined> {
+  async getPropertiesCards(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       const page = Number.parseInt(req.query.page as string) || 1;
       const limit = Math.min(Number.parseInt(req.query.limit as string) || 20, 100);
@@ -138,7 +138,7 @@ export class PropertyController {
           case 'admin':
             // ADMIN: Solo proprietà della propria agenzia
             if (!req.user.agencyId) {
-              errorResponse(res, 'FORBIDDEN', 'Admin must be associated with an agency', 403);
+              setResponseAsError(res, 'FORBIDDEN', 'Admin must be associated with an agency', 403);
               return;
             }
             
@@ -162,7 +162,7 @@ export class PropertyController {
             break;
 
           default:
-            errorResponse(res, 'FORBIDDEN', 'Invalid user role', 403);
+            setResponseAsError(res, 'FORBIDDEN', 'Invalid user role', 403);
             return;
         }
       }
@@ -174,11 +174,11 @@ export class PropertyController {
         filters
       });
 
-      successResponse(res, result);
+      setResponseAsSuccess(res, result);
 
     } catch (error: any) {
       logger.error('Error in getPropertiesCards PropertyController:', error);
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to get properties', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get properties', 500);
     }
   }
 
@@ -284,7 +284,7 @@ export class PropertyController {
       const { source = 'web' } = req.body;
 
       if (!propertyId) {
-        errorResponse(res, 'BAD_REQUEST', 'Property ID is required', 400);
+        setResponseAsError(res, 'BAD_REQUEST', 'Property ID is required', 400);
         return;
       }
 
@@ -293,7 +293,7 @@ export class PropertyController {
       
       logger.info('Property view recorded', { propertyId, source });
       
-      successResponse(res, { message: 'View recorded' });
+      setResponseAsSuccess(res, { message: 'View recorded' });
 
     } catch (error: any) {
       logger.error('Error in recordPropertyView controller:', error);
@@ -303,7 +303,7 @@ export class PropertyController {
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to record view', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to record view', 500);
     }
   }
 }

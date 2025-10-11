@@ -57,21 +57,22 @@ export interface PaginationResult<T> {
   hasPreviousPage: boolean;
 }
 
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
+export type ApiResponse<T = any> =
+  | {
+  success: true;
+  data: T;
   message?: string;
   timestamp: Date;
+  path?: string;
 }
-
-export interface ErrorResponse {
+  | {
   success: false;
-  error: string;
-  message: string;
-  details?: any;
+  message?: string;
+  error?: string;
   timestamp: Date;
-  path: string;
-}
+  path?: string;
+  details?: string[];
+};
 
 // TODO rivedere bene le categorie di notifiche
 export type NotificationType = 

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { userService } from '../services/UserService';
 import { AuthenticatedRequest } from '../../../shared/types/common.types';
-import { successResponse, errorResponse, validationErrorResponse, notFoundResponse } from '@shared/utils/helpers';
+import { setResponseAsSuccess, setResponseAsError, validationErrorResponse, notFoundResponse } from '@shared/utils/helpers';
 import logger from '../../../shared/utils/logger';
 
 export class UserController {
@@ -13,12 +13,12 @@ export class UserController {
     try {
       const userId = req.user?.id;
       if (!userId) {
-        errorResponse(res, 'UNAUTHORIZED', 'User not authenticated', 401);
+        setResponseAsError(res, 'UNAUTHORIZED', 'User not authenticated', 401);
         return;
       }
 
       const userProfile = await userService.getUserProfile(userId);
-      successResponse(res, userProfile);
+      setResponseAsSuccess(res, userProfile);
 
     } catch (error: any) {
       logger.error('Error in getProfile controller:', error);
@@ -28,7 +28,7 @@ export class UserController {
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to get user profile', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get user profile', 500);
     }
   }
 
@@ -40,14 +40,14 @@ export class UserController {
     try {
       const userId = req.user?.id;
       if (!userId) {
-        errorResponse(res, 'UNAUTHORIZED', 'User not authentication', 401);
+        setResponseAsError(res, 'UNAUTHORIZED', 'User not authentication', 401);
         return;
       }
 
       const updateData = req.body;
       const updatedUser = await userService.updateUserProfile(userId, updateData);
 
-      successResponse(res, updatedUser, 'Profile updated successfully');
+      setResponseAsSuccess(res, updatedUser, 'Profile updated successfully');
 
     } catch (error: any) {
       logger.error('Error in updateProfile controller:', error);
@@ -63,11 +63,11 @@ export class UserController {
       }
 
       if (error.name === 'BadRequestError') {
-        errorResponse(res, 'BAD_REQUEST', error.message, 400);
+        setResponseAsError(res, 'BAD_REQUEST', error.message, 400);
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to update profile', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to update profile', 500);
     }
   }
 
@@ -80,12 +80,12 @@ export class UserController {
       const { userId } = req.params;
 
       if (!userId) {
-        errorResponse(res, 'BAD_REQUEST', 'User ID is required', 400);
+        setResponseAsError(res, 'BAD_REQUEST', 'User ID is required', 400);
         return;
       }
 
       const userProfile = await userService.getUserById(userId);
-      successResponse(res, userProfile);
+      setResponseAsSuccess(res, userProfile);
 
     } catch (error: any) {
       logger.error('Error in getUserById controller:', error);
@@ -95,7 +95,7 @@ export class UserController {
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to get user', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get user', 500);
     }
   }
 
@@ -107,12 +107,12 @@ export class UserController {
     try {
       const userId = req.user?.id;
       if (!userId) {
-        errorResponse(res, 'UNAUTHORIZED', 'User not authenticated', 401);
+        setResponseAsError(res, 'UNAUTHORIZED', 'User not authenticated', 401);
         return;
       }
 
       const preferences = await userService.getUserPreferences(userId);
-      successResponse(res, preferences);
+      setResponseAsSuccess(res, preferences);
 
     } catch (error: any) {
       logger.error('Error in getUserPreferences controller:', error);
@@ -122,7 +122,7 @@ export class UserController {
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to get user preferences', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get user preferences', 500);
     }
   }
 
@@ -134,14 +134,14 @@ export class UserController {
     try {
       const userId = req.user?.id;
       if (!userId) {
-        errorResponse(res, 'UNAUTHORIZED', 'User not authenticated', 401);
+        setResponseAsError(res, 'UNAUTHORIZED', 'User not authenticated', 401);
         return;
       }
 
       const preferencesData = req.body;
       const updatedPreferences = await userService.updateUserPreferences(userId, preferencesData);
 
-      successResponse(res, updatedPreferences, 'Preferences updated successfully');
+      setResponseAsSuccess(res, updatedPreferences, 'Preferences updated successfully');
 
     } catch (error: any) {
       logger.error('Error in updateUserPreferences controller:', error);
@@ -151,7 +151,7 @@ export class UserController {
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to update preferences', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to update preferences', 500);
     }
   }
 
@@ -163,12 +163,12 @@ export class UserController {
     try {
       const userId = req.user?.id;
       if (!userId) {
-        errorResponse(res, 'UNAUTHORIZED', 'User not authenticated', 401);
+        setResponseAsError(res, 'UNAUTHORIZED', 'User not authenticated', 401);
         return;
       }
 
       const preferences = await userService.getNotificationPreferences(userId);
-      successResponse(res, preferences);
+      setResponseAsSuccess(res, preferences);
 
     } catch (error: any) {
       logger.error('Error in getNotificationPreferences controller:', error);
@@ -178,7 +178,7 @@ export class UserController {
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to get notification preferences', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get notification preferences', 500);
     }
   }
 
@@ -190,14 +190,14 @@ export class UserController {
     try {
       const userId = req.user?.id;
       if (!userId) {
-        errorResponse(res, 'UNAUTHORIZED', 'User not authenticated', 401);
+        setResponseAsError(res, 'UNAUTHORIZED', 'User not authenticated', 401);
         return;
       }
 
       const notificationData = req.body;
       const updatedPreferences = await userService.updateNotificationPreferences(userId, notificationData);
 
-      successResponse(res, updatedPreferences, 'Notification preferences updated successfully');
+      setResponseAsSuccess(res, updatedPreferences, 'Notification preferences updated successfully');
 
     } catch (error: any) {
       logger.error('Error in updateNotificationPreferences controller:', error);
@@ -207,7 +207,7 @@ export class UserController {
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to update notification preferences', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to update notification preferences', 500);
     }
   }
 
@@ -219,18 +219,18 @@ export class UserController {
     try {
       const userId = req.user?.id;
       if (!userId) {
-        errorResponse(res, 'UNAUTHORIZED', 'User not authenticated', 401);
+        setResponseAsError(res, 'UNAUTHORIZED', 'User not authenticated', 401);
         return;
       }
 
       // Per ora implementiamo solo la risposta di placeholder
       // TODO: Implementare logica di upload file
       // da valutare perché non è richiesto
-      successResponse(res, { message: 'Avatar upload functionality not yet implemented' });
+      setResponseAsSuccess(res, { message: 'Avatar upload functionality not yet implemented' });
 
     } catch (error: any) {
       logger.error('Error in uploadAvatar controller:', error);
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to upload avatar', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to upload avatar', 500);
     }
   }
 
@@ -242,7 +242,7 @@ export class UserController {
     try {
       const userId = req.user?.id;
       if (!userId) {
-        errorResponse(res, 'UNAUTHORIZED', 'User not authenticated', 401);
+        setResponseAsError(res, 'UNAUTHORIZED', 'User not authenticated', 401);
         return;
       }
 
@@ -255,11 +255,11 @@ export class UserController {
         viewedProperties: [],
         savedSearches: []
       };
-      successResponse(res, activity);
+      setResponseAsSuccess(res, activity);
 
     } catch (error: any) {
       logger.error('Error in getUserActivity controller:', error);
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to get user activity', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get user activity', 500);
     }
   }
 
@@ -271,14 +271,14 @@ export class UserController {
     try {
       const creatorId = req.user?.id;
       if (!creatorId) {
-        errorResponse(res, 'UNAUTHORIZED', 'User not authenticated', 401);
+        setResponseAsError(res, 'UNAUTHORIZED', 'User not authenticated', 401);
         return;
       }
 
       const agentData = req.body;
       const result = await userService.createAgent(creatorId, agentData);
 
-      successResponse(res, result, 'Agent created successfully', 201);
+      setResponseAsSuccess(res, result, 'Agent created successfully', 201);
 
     } catch (error: any) {
       logger.error('Error in createAgent controller:', error);
@@ -289,27 +289,27 @@ export class UserController {
       }
 
       if (error.name === 'BadRequestError') {
-        errorResponse(res, 'BAD_REQUEST', error.message, 400);
+        setResponseAsError(res, 'BAD_REQUEST', error.message, 400);
         return;
       }
 
       if (error.name === 'UnauthorizedError') {
-        errorResponse(res, 'UNAUTHORIZED', error.message, 401);
+        setResponseAsError(res, 'UNAUTHORIZED', error.message, 401);
         return;
       }
 
       if (error.name === 'ForbiddenError') {
-        errorResponse(res, 'FORBIDDEN', error.message, 403);
+        setResponseAsError(res, 'FORBIDDEN', error.message, 403);
         return;
       }
 
       if (error.name === 'ConflictError') {
-        errorResponse(res, 'CONFLICT', error.message, 409);
+        setResponseAsError(res, 'CONFLICT', error.message, 409);
         return;
       }
 
       if (error.name === 'NotFoundError') {
-        errorResponse(res, 'NOT_FOUND', error.message, 404);
+        setResponseAsError(res, 'NOT_FOUND', error.message, 404);
         return;
       }
 
@@ -319,7 +319,7 @@ export class UserController {
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to create agent', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to create agent', 500);
     }
   }
 
@@ -331,14 +331,14 @@ export class UserController {
     try {
       const creatorId = req.user?.id;
       if (!creatorId) {
-        errorResponse(res, 'UNAUTHORIZED', 'User not authenticated', 401);
+        setResponseAsError(res, 'UNAUTHORIZED', 'User not authenticated', 401);
         return;
       }
 
       const adminData = req.body;
       const result = await userService.createAdmin(creatorId, adminData);
 
-      successResponse(res, result, 'Admin created successfully', 201);
+      setResponseAsSuccess(res, result, 'Admin created successfully', 201);
 
     } catch (error: any) {
       logger.error('Error in createAdmin controller:', error);
@@ -349,27 +349,27 @@ export class UserController {
       }
 
       if (error.name === 'BadRequestError') {
-        errorResponse(res, 'BAD_REQUEST', error.message, 400);
+        setResponseAsError(res, 'BAD_REQUEST', error.message, 400);
         return;
       }
 
       if (error.name === 'UnauthorizedError') {
-        errorResponse(res, 'UNAUTHORIZED', error.message, 401);
+        setResponseAsError(res, 'UNAUTHORIZED', error.message, 401);
         return;
       }
 
       if (error.name === 'ForbiddenError') {
-        errorResponse(res, 'FORBIDDEN', error.message, 403);
+        setResponseAsError(res, 'FORBIDDEN', error.message, 403);
         return;
       }
 
       if (error.name === 'ConflictError') {
-        errorResponse(res, 'CONFLICT', error.message, 409);
+        setResponseAsError(res, 'CONFLICT', error.message, 409);
         return;
       }
 
       if (error.name === 'NotFoundError') {
-        errorResponse(res, 'NOT_FOUND', error.message, 404);
+        setResponseAsError(res, 'NOT_FOUND', error.message, 404);
         return;
       }
 
@@ -379,7 +379,7 @@ export class UserController {
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to create admin', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to create admin', 500);
     }
   }
 }

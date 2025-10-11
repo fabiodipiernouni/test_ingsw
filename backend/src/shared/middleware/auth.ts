@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import jwksRsa from 'jwks-rsa';
 import { User, Agency } from '@shared/database/models';
 import { AuthenticatedRequest } from '@shared/types/common.types';
-import { unauthorizedResponse, forbiddenResponse } from '@shared/utils/helpers';
+import { unauthorizedResponse, setResponseAsForbidden } from '@shared/utils/helpers';
 import appConfig from '@shared/config';
 import { UserRole } from '@user/models/UserRole';
 import logger from '@shared/utils/logger';
@@ -85,7 +85,7 @@ export const authenticateToken = async (
           }
 
           if (!user.isActive) {
-            return forbiddenResponse(res, 'Account is disabled');
+            return setResponseAsForbidden(res, 'Account is disabled');
           }
 
           // Determina ruolo dai Cognito Groups
@@ -202,7 +202,7 @@ export const requireRole = (roles: string | string[]) => {
     const allowedRoles = Array.isArray(roles) ? roles : [roles];
     
     if (!allowedRoles.includes(req.user.role)) {
-      return forbiddenResponse(res, 'Insufficient permissions');
+      return setResponseAsForbidden(res, 'Insufficient permissions');
     }
 
     next();
@@ -239,12 +239,12 @@ export const requireOwnership = (
       const resourceUserId = await getResourceUserId(req);
       
       if (!resourceUserId || req.user.id !== resourceUserId) {
-        return forbiddenResponse(res, 'Access denied to this resource');
+        return setResponseAsForbidden(res, 'Access denied to this resource');
       }
 
       next();
     } catch (error) {
-      return forbiddenResponse(res, 'Unable to verify resource ownership');
+      return setResponseAsForbidden(res, 'Unable to verify resource ownership');
     }
   };
 };

@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { searchService } from '../services/SearchService';
 import { SearchRequest } from '../models/types';
 import { AuthenticatedRequest } from '@shared/types/common.types';
-import { successResponse, errorResponse, validationErrorResponse, notFoundResponse } from '@shared/utils/helpers';
+import { setResponseAsSuccess, setResponseAsError, validationErrorResponse, notFoundResponse } from '@shared/utils/helpers';
 import logger from '@shared/utils/logger';
 
 export class SearchController {
@@ -25,7 +25,7 @@ export class SearchController {
       // Esegui la ricerca
       const result = await searchService.searchProperties(searchRequest, userId);
 
-      successResponse(res, result, 'Search completed successfully');
+      setResponseAsSuccess(res, result, 'Search completed successfully');
 
     } catch (error: any) {
       logger.error('Error in searchProperties controller:', error);
@@ -35,7 +35,7 @@ export class SearchController {
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Search failed', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Search failed', 500);
     }
   }
 
@@ -48,22 +48,22 @@ export class SearchController {
       const { query, type = 'location' } = req.query;
 
       if (!query || typeof query !== 'string') {
-        errorResponse(res, 'BAD_REQUEST', 'Query parameter is required', 400);
+        setResponseAsError(res, 'BAD_REQUEST', 'Query parameter is required', 400);
         return;
       }
 
       if (query.length < 2) {
-        successResponse(res, []);
+        setResponseAsSuccess(res, []);
         return;
       }
 
       const suggestions = await searchService.getSearchSuggestions(query, type as string);
 
-      successResponse(res, suggestions);
+      setResponseAsSuccess(res, suggestions);
 
     } catch (error: any) {
       logger.error('Error in getSearchSuggestions controller:', error);
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to get suggestions', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get suggestions', 500);
     }
   }
 
@@ -93,14 +93,14 @@ export class SearchController {
     try {
       // Verifica autenticazione
       if (!req.user || !req.user.id) {
-        errorResponse(res, 'UNAUTHORIZED', 'User authentication required', 401);
+        setResponseAsError(res, 'UNAUTHORIZED', 'User authentication required', 401);
         return;
       }
 
       const { name, filters, isNotificationEnabled = true } = req.body;
 
       if (!name || !filters) {
-        errorResponse(res, 'BAD_REQUEST', 'Name and filters are required', 400);
+        setResponseAsError(res, 'BAD_REQUEST', 'Name and filters are required', 400);
         return;
       }
 
@@ -117,7 +117,7 @@ export class SearchController {
         isNotificationEnabled
       });
 
-      successResponse(res, savedSearch, 'Search saved successfully', 201);
+      setResponseAsSuccess(res, savedSearch, 'Search saved successfully', 201);
 
     } catch (error: any) {
       logger.error('Error in saveSearch controller:', error);
@@ -127,7 +127,7 @@ export class SearchController {
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to save search', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to save search', 500);
     }
   }
 
@@ -139,16 +139,16 @@ export class SearchController {
     try {
       // Verifica autenticazione
       if (!req.user || !req.user.id) {
-        errorResponse(res, 'UNAUTHORIZED', 'User authentication required', 401);
+        setResponseAsError(res, 'UNAUTHORIZED', 'User authentication required', 401);
         return;
       }
 
       const savedSearches = await searchService.getUserSavedSearches(req.user.id);
-      successResponse(res, savedSearches);
+      setResponseAsSuccess(res, savedSearches);
 
     } catch (error: any) {
       logger.error('Error in getSavedSearches controller:', error);
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to get saved searches', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get saved searches', 500);
     }
   }
   /**
@@ -159,7 +159,7 @@ export class SearchController {
     try {
       // Verifica autenticazione
       if (!req.user || !req.user.id) {
-        errorResponse(res, 'UNAUTHORIZED', 'User authentication required', 401);
+        setResponseAsError(res, 'UNAUTHORIZED', 'User authentication required', 401);
         return;
       }
 
@@ -167,7 +167,7 @@ export class SearchController {
       const updateData = req.body;
 
       if (!searchId) {
-        errorResponse(res, 'BAD_REQUEST', 'Search ID is required', 400);
+        setResponseAsError(res, 'BAD_REQUEST', 'Search ID is required', 400);
         return;
       }
 
@@ -178,7 +178,7 @@ export class SearchController {
       });
 
       const updatedSearch = await searchService.updateSavedSearch(req.user.id, searchId, updateData);
-      successResponse(res, updatedSearch, 'Search updated successfully');
+      setResponseAsSuccess(res, updatedSearch, 'Search updated successfully');
       next();
 
     } catch (error: any) {
@@ -194,7 +194,7 @@ export class SearchController {
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to update search', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to update search', 500);
     }
   }
   /**
@@ -205,14 +205,14 @@ export class SearchController {
     try {
       // Verifica autenticazione
       if (!req.user || !req.user.id) {
-        errorResponse(res, 'UNAUTHORIZED', 'User authentication required', 401);
+        setResponseAsError(res, 'UNAUTHORIZED', 'User authentication required', 401);
         return;
       }
 
       const { searchId } = req.params;
 
       if (!searchId) {
-        errorResponse(res, 'BAD_REQUEST', 'Search ID is required', 400);
+        setResponseAsError(res, 'BAD_REQUEST', 'Search ID is required', 400);
         return;
       }
 
@@ -222,7 +222,7 @@ export class SearchController {
       });
 
       await searchService.deleteSavedSearch(req.user.id, searchId);
-      successResponse(res, { message: 'Search deleted successfully' });
+      setResponseAsSuccess(res, { message: 'Search deleted successfully' });
 
     } catch (error: any) {
       logger.error('Error in deleteSavedSearch controller:', error);
@@ -232,7 +232,7 @@ export class SearchController {
         return;
       }
 
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to delete search', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to delete search', 500);
     }
   }
 
@@ -244,7 +244,7 @@ export class SearchController {
     try {
       // Verifica autenticazione
       if (!req.user || !req.user.id) {
-        errorResponse(res, 'UNAUTHORIZED', 'User authentication required', 401);
+        setResponseAsError(res, 'UNAUTHORIZED', 'User authentication required', 401);
         return;
       }
 
@@ -258,11 +258,11 @@ export class SearchController {
       });
 
       const historyResponse = await searchService.getUserSearchHistory(req.user.id, page, limit);
-      successResponse(res, historyResponse);
+      setResponseAsSuccess(res, historyResponse);
 
     } catch (error: any) {
       logger.error('Error in getSearchHistory controller:', error);
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to get search history', 500);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get search history', 500);
     }
   }
 }

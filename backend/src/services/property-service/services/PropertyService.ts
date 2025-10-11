@@ -2,7 +2,7 @@ import { Property, PropertyImage } from '@shared/database/models';
 import logger from '@shared/utils/logger';
 import { imageService } from '@shared/services/ImageService';
 import config from '@shared/config';
-import { PropertyCard } from '@property/models/PropertyCard';
+import { PropertyCardDto } from '@property/dto/PropertyCardDto';
 import { PagedResult } from '@shared/models/pagedResult';
 import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequest';
 import { CreatePropertyResponse } from '@property/dto/CreatePropertyResponse';
@@ -100,7 +100,7 @@ export class PropertyService {
   /**
    * Formatta la risposta della proprietà per l'API
    */
-  private async formatPropertyCardResponse(property: Property): Promise<PropertyCard> {
+  private async formatPropertyCardResponse(property: Property): Promise<PropertyCardDto> {
     // Generate signed URLs for images
     const imagesWithUrls = await Promise.all(
       (property.images || []).map(async (image) => {
@@ -328,7 +328,7 @@ export class PropertyService {
     page: number;
     limit: number;
     filters: any;
-  }): Promise<PagedResult<PropertyCard>> {
+  }): Promise<PagedResult<PropertyCardDto>> {
     try {
       const { page, limit, filters } = options;
       const offset = (page - 1) * limit;
