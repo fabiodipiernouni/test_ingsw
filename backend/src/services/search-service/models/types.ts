@@ -124,18 +124,6 @@ export interface SearchSuggestionsRequest {
   type?: SuggestionType;
 }
 
-export interface SearchResponse {
-  success: boolean;
-  data: SearchResult;
-  message?: string;
-}
-
-export interface SavedSearchResponse {
-  success: boolean;
-  data: SavedSearch;
-  message?: string;
-}
-
 export interface SearchHistoryPagination {
   page?: number;
   limit?: number;

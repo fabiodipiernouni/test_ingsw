@@ -108,7 +108,7 @@ export class Agency extends Model {
       const constraints = await sequelize.getQueryInterface().getForeignKeyReferencesForTable('agencies');
       const constraintsArray = Array.isArray(constraints) ? constraints : [];
       const exists = constraintsArray.some(
-        (c: any) => c.constraintName === 'agencies_createdBy_fkey'
+        (c: any) => c.constraintName.toLowerCase() === 'agencies_createdby_fkey'
       );
 
       if (!exists) {

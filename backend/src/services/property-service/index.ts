@@ -2,9 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import yaml from 'js-yaml';
-import { config } from '../../config/index';
-import { errorHandler, notFoundHandler } from '../../shared/middleware/errorHandler';
-import logger from '../../shared/utils/logger';
+import { config } from '@config/index';
+import { errorHandler, notFoundHandler } from '@shared/middleware/errorHandler';
+import logger from '@shared/utils/logger';
 import { connectToDatabase } from '@shared/database';
 import { specs } from './config/swagger';
 

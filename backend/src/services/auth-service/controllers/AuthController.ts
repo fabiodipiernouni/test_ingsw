@@ -8,6 +8,7 @@ import { successResponse, errorResponse, validationErrorResponse, notFoundRespon
 import { RegisterDto } from '@auth/dto/RegisterDto';
 import { LoginDto } from '@auth/dto/LoginDto';
 import config from '@shared/config';
+import { UserResponse } from '@auth/dto/UserResponse';
 
 export class AuthController {
   /**

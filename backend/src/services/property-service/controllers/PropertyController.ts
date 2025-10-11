@@ -1,9 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { propertyService } from '../services/PropertyService';
-import { AuthenticatedRequest } from '@shared/types/common.types';
+import { ApiResponse, AuthenticatedRequest } from '@shared/types/common.types';
 import { successResponse, errorResponse, validationErrorResponse, notFoundResponse } from '@shared/utils/helpers';
 import logger from '@shared/utils/logger';
 import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequest';
+import { PagedResult } from '@shared/models/pagedResult';
+import { PropertyCard } from '@property/models/PropertyCard';
 
 export class PropertyController {
   /**
@@ -93,7 +95,7 @@ export class PropertyController {
    * Lista proprietà con paginazione - logica basata su ruoli
    * GET /properties/cards
    */
-  async getPropertiesCards(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+  async getPropertiesCards(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<ApiResponse<PagedResult<PropertyCard>> | undefined> {
     try {
       const page = Number.parseInt(req.query.page as string) || 1;
       const limit = Math.min(Number.parseInt(req.query.limit as string) || 20, 100);

@@ -26,6 +26,7 @@ class Database {
       dialectOptions: {
         connectString: config.database.connectString
       },
+      quoteIdentifiers: false,
       pool: config.database.pool,
       logging: config.database.logging,
       models: [
