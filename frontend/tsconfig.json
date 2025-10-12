@@ -8,7 +8,9 @@
       "@app/*": ["src/app/*"],
       "@core/*": ["src/app/core/*"],
       "@shared/*": ["src/app/shared/*"],
-      "@features/*": ["src/app/features/*"]
+      "@features/*": ["src/app/features/*"],
+      "@core-services/*": ["src/app/core/services/*"],
+      "@service-shared/*": ["src/app/core/services/shared/*"],
     },
     "strict": true,
     "noImplicitOverride": true,
