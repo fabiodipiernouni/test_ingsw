@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response } from 'express';
 import { ApiResponse } from '@shared/types/common.types';
 
 /**
@@ -46,7 +46,7 @@ export const setResponseAsError = (
 /**
  * Validation error response
  */
-export const validationErrorResponse = (
+export const setResponseAsValidationError = (
   res: Response,
   errors: string[]
 ): void =>
@@ -62,7 +62,7 @@ export const validationErrorResponse = (
 /**
  * Not found error response
  */
-export const notFoundResponse = (
+export const setResponseAsNotFound = (
   res: Response,
   resource: string = 'Resource'
 ): void =>

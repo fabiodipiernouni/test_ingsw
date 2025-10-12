@@ -328,9 +328,11 @@ export class PropertyService {
     page: number;
     limit: number;
     filters: any;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
   }): Promise<PagedResult<PropertyCardDto>> {
     try {
-      const { page, limit, filters } = options;
+      const { page, limit, filters, sortBy = 'createdAt', sortOrder = 'DESC' } = options;
       const offset = (page - 1) * limit;
 
       logger.info('Getting properties with filters', { filters, page, limit });
@@ -351,7 +353,7 @@ export class PropertyService {
           required: false
         }
       ];
-      
+
       if (filters.status) {
         whereClause.status = filters.status;
       }
@@ -366,7 +368,7 @@ export class PropertyService {
       if (filters.agencyId) {
         includeClause[0].where = { agencyId: filters.agencyId };
         includeClause[0].required = true; // INNER JOIN per garantire che l'agente appartenga all'agenzia
-        
+
         // Se specificato anche un agente particolare (solo della stessa agenzia)
         if (filters.specificAgentId) {
           includeClause[0].where.id = filters.specificAgentId;
@@ -377,7 +379,7 @@ export class PropertyService {
       const { rows: properties, count: totalCount } = await Property.findAndCountAll({
         where: whereClause,
         include: includeClause,
-        order: [['createdAt', 'DESC']],
+        order: [[sortBy, sortOrder]],
         limit,
         offset,
         distinct: true
@@ -390,7 +392,7 @@ export class PropertyService {
         properties.map(property => this.formatPropertyCardResponse(property))
       );
 
-      return {
+      const result: PagedResult<PropertyCardDto> = {
         data: formattedProperties,
         totalCount,
         currentPage: page,
@@ -398,6 +400,8 @@ export class PropertyService {
         hasNextPage: page < totalPages,
         hasPreviousPage: page > 1
       };
+
+      return result;
     } catch (error) {
       logger.error('Error getting properties:', error);
       throw error;

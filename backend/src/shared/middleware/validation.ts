@@ -1,23 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationResult, ValidationChain } from 'express-validator';
-import { validationErrorResponse } from '@shared/utils/helpers';
+import { setResponseAsValidationError } from '@shared/utils/helpers';
 
-/**
- * Validation middleware to handle express-validator results
- */
-export const handleValidationErrors = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const errors = validationResult(req);
-  
-  if (!errors.isEmpty()) {
-    return validationErrorResponse(res, errors.array());
-  }
-  
-  next();
-};
 
 /**
  * Wrapper to apply validation chains and error handling
@@ -29,8 +13,11 @@ export const validate = (validations: ValidationChain[]) => {
     
     // Check for errors
     const errors = validationResult(req);
+
     if (!errors.isEmpty()) {
-      return validationErrorResponse(res, errors.array());
+      const str_errors = Array<string>();
+      for (const err of errors.array()) { str_errors.push(err.msg); }
+      return setResponseAsValidationError(res, str_errors);
     }
     
     next();

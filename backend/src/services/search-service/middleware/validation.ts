@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { validationErrorResponse } from '@shared/utils/helpers';
+import { setResponseAsValidationError } from '@shared/utils/helpers';
 import { isValidGeoJSONPoint } from '@shared/types/geojson.types';
 import { SearchRequest } from '../models/types';
 
@@ -137,7 +137,7 @@ export const validateSearchRequest = (
 
   // Se ci sono errori, restituisce una risposta di errore
   if (errors.length > 0) {
-    validationErrorResponse(res, errors);
+    setResponseAsValidationError(res, errors);
     return;
   }
 
@@ -177,7 +177,7 @@ export const validateSuggestionsRequest = (
 
   // Se ci sono errori, restituisce una risposta di errore
   if (errors.length > 0) {
-    validationErrorResponse(res, errors);
+    setResponseAsValidationError(res, errors);
     return;
   }
 
@@ -199,7 +199,7 @@ export const validateUUID = (paramName: string) => (
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   
   if (!id || !uuidRegex.test(id)) {
-    validationErrorResponse(res, [`Invalid ${paramName} format`]);
+    setResponseAsValidationError(res, [`Invalid ${paramName} format`]);
     return;
   }
 
@@ -247,7 +247,7 @@ export const validateSavedSearchData = (
 
   // Se ci sono errori, restituisce una risposta di errore
   if (errors.length > 0) {
-    validationErrorResponse(res, errors);
+    setResponseAsValidationError(res, errors);
     return;
   }
 
@@ -284,7 +284,7 @@ export const validatePagination = (
 
   // Se ci sono errori, restituisce una risposta di errore
   if (errors.length > 0) {
-    validationErrorResponse(res, errors);
+    setResponseAsValidationError(res, errors);
     return;
   }
 

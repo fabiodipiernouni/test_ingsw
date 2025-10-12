@@ -1,11 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { propertyService } from '../services/PropertyService';
-import { ApiResponse, AuthenticatedRequest } from '@shared/types/common.types';
-import { setResponseAsSuccess, setResponseAsError, validationErrorResponse, notFoundResponse } from '@shared/utils/helpers';
+import { AuthenticatedRequest } from '@shared/types/common.types';
+import { setResponseAsSuccess, setResponseAsError, setResponseAsValidationError, setResponseAsNotFound } from '@shared/utils/helpers';
 import logger from '@shared/utils/logger';
 import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequest';
-import { PagedResult } from '@shared/models/pagedResult';
-import { PropertyCardDto } from '@property/dto/PropertyCardDto';
 
 export class PropertyController {
   /**
@@ -47,7 +45,7 @@ export class PropertyController {
       logger.error('Error in createProperty controller:', error);
 
       if (error.name === 'ValidationError') {
-        validationErrorResponse(res, error.details?.errors || [error.message]);
+        setResponseAsValidationError(res, error.details?.errors || [error.message]);
         return;
       }
 
@@ -82,7 +80,7 @@ export class PropertyController {
       logger.error('Error in getPropertyById controller:', error);
 
       if (error.name === 'NotFoundError') {
-        notFoundResponse(res, error.message);
+        setResponseAsNotFound(res, error.message);
         return;
       }
 
@@ -299,7 +297,7 @@ export class PropertyController {
       logger.error('Error in recordPropertyView controller:', error);
 
       if (error.name === 'NotFoundError') {
-        notFoundResponse(res, error.message);
+        setResponseAsNotFound(res, error.message);
         return;
       }
 

@@ -4,11 +4,10 @@ import { validate } from 'class-validator';
 import { authService } from '../services/AuthService';
 import logger from '@shared/utils/logger';
 import { AuthenticatedRequest } from '@shared/types/common.types';
-import { setResponseAsSuccess, setResponseAsError, validationErrorResponse, notFoundResponse } from '@shared/utils/helpers';
+import { setResponseAsSuccess, setResponseAsError, setResponseAsValidationError, setResponseAsNotFound } from '@shared/utils/helpers';
 import { RegisterDto } from '@auth/dto/RegisterDto';
 import { LoginDto } from '@auth/dto/LoginDto';
 import config from '@shared/config';
-import { UserResponse } from '@auth/dto/UserResponse';
 
 export class AuthController {
   /**
@@ -19,8 +18,11 @@ export class AuthController {
 
       const registerData: RegisterDto = plainToInstance(RegisterDto, req.body);
       const errors = await validate(registerData);
+
       if (errors.length > 0) {
-        return validationErrorResponse(res, errors.map(e => Object.values(e.constraints || {})).flat());
+        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        setResponseAsValidationError(res, str_errors);
+        return;
       }
 
       logger.info('User registration request', { email: registerData.email });
@@ -44,7 +46,7 @@ export class AuthController {
       logger.error('Error in register controller:', error);
 
       if (error.name === 'ValidationError') {
-        validationErrorResponse(res, [error.message]);
+        setResponseAsValidationError(res, [error.message]);
         return;
       }
 
@@ -263,7 +265,7 @@ export class AuthController {
       const { email, code } = req.body;
 
       if (!email || !code) {
-        validationErrorResponse(res, ['Email and verification code are required']);
+        setResponseAsValidationError(res, ['Email and verification code are required']);
         return;
       }
 
@@ -300,7 +302,7 @@ export class AuthController {
           error.name === 'UserNotFoundException' || 
           (error.message?.includes('Username/client id combination not found')) ||
           (error.message?.includes('User not found'))) {
-        notFoundResponse(res, 'User not found. Please check your email or register first.');
+        setResponseAsNotFound(res, 'User not found. Please check your email or register first.');
         return;
       }
 
@@ -321,7 +323,7 @@ export class AuthController {
       const { email } = req.body;
 
       if (!email) {
-        validationErrorResponse(res, ['Email is required']);
+        setResponseAsValidationError(res, ['Email is required']);
         return;
       }
 
@@ -335,7 +337,7 @@ export class AuthController {
       logger.error('Error in resendVerificationCode controller:', error);
 
       if (error.name === 'NotFoundError' || error.name === 'UserNotFoundException') {
-        notFoundResponse(res, 'User not found');
+        setResponseAsNotFound(res, 'User not found');
         return;
       }
 
@@ -446,13 +448,13 @@ export class AuthController {
       const { currentPassword, newPassword } = req.body;
 
       if (!currentPassword || !newPassword) {
-        validationErrorResponse(res, ['Current password and new password are required']);
+        setResponseAsValidationError(res, ['Current password and new password are required']);
         return;
       }
 
       const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/;
       if (!passwordRegex.test(newPassword)) {
-        validationErrorResponse(res, ['New password must be at least 8 characters long and contain at least one letter and one number']);
+        setResponseAsValidationError(res, ['New password must be at least 8 characters long and contain at least one letter and one number']);
         return;
       }
 
@@ -469,7 +471,7 @@ export class AuthController {
       }
 
       if (error.name === 'ValidationError') {
-        validationErrorResponse(res, [error.message]);
+        setResponseAsValidationError(res, [error.message]);
         return;
       }
 

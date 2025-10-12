@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { userService } from '../services/UserService';
 import { AuthenticatedRequest } from '../../../shared/types/common.types';
-import { setResponseAsSuccess, setResponseAsError, validationErrorResponse, notFoundResponse } from '@shared/utils/helpers';
+import { setResponseAsSuccess, setResponseAsError, setResponseAsValidationError, setResponseAsNotFound } from '@shared/utils/helpers';
 import logger from '../../../shared/utils/logger';
 
 export class UserController {
@@ -24,7 +24,7 @@ export class UserController {
       logger.error('Error in getProfile controller:', error);
 
       if (error.name === 'NotFoundError') {
-        notFoundResponse(res, error.message);
+        setResponseAsNotFound(res, error.message);
         return;
       }
 
@@ -53,12 +53,12 @@ export class UserController {
       logger.error('Error in updateProfile controller:', error);
 
       if (error.name === 'NotFoundError') {
-        notFoundResponse(res, error.message);
+        setResponseAsNotFound(res, error.message);
         return;
       }
 
       if (error.name === 'ValidationError') {
-        validationErrorResponse(res, error.details?.errors || [error.message]);
+        setResponseAsValidationError(res, error.details?.errors || [error.message]);
         return;
       }
 
@@ -91,7 +91,7 @@ export class UserController {
       logger.error('Error in getUserById controller:', error);
 
       if (error.name === 'NotFoundError') {
-        notFoundResponse(res, error.message);
+        setResponseAsNotFound(res, error.message);
         return;
       }
 
@@ -118,7 +118,7 @@ export class UserController {
       logger.error('Error in getUserPreferences controller:', error);
 
       if (error.name === 'NotFoundError') {
-        notFoundResponse(res, error.message);
+        setResponseAsNotFound(res, error.message);
         return;
       }
 
@@ -147,7 +147,7 @@ export class UserController {
       logger.error('Error in updateUserPreferences controller:', error);
 
       if (error.name === 'ValidationError') {
-        validationErrorResponse(res, error.details?.errors || [error.message]);
+        setResponseAsValidationError(res, error.details?.errors || [error.message]);
         return;
       }
 
@@ -174,7 +174,7 @@ export class UserController {
       logger.error('Error in getNotificationPreferences controller:', error);
 
       if (error.name === 'NotFoundError') {
-        notFoundResponse(res, error.message);
+        setResponseAsNotFound(res, error.message);
         return;
       }
 
@@ -203,7 +203,7 @@ export class UserController {
       logger.error('Error in updateNotificationPreferences controller:', error);
 
       if (error.name === 'ValidationError') {
-        validationErrorResponse(res, error.details?.errors || [error.message]);
+        setResponseAsValidationError(res, error.details?.errors || [error.message]);
         return;
       }
 
@@ -284,7 +284,7 @@ export class UserController {
       logger.error('Error in createAgent controller:', error);
 
       if (error.name === 'ValidationError') {
-        validationErrorResponse(res, error.details?.errors || [error.message]);
+        setResponseAsValidationError(res, error.details?.errors || [error.message]);
         return;
       }
 
@@ -315,7 +315,7 @@ export class UserController {
 
       if (error.name === 'SequelizeValidationError') {
         const validationErrors = error.errors?.map((err: any) => err.message) || [error.message];
-        validationErrorResponse(res, validationErrors);
+        setResponseAsValidationError(res, validationErrors);
         return;
       }
 
@@ -344,7 +344,7 @@ export class UserController {
       logger.error('Error in createAdmin controller:', error);
 
       if (error.name === 'ValidationError') {
-        validationErrorResponse(res, error.details?.errors || [error.message]);
+        setResponseAsValidationError(res, error.details?.errors || [error.message]);
         return;
       }
 
@@ -375,7 +375,7 @@ export class UserController {
 
       if (error.name === 'SequelizeValidationError') {
         const validationErrors = error.errors?.map((err: any) => err.message) || [error.message];
-        validationErrorResponse(res, validationErrors);
+        setResponseAsValidationError(res, validationErrors);
         return;
       }
 

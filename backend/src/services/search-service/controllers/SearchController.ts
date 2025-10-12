@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { searchService } from '../services/SearchService';
 import { SearchRequest } from '../models/types';
 import { AuthenticatedRequest } from '@shared/types/common.types';
-import { setResponseAsSuccess, setResponseAsError, validationErrorResponse, notFoundResponse } from '@shared/utils/helpers';
+import { setResponseAsSuccess, setResponseAsError, setResponseAsValidationError, setResponseAsNotFound } from '@shared/utils/helpers';
 import logger from '@shared/utils/logger';
 
 export class SearchController {
@@ -31,7 +31,7 @@ export class SearchController {
       logger.error('Error in searchProperties controller:', error);
 
       if (error.name === 'ValidationError') {
-        validationErrorResponse(res, error.details?.errors || [error.message]);
+        setResponseAsValidationError(res, error.details?.errors || [error.message]);
         return;
       }
 
@@ -123,7 +123,7 @@ export class SearchController {
       logger.error('Error in saveSearch controller:', error);
 
       if (error.name === 'ValidationError') {
-        validationErrorResponse(res, error.details?.errors || [error.message]);
+        setResponseAsValidationError(res, error.details?.errors || [error.message]);
         return;
       }
 
@@ -185,12 +185,12 @@ export class SearchController {
       logger.error('Error in updateSavedSearch controller:', error);
 
       if (error.name === 'NotFoundError') {
-        notFoundResponse(res, error.message);
+        setResponseAsNotFound(res, error.message);
         return;
       }
 
       if (error.name === 'ValidationError') {
-        validationErrorResponse(res, error.details?.errors || [error.message]);
+        setResponseAsValidationError(res, error.details?.errors || [error.message]);
         return;
       }
 
@@ -228,7 +228,7 @@ export class SearchController {
       logger.error('Error in deleteSavedSearch controller:', error);
 
       if (error.name === 'NotFoundError') {
-        notFoundResponse(res, error.message);
+        setResponseAsNotFound(res, error.message);
         return;
       }
 

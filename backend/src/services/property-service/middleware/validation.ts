@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { validationErrorResponse } from '@shared/utils/helpers';
+import { setResponseAsValidationError } from '@shared/utils/helpers';
 import { isValidGeoJSONPoint } from '@shared/types/geojson.types';
 import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequest';
 
@@ -126,7 +126,7 @@ export const validatePropertyCreate = (
 
   // Se ci sono errori, restituisce una risposta di errore
   if (errors.length > 0) {
-    validationErrorResponse(res, errors);
+    setResponseAsValidationError(res, errors);
     return;
   }
 
@@ -148,7 +148,7 @@ export const validatePropertyId = (
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   
   if (!propertyId || !uuidRegex.test(propertyId)) {
-    validationErrorResponse(res, ['Invalid property ID format 1']);
+    setResponseAsValidationError(res, ['Invalid property ID format 1']);
     return;
   }
 
