@@ -2,7 +2,7 @@ import { PropertyImageModel } from './PropertyImageModel';
 import { EnergyClass, ListingType, PropertyStatus, PropertyType } from '@property/models/types';
 import { Address } from '@shared/models/address';
 import { GeoJSONPoint } from '@shared/types/geojson.types';
-import { UserModel } from '@user/models/UserModel';
+import { User } from '@shared/database/models';
 
 export interface PropertyModel {
   id: string;
@@ -31,5 +31,5 @@ export interface PropertyModel {
   favorites: number;
   createdAt: Date;
   updatedAt: Date;
-  agent?: UserModel
+  agent?: User
 }

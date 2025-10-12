@@ -8,6 +8,7 @@ import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequest';
 import { CreatePropertyResponse } from '@property/dto/CreatePropertyResponse';
 import { PropertyModel } from '@property/models/PropertyModel';
 import { isValidGeoJSONPoint } from '@shared/types/geojson.types';
+import { Helper } from '@services/property-service/utils/Helper';
 
 // Custom error classes for better error handling
 class ValidationError extends Error {
@@ -243,7 +244,7 @@ export class PropertyService {
       location: property.location,  // GeoJSON Point format
       images: imagesWithUrls as any,
       agentId: property.agentId,
-      agent: property.agent,
+      agent: Helper.userToUserModel(property.agent),
       isActive: property.isActive,
       views: property.views,
       favorites: property.favorites,

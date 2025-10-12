@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { validationResult, ValidationChain } from 'express-validator';
+import { body, param, query, validationResult, ValidationChain } from 'express-validator';
 import { setResponseAsValidationError } from '@shared/utils/helpers';
 
 
@@ -27,7 +27,6 @@ export const validate = (validations: ValidationChain[]) => {
 /**
  * Validation chains for common fields
  */
-import { body, param, query } from 'express-validator';
 
 export const commonValidations = {
   uuid: (field: string) => 
