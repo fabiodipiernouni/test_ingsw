@@ -1,11 +1,7 @@
-export interface CompleteNewPasswordData {
-  email: string;
-  newPassword: string;
-  session: string;
-}
+import { OAuthProvider } from "../models/OAuthProvider";
 
 export interface OAuthUrlParams {
-  provider: 'google' | 'facebook' | 'apple';
+  provider: OAuthProvider;
   state?: string;
 }
 

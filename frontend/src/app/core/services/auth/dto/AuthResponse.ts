@@ -1,13 +1,16 @@
 import { UserResponse } from './UserResponse';
 
-export interface AuthResponse {
+export type AuthResponse =
+  | {
   user: UserResponse;
   accessToken: string;
   idToken: string;
   refreshToken: string;
   tokenType: string;
-  challenge?: {
+  }
+  | {
+  challenge: {
     name: string;
     session: string;
   };
-}
+};

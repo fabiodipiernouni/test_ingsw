@@ -1,5 +1,6 @@
 import { Agency } from 'src/services/agency-service/models/Agency';
 import { UserRole } from '@user/models/UserRole';
+import { OAuthProvider } from '@services/auth-service/models/OAuthProvider';
 
 export interface UserModel {
   id: string;
@@ -11,7 +12,7 @@ export interface UserModel {
   phone?: string;
   isVerified: boolean;
   isActive: boolean;
-  linkedProviders: Array<'google' | 'github' | 'facebook'>;
+  linkedProviders: Array<OAuthProvider>;
   cognitoSub?: string;
   cognitoUsername?: string;
   lastLoginAt?: Date;

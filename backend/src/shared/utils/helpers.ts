@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { ApiResponse } from '@shared/types/common.types';
+import { ApiResponse } from '@shared/dto/ApiResponse';
 
 /**
  * Success response helper

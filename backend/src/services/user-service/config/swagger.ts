@@ -150,7 +150,7 @@ const options = {
               description: 'Numero di licenza (per agenti)',
               example: 'LIC123456'
             },
-            isEmailVerified: {
+            isVerified: {
               type: 'boolean',
               description: 'Indica se l\'email è stata verificata',
               example: true

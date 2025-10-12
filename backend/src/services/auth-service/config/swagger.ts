@@ -7,7 +7,7 @@ const options = {
     info: {
       title: 'Auth Service API',
       version: '1.0.0',
-      description: 'Servizio di autenticazione e autorizzazione - Gestisce registrazione, login, logout e gestione delle password degli utenti.',
+      description: 'Servizio di autenticazione e autorizzazione - Gestisce registrazione, login e gestione delle password degli utenti.',
       contact: {
         name: 'API Support',
         email: 'support@example.com'
@@ -88,7 +88,7 @@ const options = {
               description: 'Numero di telefono',
               example: '+39 123 456 7890'
             },
-            isEmailVerified: {
+            isVerified: {
               type: 'boolean',
               description: 'Indica se l\'email è stata verificata',
               example: true
@@ -380,7 +380,7 @@ const options = {
     tags: [
       {
         name: 'Authentication',
-        description: 'Operazioni di autenticazione (login, registrazione, logout)'
+        description: 'Operazioni di autenticazione (login, registrazione)'
       },
       {
         name: 'Token Management',

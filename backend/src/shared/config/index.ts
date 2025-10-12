@@ -31,7 +31,6 @@ const cognitoConfig: CognitoConfig = {
   oauth: {
     domain: process.env.AWS_COGNITO_DOMAIN || '',
     callbackUrl: process.env.AWS_COGNITO_CALLBACK_URL || 'http://localhost:3001/auth/callback',
-    logoutUrl: process.env.AWS_COGNITO_LOGOUT_URL || 'http://localhost:4200',
     scope: (process.env.AWS_COGNITO_OAUTH_SCOPE || 'openid,email,profile').split(','),
     responseType: process.env.AWS_COGNITO_RESPONSE_TYPE || 'code'
   }

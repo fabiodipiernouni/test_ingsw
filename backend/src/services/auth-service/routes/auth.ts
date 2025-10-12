@@ -92,35 +92,6 @@ router.post('/login', validate(authValidations.login), authController.login);
 
 /**
  * @swagger
- * /logout:
- *   post:
- *     summary: Logout utente
- *     description: Effettua il logout dell'utente autenticato
- *     tags:
- *       - Authentication
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Logout effettuato con successo
- *       401:
- *         description: Token non valido o mancante
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       500:
- *         description: Errore interno del server
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
-
-//router.post('/logout', authenticateToken as any, authController.logout);
-
-/**
- * @swagger
  * /refresh-token:
  *   post:
  *     summary: Refresh del token di accesso

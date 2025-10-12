@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import jwksRsa from 'jwks-rsa';
 import { User, Agency } from '@shared/database/models';
-import { AuthenticatedRequest } from '@shared/types/common.types';
+import { AuthenticatedRequest } from '@shared/dto/AuthenticatedRequest';
 import { unauthorizedResponse, setResponseAsForbidden } from '@shared/utils/helpers';
 import appConfig from '@shared/config';
 import { UserRole } from '@user/models/UserRole';

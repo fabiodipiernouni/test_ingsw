@@ -3,7 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, BehaviorSubject, throwError, catchError, tap, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { User } from './models/User';
+import { UserModel } from './models/UserModel';
 
 import { AuthResponse } from './dto/AuthResponse';
 import { ChangePasswordRequest } from './dto/ChangePasswordRequest';
@@ -21,7 +21,7 @@ import { OAuthProvider } from './models/OAuthProvider';
 
 import { ApiResponse } from '../shared/dto/ApiResponse';
 import { RefreshTokenResponse } from './dto/RefreshTokenResponse';
-import { Agency } from '../shared/models/Agency';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Injectable({
   providedIn: 'root'
@@ -30,6 +30,8 @@ export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
 
+  private snackBar = inject(MatSnackBar);
+
   private readonly API_URL = environment.apiUrlAuth;
   private readonly ACCESS_TOKEN_KEY = 'auth_access_token';
   private readonly REFRESH_TOKEN_KEY = 'auth_refresh_token';
@@ -37,11 +39,11 @@ export class AuthService {
   private readonly USER_KEY = 'auth_user';
 
   // State management
-  private currentUserSubject = new BehaviorSubject<User | null>(null);
+  private currentUserSubject = new BehaviorSubject<UserModel | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
   // Signals for reactive UI
-  currentUser = signal<User | null>(null);
+  currentUser = signal<UserModel | null>(null);
   isAuthenticated = signal<boolean>(false);
   isLoading = signal<boolean>(false);
 
@@ -54,14 +56,18 @@ export class AuthService {
   /**
    * Registrazione nuovo utente
    */
-  register(request: RegisterRequest): Observable<ApiResponse<AuthResponse>> {
+  register(request: RegisterRequest): Observable<ApiResponse> {
     this.isLoading.set(true);
     
-    return this.http.post<ApiResponse<AuthResponse>>(`${this.API_URL}/register`, request)
+    return this.http.post<ApiResponse>(`${this.API_URL}/register`, request)
       .pipe(
         tap(response => {
-          if (response.success && response.data) {
-            this.handleAuthSuccess(response.data);
+          if (response.success) {
+            this.snackBar.open('Registration successful', 'Close', { duration: 5000 });
+            this.router.navigate(['/auth/login']);
+          }
+          else {
+            this.snackBar.open(response.message || 'Registration failed', 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
           }
         }),
         catchError(this.handleError.bind(this)),
@@ -241,7 +247,7 @@ export class AuthService {
   /**
    * Ottieni utente corrente
    */
-  getCurrentUser(): User | null {
+  getCurrentUser(): UserModel | null {
     return this.currentUser();
   }
 
@@ -280,7 +286,7 @@ export class AuthService {
 
     if (accessToken && userJson) {
       try {
-        const user: User = JSON.parse(userJson);
+        const user: UserModel = JSON.parse(userJson);
         this.setAuthenticationState(user);
       } catch (error) {
         console.error('Error parsing user from storage:', error);
@@ -292,7 +298,7 @@ export class AuthService {
   /**
    * Converte UserResponse a User
    */
-  private convertToUser(userResponse: UserResponse): User {
+  private convertToUser(userResponse: UserResponse): UserModel {
 
     return {
       id: userResponse.id,
@@ -356,14 +362,14 @@ export class AuthService {
   /**
    * Salva l'utente nel localStorage
    */
-  private storeUser(user: User): void {
+  private storeUser(user: UserModel): void {
     localStorage.setItem(this.USER_KEY, JSON.stringify(user));
   }
 
   /**
    * Imposta lo stato di autenticazione
    */
-  private setAuthenticationState(user: User): void {
+  private setAuthenticationState(user: UserModel): void {
     this.currentUser.set(user);
     this.isAuthenticated.set(true);
     this.currentUserSubject.next(user);

@@ -27,7 +27,6 @@ export interface CognitoConfig {
   oauth: {
     domain: string; // es: your-domain.auth.eu-south-1.amazoncognito.com
     callbackUrl: string; // es: http://localhost:3000/auth/callback
-    logoutUrl: string; // es: http://localhost:3000
     scope: string[]; // es: ['openid', 'email', 'profile']
     responseType: string; // es: 'code'
   };

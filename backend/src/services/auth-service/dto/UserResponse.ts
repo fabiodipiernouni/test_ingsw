@@ -8,7 +8,7 @@ export interface UserResponse {
   phone?: string;
   role: string;
   isActive: boolean;
-  emailVerified: boolean;
+  isVerified: boolean;
   createdAt: string;
   updatedAt: string;
   agency?: AgencyResponse;

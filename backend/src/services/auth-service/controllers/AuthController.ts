@@ -28,24 +28,11 @@ export class AuthController {
 
       logger.info('User registration request', { email: registerData.email });
 
-      const result = await authService.register(registerData);
-
-      const authResponse: AuthResponse = {
-        user: result.user,
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-        tokenType: 'Bearer'
-      };
+      await authService.register(registerData);
 
       setResponseAsSuccess(
         res,
-        {
-          user: result.user,
-          accessToken: result.accessToken,
-          refreshToken: result.refreshToken,
-          tokenType: 'Bearer',
-          isNewUser: true
-        },
+        null,
         'User registered successfully',
         201
       );
@@ -93,7 +80,7 @@ export class AuthController {
 
       const result = await authService.login({ email, password });
 
-      // Se c'è una challenge (es. NEW_PASSWORD_REQUIRED)
+      // Se c'è una challenge, gestiscila in base al tipo
       if ('challenge' in result) {
         const authResponse: AuthResponse = {
           challenge: {
@@ -102,26 +89,81 @@ export class AuthController {
           }
         };
 
-        setResponseAsSuccess(
-          res,
-          authResponse,
-          'Additional authentication step required'
-        );
+        // Gestione specifica per ogni tipo di challenge
+        switch (result.challenge.name) {
+          case 'NEW_PASSWORD_REQUIRED':
+            setResponseAsSuccess(
+              res,
+              authResponse,
+              'Password change required. Please set a new password to continue.',
+              200
+            );
+            break;
+
+          case 'SMS_MFA':
+            setResponseAsSuccess(
+              res,
+              authResponse,
+              'SMS verification required. Please enter the code sent to your phone.',
+              200
+            );
+            break;
+
+          case 'SOFTWARE_TOKEN_MFA':
+            setResponseAsSuccess(
+              res,
+              authResponse,
+              'MFA verification required. Please enter the code from your authenticator app.',
+              200
+            );
+            break;
+
+          case 'MFA_SETUP':
+            setResponseAsSuccess(
+              res,
+              authResponse,
+              'MFA setup required. Please configure multi-factor authentication.',
+              200
+            );
+            break;
+
+          case 'SELECT_MFA_TYPE':
+            setResponseAsSuccess(
+              res,
+              authResponse,
+              'Please select your preferred MFA method.',
+              200
+            );
+            break;
+
+          case 'CUSTOM_CHALLENGE':
+            setResponseAsSuccess(
+              res,
+              authResponse,
+              'Additional verification required. Please complete the authentication challenge.',
+              200
+            );
+            break;
+
+          default:
+            logger.warn('Unknown challenge type', { challengeName: result.challenge.name });
+            setResponseAsSuccess(
+              res,
+              authResponse,
+              'Additional authentication step required.',
+              200
+            );
+            break;
+        }
       }
       else {
-        const authResponse: AuthResponse = {
-          user: result.user,
-          accessToken: result.accessToken,
-          refreshToken: result.refreshToken,
-          idToken: result.idToken,
-          tokenType: result.tokenType || 'Bearer'
-        };
-
+        // Login completato con successo - TypeScript type guard
         setResponseAsSuccess(
           res,
-          authResponse,
+          result,
           'Login successful'
         );
+      }
 
     } catch (error: any) {
       logger.error('Error in login controller:', error);
@@ -177,13 +219,7 @@ export class AuthController {
 
       setResponseAsSuccess(
         res,
-        {
-          user: result.user,
-          accessToken: result.accessToken,
-          refreshToken: result.refreshToken,
-          idToken: result.idToken,
-          tokenType: result.tokenType || 'Bearer'
-        },
+        result,
         'Password updated successfully'
       );
 
@@ -228,7 +264,7 @@ export class AuthController {
 
       logger.info('Confirm forgot password', { email });
 
-      await authService.confirmForgotPassword(email, code, newPassword);
+      await authService.confirmForgotPassword({ email, code, newPassword });
 
       setResponseAsSuccess(res, { message: 'Password reset successful. You can now login with your new password.' });
 
@@ -283,9 +319,9 @@ export class AuthController {
 
       logger.info('Email confirmation request', { email });
 
-      const result = await authService.confirmEmail(email, code);
+      await authService.confirmEmail({email, code});
 
-      setResponseAsSuccess(res, { message: result.message }, 'Email verified successfully', 200);
+      setResponseAsSuccess(res, null, 'Email verified successfully', 200);
 
     } catch (error: any) {
       logger.error('Error in confirmEmail controller:', error);
@@ -341,9 +377,9 @@ export class AuthController {
 
       logger.info('Resend verification code request', { email });
 
-      const result = await authService.resendVerificationCode(email);
+      await authService.resendVerificationCode({email});
 
-      setResponseAsSuccess(res, { message: result.message }, 'Verification code sent', 200);
+      setResponseAsSuccess(res, null, 'Verification code sent', 200);
 
     } catch (error: any) {
       logger.error('Error in resendVerificationCode controller:', error);
@@ -386,9 +422,9 @@ export class AuthController {
 
       logger.info('Forgot password request', { email });
 
-      await authService.forgotPassword(email);
+      await authService.forgotPassword({ email });
 
-      setResponseAsSuccess(res, { message: 'Password reset code sent to your email' });
+      setResponseAsSuccess(res, null, 'Password reset code sent to your email', 200);
 
     } catch (error: any) {
       logger.error('Error in forgotPassword controller:', error);
@@ -415,7 +451,7 @@ export class AuthController {
         return;
       }
 
-      const result = await authService.refreshToken(refreshToken);
+      const result = await authService.refreshToken({ refreshToken });
 
       setResponseAsSuccess(res, {
         accessToken: result.accessToken,
@@ -470,7 +506,7 @@ export class AuthController {
         return;
       }
 
-      await authService.changePassword(accessToken, currentPassword, newPassword);
+      await authService.changePassword(accessToken, { currentPassword, newPassword });
 
       setResponseAsSuccess(res, { message: 'Password changed successfully' });
 
@@ -573,6 +609,14 @@ export class AuthController {
         state: state as string
       });
 
+      // OAuth non dovrebbe mai restituire una challenge, ma verifichiamo per sicurezza
+      if ('challenge' in result) {
+        logger.error('Unexpected challenge in OAuth callback', { challengeName: result.challenge.name });
+        const errorUrl = `${config.frontendUrl}/auth/error?message=${encodeURIComponent('OAuth authentication requires additional steps')}`;
+        res.redirect(errorUrl);
+        return;
+      }
+
       // Redirect al frontend con token nei query params
       const callbackUrl = new URL(`${config.frontendUrl}/auth/callback`);
       callbackUrl.searchParams.append('access_token', result.accessToken);
@@ -580,7 +624,7 @@ export class AuthController {
       callbackUrl.searchParams.append('refresh_token', result.refreshToken);
       callbackUrl.searchParams.append('token_type', result.tokenType);
       callbackUrl.searchParams.append('email', result.user.email);
-      callbackUrl.searchParams.append('is_new_user', (!result.user.emailVerified).toString());
+      callbackUrl.searchParams.append('is_new_user', (!result.user.isVerified).toString());
 
       logger.info('OAuth login successful, redirecting to frontend', { email: result.user.email });
       res.redirect(callbackUrl.toString());
