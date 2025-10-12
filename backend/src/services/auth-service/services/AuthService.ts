@@ -247,13 +247,15 @@ export class AuthService {
 
       logger.info('User logged in successfully', { email: credentials.email, cognitoSub });
 
-      return {
+      const response: AuthResponse = {
         user: this.formatUserResponse(user),
         accessToken: AccessToken,
         idToken: IdToken,
         refreshToken: RefreshToken,
         tokenType: 'Bearer'
       };
+
+      return response;
     } catch (error: any) {
       logger.error('Error in login service:', error);
 

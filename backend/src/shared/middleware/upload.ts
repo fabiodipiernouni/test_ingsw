@@ -4,7 +4,7 @@ import sharp from 'sharp';
 import config from '@shared/config';
 import { imageService } from '../services/ImageService';
 import { Property } from '../database/models/Property';
-import { AuthenticatedRequest } from '../types/common.types';
+import { AuthenticatedRequest } from '@shared/dto/AuthenticatedRequest';
 
 // Memory storage for processing before upload to S3
 const storage = multer.memoryStorage();

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { searchService } from '../services/SearchService';
 import { SearchRequest } from '../models/types';
-import { AuthenticatedRequest } from '@shared/types/common.types';
+import { AuthenticatedRequest } from '@shared/dto/AuthenticatedRequest';
 import { setResponseAsSuccess, setResponseAsError, setResponseAsValidationError, setResponseAsNotFound } from '@shared/utils/helpers';
 import logger from '@shared/utils/logger';
 

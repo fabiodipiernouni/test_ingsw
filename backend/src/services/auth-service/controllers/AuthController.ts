@@ -3,11 +3,12 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { authService } from '../services/AuthService';
 import logger from '@shared/utils/logger';
-import { AuthenticatedRequest } from '@shared/types/common.types';
+import { AuthenticatedRequest } from '@shared/dto/AuthenticatedRequest';
 import { setResponseAsSuccess, setResponseAsError, setResponseAsValidationError, setResponseAsNotFound } from '@shared/utils/helpers';
 import { RegisterDto } from '@auth/dto/RegisterDto';
 import { LoginDto } from '@auth/dto/LoginDto';
 import config from '@shared/config';
+import { AuthResponse } from '@auth/dto/AuthResponse';
 
 export class AuthController {
   /**
@@ -28,6 +29,13 @@ export class AuthController {
       logger.info('User registration request', { email: registerData.email });
 
       const result = await authService.register(registerData);
+
+      const authResponse: AuthResponse = {
+        user: result.user,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+        tokenType: 'Bearer'
+      };
 
       setResponseAsSuccess(
         res,
@@ -86,30 +94,34 @@ export class AuthController {
       const result = await authService.login({ email, password });
 
       // Se c'è una challenge (es. NEW_PASSWORD_REQUIRED)
-      if (result.challenge) {
-        return setResponseAsSuccess(
+      if ('challenge' in result) {
+        const authResponse: AuthResponse = {
+          challenge: {
+            name: result.challenge.name,
+            session: result.challenge.session
+          }
+        };
+
+        setResponseAsSuccess(
           res,
-          {
-            challengeName: result.challenge.name,
-            session: result.challenge.session,
-            message: 'Challenge required'
-          },
+          authResponse,
           'Additional authentication step required'
         );
       }
-
-      // Login normale completato
-      setResponseAsSuccess(
-        res,
-        {
+      else {
+        const authResponse: AuthResponse = {
           user: result.user,
           accessToken: result.accessToken,
           refreshToken: result.refreshToken,
           idToken: result.idToken,
           tokenType: result.tokenType || 'Bearer'
-        },
-        'Login successful'
-      );
+        };
+
+        setResponseAsSuccess(
+          res,
+          authResponse,
+          'Login successful'
+        );
 
     } catch (error: any) {
       logger.error('Error in login controller:', error);

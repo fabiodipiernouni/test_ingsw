@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { userService } from '../services/UserService';
-import { AuthenticatedRequest } from '../../../shared/types/common.types';
+import { AuthenticatedRequest } from '@shared/dto/AuthenticatedRequest';
 import { setResponseAsSuccess, setResponseAsError, setResponseAsValidationError, setResponseAsNotFound } from '@shared/utils/helpers';
 import logger from '../../../shared/utils/logger';
 

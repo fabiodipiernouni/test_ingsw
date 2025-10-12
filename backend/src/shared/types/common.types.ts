@@ -1,14 +1,9 @@
-import { Request } from 'express';
-import { UserModel } from '@user/models/UserModel';
+
 import { EnergyClass, ListingType, PropertyType } from '@property/models/types';
-import { Agency } from '@shared/database/models';
 
 
 
-export interface AuthenticatedRequest extends Request {
-  user?: UserModel;
-  userAgency?: Agency;
-}
+
 
 export interface UploadedFile {
   fieldname: string;
@@ -48,31 +43,7 @@ export interface PaginationParams {
   limit: number;
 }
 
-export interface PaginationResult<T> {
-  data: T[];
-  totalCount: number;
-  currentPage: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-}
 
-export type ApiResponse<T = any> =
-  | {
-  success: true;
-  data: T;
-  message?: string;
-  timestamp: Date;
-  path?: string;
-}
-  | {
-  success: false;
-  message?: string;
-  error?: string;
-  timestamp: Date;
-  path?: string;
-  details?: string[];
-};
 
 // TODO rivedere bene le categorie di notifiche
 export type NotificationType = 
