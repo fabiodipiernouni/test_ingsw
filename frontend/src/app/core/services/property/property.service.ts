@@ -5,7 +5,7 @@ import { map, tap, catchError } from 'rxjs/operators';
 import { Property, PropertyStats } from '@features/properties/models/property';
 import { SearchFilters, SearchResult } from '@core/models/search.model';
 import { environment } from '../../../../environments/environment';
-import {ApiResponse} from '@core/services/shared/dto/ApiResponse';
+import { ApiResponse } from '@service-shared/dto/ApiResponse';
 
 @Injectable({
   providedIn: 'root'
