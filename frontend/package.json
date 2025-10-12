@@ -11,7 +11,10 @@
     "test:coverage": "jest --coverage",
     "lint": "ng lint",
     "lint:fix": "ng lint --fix",
-    "serve:ssr:dietiestates25": "node dist/dietiestates25/server/server.mjs"
+    "serve:ssr:dietiestates25": "node dist/dietiestates25/server/server.mjs",
+    "generate:api": "npm run generate:auth-api && npm run generate:property-api",
+    "generate:auth-api": "openapi-generator-cli generate -i docs/auth-service-openapi.yaml -g typescript-angular -o src/app/core/api/auth-api --additional-properties=ngVersion=20,supportsES6=true,withInterfaces=true",
+    "generate:property-api": "openapi-generator-cli generate -i docs/property-service-openapi.yaml -g typescript-angular -o src/app/core/api/property-api --additional-properties=ngVersion=20,supportsES6=true,withInterfaces=true"
   },
   "private": true,
   "dependencies": {
@@ -52,6 +55,7 @@
     "@angular/build": "^20.0.2",
     "@angular/cli": "^20.0.2",
     "@angular/compiler-cli": "^20.0.0",
+    "@openapitools/openapi-generator-cli": "^2.24.0",
     "@types/express": "^5.0.1",
     "@types/jasmine": "~5.1.0",
     "@types/jest": "^30.0.0",

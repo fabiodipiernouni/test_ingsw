@@ -9,7 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService } from '../../../core/services/auth/auth.service';
 import { OAuthProviders } from '../oauth/oauth-providers';
 
 @Component({
@@ -58,11 +58,28 @@ export class Login implements OnInit {
 
       const credentials = {
         email: this.loginForm.value.email,
-        password: this.loginForm.value.password,
-        rememberMe: this.loginForm.value.rememberMe
+        password: this.loginForm.value.password
       };
 
       this.authService.login(credentials).subscribe({
+        next: (response) => {
+          this.isLoading.set(false);
+          if (response.success) {
+            // Controlla se c'è una challenge (es. NEW_PASSWORD_REQUIRED)
+            if ('challengeName' in response.data!) {
+              // Naviga alla pagina per gestire la challenge
+              this.router.navigate(['/auth/new-password'], {
+                queryParams: {
+                  session: (response.data as any).session,
+                  email: credentials.email
+                }
+              });
+            } else {
+              // Login completato, naviga alla destinazione
+              this.router.navigate([this.returnUrl()]);
+            }
+          }
+        },
         error: (error) => {
           this.isLoading.set(false);
           this.snackBar.open(

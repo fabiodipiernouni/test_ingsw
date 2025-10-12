@@ -10,7 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService } from '../../../core/services/auth/auth.service';
 import { OAuthProviders } from '../oauth/oauth-providers';
 
 @Component({
@@ -65,18 +65,23 @@ export class Register {
         email: formValue.email,
         phone: formValue.phone || undefined,
         password: formValue.password,
-        role: 'client' as const, // Always client for public registration
         acceptTerms: formValue.acceptTerms,
         acceptPrivacy: formValue.acceptPrivacy
       };
 
       this.authService.register(userData).subscribe({
         next: (response) => {
-          this.snackBar.open('Registrazione completata con successo!', 'Chiudi', {
-            duration: 3000,
-            panelClass: ['success-snackbar']
-          });
-          this.router.navigate(['/onboarding']);
+          this.isLoading.set(false);
+          if (response.success) {
+            this.snackBar.open('Registrazione completata! Controlla la tua email per la verifica.', 'Chiudi', {
+              duration: 5000,
+              panelClass: ['success-snackbar']
+            });
+            // Naviga alla pagina di verifica email
+            this.router.navigate(['/auth/verify-email'], {
+              queryParams: { email: userData.email }
+            });
+          }
         },
         error: (error) => {
           this.isLoading.set(false);

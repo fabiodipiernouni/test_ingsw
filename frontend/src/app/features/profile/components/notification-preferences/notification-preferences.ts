@@ -11,8 +11,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { finalize } from 'rxjs/operators';
 
-import { UserService } from '../../../../core/services/user.service';
-import { User } from '@core/models/user.model';
+import { User } from '../../../../core/services/auth/models/User';
 
 interface NotificationCategory {
   id: string;

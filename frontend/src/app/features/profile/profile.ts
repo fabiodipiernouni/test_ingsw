@@ -9,9 +9,8 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, RouterModule } from '@angular/router';
 
-import { AuthService } from '../../core/services/auth.service';
-import { UserService } from '../../core/services/user.service';
-import { User } from '@core/models/user.model';
+import { AuthService } from '../../core/services/auth/auth.service';
+import { User } from '../../core/services/auth/models/User';
 import {
   PersonalData,
   ContactInfo,
@@ -41,7 +40,7 @@ import {
 })
 export class Profile implements OnInit {
   private authService = inject(AuthService);
-  private userService = inject(UserService);
+  // private userService = inject(UserService); //TODO
   private snackBar = inject(MatSnackBar);
   private router = inject(Router);
 

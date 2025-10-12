@@ -9,8 +9,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { finalize } from 'rxjs/operators';
 
-import { UserService } from '../../../../core/services/user.service';
-import { User } from '@core/models/user.model';
+import { User } from '../../../../core/services/auth/models/User';
 
 @Component({
   selector: 'app-contact-info',

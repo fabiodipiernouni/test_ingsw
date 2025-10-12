@@ -20,7 +20,7 @@ export interface PropertyCard {
   energyClass?: 'A+' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
   hasElevator: boolean;
   hasParking: boolean;
-  //isFavorite?: boolean; // per mostrare l'icona del cuore
+  //isFavorite?: boolean; // per mostrare l'icona del cuore //TODO
   views?: number;
 }
 

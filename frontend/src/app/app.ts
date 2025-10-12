@@ -4,8 +4,7 @@ import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { filter } from 'rxjs/operators';
 import { Header } from '@shared/components/header/header';
-import { AuthService } from '@core/services/auth.service';
-import { NotificationService } from '@core/services/notification.service';
+import { AuthService } from '@core/services/auth/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -20,7 +19,7 @@ import { NotificationService } from '@core/services/notification.service';
 })
 export class App implements OnInit {
   private authService = inject(AuthService);
-  private notificationService = inject(NotificationService);
+  // private notificationService = inject(NotificationService); //TODO
   private router = inject(Router);
   private titleService = inject(Title);
 
@@ -49,7 +48,7 @@ export class App implements OnInit {
     this.authService.currentUser$.subscribe(user => {
       if (user) {
         // Load user notifications
-        this.notificationService.getNotifications().subscribe();
+        //this.notificationService.getNotifications().subscribe(); //TODO
       }
     });
   }

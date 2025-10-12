@@ -29,7 +29,7 @@ export const routes: Routes = [
   },
   {
     path: 'auth/callback',
-    loadComponent: () => import('./features/auth/oauth/oauth').then(m => m.OAuthCallback),
+    loadComponent: () => import('./features/auth/components/oauth-callback.component').then(m => m.OAuthCallbackComponent),
     title: 'Autenticazione in corso... - DietiEstates25'
   },
 

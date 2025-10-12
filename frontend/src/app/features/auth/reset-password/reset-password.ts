@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService } from '../../../core/services/auth/auth.service';
 
 @Component({
   selector: 'app-reset-password',
@@ -34,7 +34,7 @@ import { AuthService } from '../../../core/services/auth.service';
                 <span>DietiEstates25</span>
               </div>
               <h1>Reimposta password</h1>
-              <p>Inserisci la tua nuova password</p>
+              <p>Inserisci il codice ricevuto via email e la tua nuova password</p>
             </div>
           </mat-card-header>
 
@@ -42,6 +42,28 @@ import { AuthService } from '../../../core/services/auth.service';
             @if (!passwordReset()) {
               <form [formGroup]="resetPasswordForm" (ngSubmit)="onSubmit()">
                 <div class="form-fields">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Email</mat-label>
+                    <input matInput
+                           type="email"
+                           formControlName="email"
+                           placeholder="mario.rossi@email.com"
+                           autocomplete="email">
+                    <mat-icon matSuffix>email</mat-icon>
+                    <mat-error>{{ getErrorMessage('email') }}</mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Codice di verifica</mat-label>
+                    <input matInput
+                           type="text"
+                           formControlName="code"
+                           placeholder="Inserisci il codice ricevuto via email"
+                           autocomplete="off">
+                    <mat-icon matSuffix>vpn_key</mat-icon>
+                    <mat-error>{{ getErrorMessage('code') }}</mat-error>
+                  </mat-form-field>
+
                   <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Nuova password</mat-label>
                     <input matInput
@@ -341,27 +363,20 @@ export class ResetPassword implements OnInit {
     hasLength: false
   });
 
-  private resetToken = '';
-
   resetPasswordForm: FormGroup = this.fb.group({
+    email: ['', [Validators.required, Validators.email]],
+    code: ['', [Validators.required, Validators.minLength(6)]],
     password: ['', [Validators.required, Validators.minLength(8), this.passwordValidator.bind(this)]],
     confirmPassword: ['', Validators.required]
   }, { validators: this.passwordMatchValidator });
 
   ngOnInit(): void {
-    // Get reset token from URL parameters
-    this.resetToken = this.route.snapshot.queryParams['token'];
-    
-    if (!this.resetToken) {
-      this.snackBar.open('Token di reset non valido', 'Chiudi', {
-        duration: 5000,
-        panelClass: ['error-snackbar']
-      });
-      this.router.navigate(['/login']);
-      return;
+    // Pre-populate email from URL if available
+    const emailFromUrl = this.route.snapshot.queryParams['email'];
+    if (emailFromUrl) {
+      this.resetPasswordForm.patchValue({ email: emailFromUrl });
     }
-
-    // Monitor password changes for requirements display
+        // Monitor password changes for requirements display
     this.resetPasswordForm.get('password')?.valueChanges.subscribe(value => {
       if (value) {
         this.passwordRequirements.set(true);
@@ -377,16 +392,17 @@ export class ResetPassword implements OnInit {
       this.isLoading.set(true);
 
       const resetData = {
-        token: this.resetToken,
-        password: this.resetPasswordForm.value.password
+        email: this.resetPasswordForm.value.email,
+        code: this.resetPasswordForm.value.code,
+        newPassword: this.resetPasswordForm.value.password
       };
 
-      this.authService.resetPassword(resetData).subscribe({
+      this.authService.confirmForgotPassword(resetData).subscribe({
         next: () => {
           this.passwordReset.set(true);
           this.isLoading.set(false);
         },
-        error: (error) => {
+        error: (error: any) => {
           this.isLoading.set(false);
           this.snackBar.open(
             error.error?.message || 'Errore durante il reset della password',
@@ -454,8 +470,15 @@ export class ResetPassword implements OnInit {
     if (control?.hasError('required')) {
       return 'Campo obbligatorio';
     }
+    if (control?.hasError('email')) {
+      return 'Email non valida';
+    }
     if (control?.hasError('minlength')) {
-      return `Minimo ${control.getError('minlength').requiredLength} caratteri`;
+      const requiredLength = control.getError('minlength').requiredLength;
+      if (field === 'code') {
+        return `Il codice deve essere di almeno ${requiredLength} caratteri`;
+      }
+      return `Minimo ${requiredLength} caratteri`;
     }
     if (field === 'confirmPassword' && this.resetPasswordForm.hasError('passwordMismatch')) {
       return 'Le password non corrispondono';
