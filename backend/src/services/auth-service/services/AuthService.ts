@@ -36,6 +36,7 @@ import { ConfirmEmailDto } from '../dto/ConfirmEmailDto';
 import { ResendVerificationCodeDto } from '../dto/ResendVerificationCodeDto';
 import { ForgotPasswordDto } from '../dto/ForgotPasswordDto';
 import { ChangePasswordDto } from '../dto/ChangePasswordDto';
+import { RefreshTokenResponse } from '../dto/RefreshTokenResponse';
 
 // Cognito Client
 const cognitoClient = new CognitoIdentityProviderClient({
@@ -323,7 +324,7 @@ export class AuthService {
   /**
    * Refresh token con Cognito
    */
-  async refreshToken(data: RefreshTokenDto): Promise<{ accessToken: string; idToken: string }> {
+  async refreshToken(data: RefreshTokenDto): Promise<RefreshTokenResponse> {
     try {
       const { refreshToken } = data;
       // 1. RICHIEDI NUOVI TOKEN A COGNITO
@@ -345,10 +346,13 @@ export class AuthService {
 
       logger.info('Tokens refreshed successfully');
 
-      return {
+      const refreshTokenResponse : RefreshTokenResponse = {
         accessToken: AccessToken,
-        idToken: IdToken
+        idToken: IdToken,
+        refreshToken,
+        tokenType: 'Bearer'
       };
+      return refreshTokenResponse;
     } catch (error: any) {
       logger.error('Error in refreshToken service:', error);
 

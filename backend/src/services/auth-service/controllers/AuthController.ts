@@ -453,11 +453,7 @@ export class AuthController {
 
       const result = await authService.refreshToken({ refreshToken });
 
-      setResponseAsSuccess(res, {
-        accessToken: result.accessToken,
-        idToken: result.idToken,
-        tokenType: 'Bearer'
-      });
+      setResponseAsSuccess(res, result, 'Token refreshed successfully');
 
     } catch (error: any) {
       logger.error('Error in refreshToken controller:', error);
