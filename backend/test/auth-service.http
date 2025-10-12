@@ -5,8 +5,8 @@ POST http://localhost:3001/api/login
 Content-Type: application/json
 
 {
-  "email": "dieti25estates@gmail.com",
-  "password": "7Bk9R|wb"
+  "email": "agent@immobiliarepassarellatorino.it",
+  "password": "Agent123!"
 }
 
 ### Challenge new password

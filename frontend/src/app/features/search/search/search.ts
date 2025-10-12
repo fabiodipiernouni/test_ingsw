@@ -10,7 +10,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { SearchForm } from '../search-form/search-form';
 import { PropertyList } from '../../properties/property-list/property-list';
 import { PropertyService } from '@core/services/property/property.service';
-import { SearchFilters, SearchResult } from '@core/models/search.model';
 import { Property } from '@features/properties/models/property';
 import {MatTooltip} from '@angular/material/tooltip';
 
@@ -59,7 +58,7 @@ export class Search implements OnInit, OnDestroy {
       if (params['filters']) {
         try {
           const filters = JSON.parse(params['filters']);
-          this.currentFilters.set(filters);
+          // this.currentFilters.set(filters); //TODO
           this.executeSearch(filters);
         } catch (error) {
           console.error('Error parsing filters from URL:', error);
@@ -144,6 +143,8 @@ export class Search implements OnInit, OnDestroy {
     this.isLoading.set(true);
     this.hasSearched.set(true);
 
+    //TODO
+    /*
     this.propertyService.searchProperties(filters, 1, 20).subscribe({
       next: (result) => {
         this.searchResult.set(result);
@@ -165,11 +166,14 @@ export class Search implements OnInit, OnDestroy {
         console.error('Search error:', error);
       }
     });
+    */
   }
 
   private loadPage(page: number): void {
     this.isLoading.set(true);
 
+    /*
+    //TODO
     this.propertyService.searchProperties(this.currentFilters(), page, 20).subscribe({
       next: (result) => {
         // Append new properties to existing ones
@@ -185,6 +189,7 @@ export class Search implements OnInit, OnDestroy {
         });
       }
     });
+    */
   }
 
   private generateSearchName(filters: SearchFilters): string {

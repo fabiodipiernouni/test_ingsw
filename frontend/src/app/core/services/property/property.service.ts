@@ -1,22 +1,27 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, BehaviorSubject, throwError } from 'rxjs';
-import { map, tap, catchError } from 'rxjs/operators';
+import { Observable, of, BehaviorSubject } from 'rxjs';
+import { map, tap, delay } from 'rxjs/operators';
+/* //TODO
 import { Property, PropertyStats } from '@features/properties/models/property';
 import { SearchFilters, SearchResult } from '@core/models/search.model';
 import { environment } from '../../../../environments/environment';
-import {ApiResponse} from '@core/services/dto/ApiResponse';
+import {ApiResponse} from '@app/core/services/shared/dto/ApiResponse';
+import {PropertyCard} from '@features/properties/models/property-card';
+*/
 
 @Injectable({
   providedIn: 'root'
 })
 export class PropertyService {
-  private readonly http = inject(HttpClient);
+/*
+// TODO
+  private http = inject(HttpClient);
 
   private readonly API_URL = `${environment.apiUrlProperties}/properties`;
 
   // Reactive state
-  private readonly propertiesSubject = new BehaviorSubject<Property[]>([]);
+  private propertiesSubject = new BehaviorSubject<Property[]>([]);
   public properties$ = this.propertiesSubject.asObservable();
 
   properties = signal<Property[]>([]);
@@ -46,22 +51,22 @@ export class PropertyService {
     if (filters.listingType && filters.listingType.trim() !== '') {
       params = params.set('listingType', filters.listingType);
     }
-    if (filters.priceMin !== undefined && filters.priceMin !== null && !Number.isNaN(filters.priceMin)) {
+    if (filters.priceMin !== undefined && filters.priceMin !== null && !isNaN(filters.priceMin)) {
       params = params.set('priceMin', filters.priceMin.toString());
     }
-    if (filters.priceMax !== undefined && filters.priceMax !== null && !Number.isNaN(filters.priceMax)) {
+    if (filters.priceMax !== undefined && filters.priceMax !== null && !isNaN(filters.priceMax)) {
       params = params.set('priceMax', filters.priceMax.toString());
     }
-    if (filters.bedrooms !== undefined && filters.bedrooms !== null && !Number.isNaN(filters.bedrooms)) {
+    if (filters.bedrooms !== undefined && filters.bedrooms !== null && !isNaN(filters.bedrooms)) {
       params = params.set('bedrooms', filters.bedrooms.toString());
     }
-    if (filters.bathrooms !== undefined && filters.bathrooms !== null && !Number.isNaN(filters.bathrooms)) {
+    if (filters.bathrooms !== undefined && filters.bathrooms !== null && !isNaN(filters.bathrooms)) {
       params = params.set('bathrooms', filters.bathrooms.toString());
     }
-    if (filters.areaMin !== undefined && filters.areaMin !== null && !Number.isNaN(filters.areaMin)) {
+    if (filters.areaMin !== undefined && filters.areaMin !== null && !isNaN(filters.areaMin)) {
       params = params.set('areaMin', filters.areaMin.toString());
     }
-    if (filters.areaMax !== undefined && filters.areaMax !== null && !Number.isNaN(filters.areaMax)) {
+    if (filters.areaMax !== undefined && filters.areaMax !== null && !isNaN(filters.areaMax)) {
       params = params.set('areaMax', filters.areaMax.toString());
     }
     if (filters.energyClass && filters.energyClass.trim() !== '') {
@@ -79,27 +84,27 @@ export class PropertyService {
     if (filters.hasParking !== undefined && filters.hasParking !== null) {
       params = params.set('hasParking', filters.hasParking.toString());
     }
-    if (filters.radius !== undefined && filters.radius !== null && !Number.isNaN(filters.radius)) {
+    if (filters.radius !== undefined && filters.radius !== null && !isNaN(filters.radius)) {
       params = params.set('radius', filters.radius.toString());
     }
-    if (filters.centerLat !== undefined && filters.centerLat !== null && !Number.isNaN(filters.centerLat)) {
+    if (filters.centerLat !== undefined && filters.centerLat !== null && !isNaN(filters.centerLat)) {
       params = params.set('centerLat', filters.centerLat.toString());
     }
-    if (filters.centerLng !== undefined && filters.centerLng !== null && !Number.isNaN(filters.centerLng)) {
+    if (filters.centerLng !== undefined && filters.centerLng !== null && !isNaN(filters.centerLng)) {
       params = params.set('centerLng', filters.centerLng.toString());
     }
 
     // Chiamata HTTP al backend
-    return this.http.get<ApiResponse<SearchResult>>(`${this.API_URL}/cards`, { params }).pipe(
+    return this.http.get<ApiResponse<PropertyCard[]>>(`${this.API_URL}/cards`, { params }).pipe(
       map(response => {
         // Mappo la risposta del backend al formato SearchResult
         const searchResult: SearchResult = {
-          properties: response.data?.properties || [],
-          totalCount: response.data?.totalCount || 0,
-          currentPage: response.data?.currentPage || page,
-          totalPages: response.data?.totalPages || Math.ceil((response.data?.totalCount || 0) / limit),
-          hasNextPage: response.data?.hasNextPage || false,
-          hasPreviousPage: response.data?.hasPreviousPage || false
+          properties: response.data || [],
+          totalCount: response.totalCount || response.total || 0,
+          currentPage: response.currentPage || response.page || page,
+          totalPages: response.totalPages || Math.ceil((response.totalCount || response.total || 0) / limit),
+          hasNextPage: response.hasNextPage || ((response.currentPage || page) < (response.totalPages || Math.ceil((response.totalCount || response.total || 0) / limit))),
+          hasPreviousPage: response.hasPreviousPage || ((response.currentPage || page) > 1)
         };
         return searchResult;
       }),
@@ -109,159 +114,199 @@ export class PropertyService {
         this.propertiesSubject.next(result.properties);
         this.isLoading.set(false);
       }),
-      catchError((error) => {
-        console.error('Errore durante la ricerca delle proprietà:', error);
-        this.isLoading.set(false);
+      // Gestione errori migliorata
+      tap({
+        error: (error) => {
+          console.error('Errore durante la ricerca delle proprietà:', error);
+          this.isLoading.set(false);
 
-        // Aggiorno lo stato con dati vuoti
-        this.properties.set([]);
-        this.totalCount.set(0);
-        this.propertiesSubject.next([]);
+          // Creo un SearchResult mock per il fallback
+          const fallbackResult: SearchResult = {
+            properties: this.mockProperties,
+            totalCount: this.mockProperties.length,
+            currentPage: 1,
+            totalPages: Math.ceil(this.mockProperties.length / limit),
+            hasNextPage: this.mockProperties.length > limit,
+            hasPreviousPage: false
+          };
 
-        return throwError(() => error);
+          this.properties.set(fallbackResult.properties);
+          this.totalCount.set(fallbackResult.totalCount);
+          this.propertiesSubject.next(fallbackResult.properties);
+        }
       })
     );
   }
 
   getPropertyById(id: string): Observable<Property | null> {
-    this.isLoading.set(true);
-
-    // GET /properties/{id}
-    return this.http.get<ApiResponse<Property>>(`${this.API_URL}/${id}`).pipe(
-      map(response => response.data || null),
-      tap(() => this.isLoading.set(false)),
-      catchError((error) => {
-        console.error(`Errore durante il recupero della proprietà ${id}:`, error);
-        this.isLoading.set(false);
-        return throwError(() => error);
-      })
-    );
+    const property = this.mockProperties.find(p => p.id === id);
+    return of(property || null).pipe(delay(200));
   }
 
   createProperty(propertyData: Partial<Property>): Observable<Property> {
-    this.isLoading.set(true);
+    const newProperty: Property = {
+      id: Math.random().toString(36),
+      title: propertyData.title || '',
+      description: propertyData.description || '',
+      price: propertyData.price || 0,
+      propertyType: propertyData.propertyType || 'apartment',
+      listingType: propertyData.listingType || 'sale',
+      bedrooms: propertyData.bedrooms || 1,
+      bathrooms: propertyData.bathrooms || 1,
+      area: propertyData.area || 50,
+      floor: propertyData.floor,
+      energyClass: propertyData.energyClass,
+      hasElevator: propertyData.hasElevator || false,
+      hasBalcony: propertyData.hasBalcony || false,
+      hasGarden: propertyData.hasGarden || false,
+      hasParking: propertyData.hasParking || false,
+      address: propertyData.address || {
+        street: '',
+        city: '',
+        province: '',
+        zipCode: '',
+        country: 'Italia'
+      },
+      location: propertyData.location || { latitude: 0, longitude: 0 },
+      images: propertyData.images || [],
+      agentId: 'current-agent-id',
+      isActive: true,
+      views: 0,
+      //favorites: 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
 
-    // POST /properties
-    return this.http.post<ApiResponse<Property>>(`${this.API_URL}`, propertyData).pipe(
-      map(response => response.data!),
+    return of(newProperty).pipe(
+      delay(1000),
       tap(property => {
+        this.mockProperties.push(property);
         this.properties.update(current => [...current, property]);
         this.totalCount.update(count => count + 1);
-        this.isLoading.set(false);
-      }),
-      catchError((error) => {
-        console.error('Errore durante la creazione della proprietà:', error);
-        this.isLoading.set(false);
-        return throwError(() => error);
       })
     );
   }
 
   updateProperty(id: string, updates: Partial<Property>): Observable<Property> {
-    this.isLoading.set(true);
+    const index = this.mockProperties.findIndex(p => p.id === id);
+    if (index === -1) {
+      throw new Error('Property not found');
+    }
 
-    // PUT /properties/{id}
-    return this.http.put<ApiResponse<Property>>(`${this.API_URL}/${id}`, updates).pipe(
-      map(response => response.data!),
+    const updatedProperty = {
+      ...this.mockProperties[index],
+      ...updates,
+      updatedAt: new Date()
+    };
+
+    return of(updatedProperty).pipe(
+      delay(500),
       tap(property => {
+        this.mockProperties[index] = property;
         this.properties.update(current =>
           current.map(p => p.id === id ? property : p)
         );
-        this.isLoading.set(false);
-      }),
-      catchError((error) => {
-        console.error(`Errore durante l'aggiornamento della proprietà ${id}:`, error);
-        this.isLoading.set(false);
-        return throwError(() => error);
       })
     );
   }
 
   deleteProperty(id: string): Observable<boolean> {
-    this.isLoading.set(true);
-
-    // DELETE /properties/{id}
-    return this.http.delete<ApiResponse<void>>(`${this.API_URL}/${id}`).pipe(
-      map(() => true),
+    return of(true).pipe(
+      delay(500),
       tap(() => {
+        this.mockProperties = this.mockProperties.filter(p => p.id !== id);
         this.properties.update(current => current.filter(p => p.id !== id));
         this.totalCount.update(count => count - 1);
-        this.isLoading.set(false);
-      }),
-      catchError((error) => {
-        console.error(`Errore durante l'eliminazione della proprietà ${id}:`, error);
-        this.isLoading.set(false);
-        return throwError(() => error);
       })
     );
   }
 
   getPropertyStats(): Observable<PropertyStats> {
-    this.isLoading.set(true);
+    const stats: PropertyStats = {
+      totalProperties: this.mockProperties.length,
+      propertiesForSale: this.mockProperties.filter(p => p.listingType === 'sale').length,
+      propertiesForRent: this.mockProperties.filter(p => p.listingType === 'rent').length,
+      averagePrice: this.mockProperties.reduce((sum, p) => sum + p.price, 0) / this.mockProperties.length,
+      mostViewedProperties: this.mockProperties
+        .sort((a, b) => b.views - a.views)
+        .slice(0, 5)
+    };
 
-    // GET /properties/stats
-    return this.http.get<ApiResponse<PropertyStats>>(`${this.API_URL}/stats`).pipe(
-      map(response => response.data!),
-      tap(() => this.isLoading.set(false)),
-      catchError((error) => {
-        console.error('Errore durante il recupero delle statistiche:', error);
-        this.isLoading.set(false);
-        return throwError(() => error);
-      })
-    );
+    return of(stats).pipe(delay(300));
   }
 
-  // Metodo per incrementare le visualizzazioni di una proprietà
-  incrementPropertyViews(propertyId: string): Observable<void> {
-    // POST /properties/{id}/views
-    return this.http.post<ApiResponse<void>>(`${this.API_URL}/${propertyId}/views`, {}).pipe(
-      map(() => void 0),
-      catchError((error) => {
-        console.error(`Errore durante l'incremento delle visualizzazioni per la proprietà ${propertyId}:`, error);
-        return throwError(() => error);
-      })
-    );
+  //toggleFavorite(propertyId: string): Observable<boolean> {
+    // Simulate API call to toggle favorite
+    //return of(true).pipe(delay(200));
+  //}
+
+  private filterProperties(properties: Property[], filters: SearchFilters): Property[] {
+    return properties.filter(property => {
+      if (filters.location && !this.matchesLocation(property, filters.location)) {
+        return false;
+      }
+
+      if (filters.propertyType && property.propertyType !== filters.propertyType) {
+        return false;
+      }
+
+      if (filters.listingType && property.listingType !== filters.listingType) {
+        return false;
+      }
+
+      if (filters.priceMin && property.price < filters.priceMin) {
+        return false;
+      }
+
+      if (filters.priceMax && property.price > filters.priceMax) {
+        return false;
+      }
+
+      if (filters.bedrooms && property.bedrooms < filters.bedrooms) {
+        return false;
+      }
+
+      if (filters.bathrooms && property.bathrooms < filters.bathrooms) {
+        return false;
+      }
+
+      if (filters.areaMin && property.area < filters.areaMin) {
+        return false;
+      }
+
+      if (filters.areaMax && property.area > filters.areaMax) {
+        return false;
+      }
+
+      if (filters.energyClass && property.energyClass !== filters.energyClass) {
+        return false;
+      }
+
+      if (filters.hasElevator !== undefined && property.hasElevator !== filters.hasElevator) {
+        return false;
+      }
+
+      if (filters.hasBalcony !== undefined && property.hasBalcony !== filters.hasBalcony) {
+        return false;
+      }
+
+      if (filters.hasGarden !== undefined && property.hasGarden !== filters.hasGarden) {
+        return false;
+      }
+
+      if (filters.hasParking !== undefined && property.hasParking !== filters.hasParking) {
+        return false;
+      }
+
+      return true;
+    });
   }
 
-  // Metodo per ottenere le proprietà di un agente specifico
-  getPropertiesByAgent(agentId: string, page: number = 1, limit: number = 20): Observable<SearchResult> {
-    this.isLoading.set(true);
-
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('limit', limit.toString());
-
-    // GET /properties/agent/{agentId}
-    return this.http.get<ApiResponse<SearchResult>>(`${this.API_URL}/agent/${agentId}`, { params }).pipe(
-      map(response => response.data!),
-      tap(result => {
-        this.properties.set(result.properties);
-        this.totalCount.set(result.totalCount);
-        this.propertiesSubject.next(result.properties);
-        this.isLoading.set(false);
-      }),
-      catchError((error) => {
-        console.error(`Errore durante il recupero delle proprietà dell'agente ${agentId}:`, error);
-        this.isLoading.set(false);
-        return throwError(() => error);
-      })
-    );
+  private matchesLocation(property: Property, location: string): boolean {
+    const searchLocation = location.toLowerCase();
+    return property.address.city.toLowerCase().includes(searchLocation) ||
+      property.address.street.toLowerCase().includes(searchLocation) ||
+      property.address.province.toLowerCase().includes(searchLocation);
   }
-
-  // Metodo per attivare/disattivare una proprietà
-  togglePropertyStatus(propertyId: string, isActive: boolean): Observable<Property> {
-    // PATCH /properties/{id}/status
-    return this.http.patch<ApiResponse<Property>>(`${this.API_URL}/${propertyId}/status`, { isActive }).pipe(
-      map(response => response.data!),
-      tap(property => {
-        this.properties.update(current =>
-          current.map(p => p.id === propertyId ? property : p)
-        );
-      }),
-      catchError((error) => {
-        console.error(`Errore durante la modifica dello stato della proprietà ${propertyId}:`, error);
-        return throwError(() => error);
-      })
-    );
-  }
+*/
 }

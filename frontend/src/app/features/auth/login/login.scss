@@ -47,6 +47,11 @@ $gap-sm: 0.75rem;
     backdrop-filter: blur(10px);
     background: $color-bg-card;
   }
+
+  .mat-mdc-card-header {
+    display: flex;
+    justify-content: center;
+  }
 }
 
 .login-header {

@@ -7,9 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { AuthService } from '@core/services/auth.service';
-import { NotificationService } from '@core/services/notification.service';
-import { User } from '@core/models/user.model';
+import { AuthService } from '@core/services/auth/auth.service';
 import {MatDivider} from '@angular/material/divider';
 import {MatChip} from '@angular/material/chips';
 
@@ -33,7 +31,7 @@ import {MatChip} from '@angular/material/chips';
 })
 export class Header implements OnInit {
   private authService = inject(AuthService);
-  private notificationService = inject(NotificationService);
+  // private notificationService = inject(NotificationService); //TODO
   private router = inject(Router);
 
   // Use signals directly from AuthService
@@ -44,9 +42,12 @@ export class Header implements OnInit {
 
   ngOnInit(): void {
     // Subscribe to notification count
+    // TODO
+    /*
     this.notificationService.unreadCount$.subscribe(count => {
       this.unreadNotifications.set(count);
     });
+    */
   }
 
   onLogin(): void {

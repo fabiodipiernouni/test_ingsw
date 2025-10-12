@@ -9,9 +9,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
-import { UserService } from '../../../../core/services/user.service';
-import { User, UpdateProfileRequest } from '@core/models/user.model';
-
 @Component({
   selector: 'app-personal-data',
   standalone: true,
@@ -84,6 +81,8 @@ export class PersonalData implements OnInit, OnChanges {
   }
 
   onSubmit(): void {
+    /*
+    // TODO
     if (this.personalDataForm.valid) {
       this.isLoading.set(true);
 
@@ -118,6 +117,7 @@ export class PersonalData implements OnInit, OnChanges {
     } else {
       this.markFormGroupTouched();
     }
+    */
   }
 
   onReset(): void {

@@ -6,7 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService } from '../../../core/services/auth/auth.service';
 
 @Component({
   selector: 'app-verify-email',
@@ -237,26 +237,33 @@ export class VerifyEmail implements OnInit {
   errorMessage = signal('');
 
   ngOnInit(): void {
-    // Get verification token from URL parameters
-    const token = this.route.snapshot.queryParams['token'];
+    // Ottieni l'email dai query parameters per pre-compilare il form
+    const email = this.route.snapshot.queryParams['email'];
+    const code = this.route.snapshot.queryParams['code'];
     
-    if (!token) {
-      this.handleVerificationError('Token di verifica mancante');
-      return;
+    if (email && code) {
+      // Se abbiamo email e codice, verifica automaticamente
+      this.authService.confirmEmail({ email, code }).subscribe({
+        next: (response) => {
+          this.isVerifying.set(false);
+          if (response.success) {
+            this.verificationSuccess.set(true);
+          } else {
+            this.handleVerificationError('Verifica fallita');
+          }
+        },
+        error: (error: any) => {
+          this.handleVerificationError(
+            error.error?.message || 'Errore durante la verifica dell\'email'
+          );
+        }
+      });
+    } else {
+      // Se non abbiamo il codice, mostriamo il form per inserirlo
+      this.isVerifying.set(false);
+      this.verificationSuccess.set(false);
+      this.errorMessage.set('Inserisci il codice di verifica ricevuto via email');
     }
-
-    // Verify the email
-    this.authService.verifyEmail({ token }).subscribe({
-      next: () => {
-        this.isVerifying.set(false);
-        this.verificationSuccess.set(true);
-      },
-      error: (error) => {
-        this.handleVerificationError(
-          error.error?.message || 'Errore durante la verifica dell\'email'
-        );
-      }
-    });
   }
 
   private handleVerificationError(message: string): void {
@@ -270,16 +277,43 @@ export class VerifyEmail implements OnInit {
   }
 
   requestNewVerification(): void {
-    // This would typically require the user to enter their email
-    // For now, redirect to login with a message
-    this.snackBar.open(
-      'Accedi al tuo account per richiedere una nuova email di verifica',
-      'Chiudi',
-      {
-        duration: 5000,
-        panelClass: ['info-snackbar']
-      }
-    );
-    this.goToLogin();
+    const email = this.route.snapshot.queryParams['email'];
+    
+    if (email) {
+      this.authService.resendVerificationCode({ email }).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.snackBar.open(
+              'Nuovo codice di verifica inviato alla tua email',
+              'Chiudi',
+              {
+                duration: 5000,
+                panelClass: ['success-snackbar']
+              }
+            );
+          }
+        },
+        error: (error: any) => {
+          this.snackBar.open(
+            error.error?.message || 'Errore nell\'invio del nuovo codice',
+            'Chiudi',
+            {
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            }
+          );
+        }
+      });
+    } else {
+      this.snackBar.open(
+        'Email non disponibile. Torna al login per richiedere una nuova verifica.',
+        'Chiudi',
+        {
+          duration: 5000,
+          panelClass: ['info-snackbar']
+        }
+      );
+      this.goToLogin();
+    }
   }
 }

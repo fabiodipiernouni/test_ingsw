@@ -84,7 +84,7 @@
         <div class="account-info">
         <p><strong>Nome:</strong> {{ currentUser?.firstName }} {{ currentUser?.lastName }}</p>
         <p><strong>Email:</strong> {{ currentUser?.email }}</p>
-        <p *ngIf="currentUser?.phone"><strong>Telefono:</strong> {{ currentUser?.phone }}</p>
+        <!-- TODO <p *ngIf="currentUser?.phone"><strong>Telefono:</strong> {{ currentUser?.phone }}</p>
         <p><strong>Tipo Account:</strong>
             <mat-chip [color]="currentUser?.role === 'agent' ? 'accent' : 'primary'">
             {{ getUserRoleLabel() }}
@@ -111,7 +111,7 @@
             </mat-chip>
         </p>
         <p *ngIf="currentUser?.lastLoginAt"><strong>Ultimo Accesso:</strong> {{ formatDate(currentUser?.lastLoginAt) }}</p>
-        <p><strong>Membro dal:</strong> {{ formatDate(currentUser?.createdAt) }}</p>
+        <p><strong>Membro dal:</strong> {{ formatDate(currentUser?.createdAt) }}</p> -->
         </div>
     </mat-card-content>
     <mat-card-actions>

@@ -8,8 +8,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
-import { UserService } from '../../../../core/services/user.service';
-import { ChangePasswordRequest } from '@core/models/user.model';
 
 @Component({
   selector: 'app-change-password',
@@ -30,7 +28,7 @@ export class ChangePassword implements OnInit {
   @Output() passwordChanged = new EventEmitter<void>();
 
   private fb = inject(FormBuilder);
-  private userService = inject(UserService);
+  // private userService = inject(UserService); //TODO
   private snackBar = inject(MatSnackBar);
 
   isLoading = signal<boolean>(false);
@@ -119,6 +117,8 @@ export class ChangePassword implements OnInit {
   }
 
   onSubmit(): void {
+    /*
+    // TODO
     if (this.changePasswordForm.valid) {
       this.isLoading.set(true);
 
@@ -158,6 +158,7 @@ export class ChangePassword implements OnInit {
     } else {
       this.markFormGroupTouched();
     }
+    */
   }
 
   onReset(): void {

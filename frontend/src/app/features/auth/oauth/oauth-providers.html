@@ -1,0 +1,20 @@
+<div class="oauth-providers">
+    <div class="divider">
+        <span>oppure</span>
+    </div>
+
+    <div class="provider-buttons">
+        <button
+            mat-stroked-button
+            class="provider-button google"
+            [disabled]="loading()"
+            (click)="loginWithProvider('google')">
+            @if (loading()) {
+                <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+                <mat-icon svgIcon="google"></mat-icon>
+            }
+            <span>Continua con Google</span>
+        </button>
+    </div>
+</div>

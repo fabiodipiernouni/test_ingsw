@@ -113,6 +113,8 @@ export class PropertyUpload {
         images: [] // TODO: Handle image upload
       };
 
+      // TODO
+      /*
       this.propertyService.createProperty(propertyData).subscribe({
         next: (property) => {
           this.snackBar.open('Immobile caricato con successo!', 'Chiudi', {
@@ -129,6 +131,7 @@ export class PropertyUpload {
           this.isLoading.set(false);
         }
       });
+      */
     }
   }
 

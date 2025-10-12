@@ -5,7 +5,8 @@
 
   <!-- Property Image -->
   <div class="property-image-container">
-    <div class="property-image"
+    <!-- TODO -->
+    <!-- <div class="property-image"
          [style.background-image]="'url(' + getImageUrl() + ')'"
          [class.loaded]="imageLoaded()">
       <img [src]="getImageUrl()"
@@ -19,14 +20,15 @@
           <mat-icon>home_work</mat-icon>
         </div>
       }
-    </div>
+    </div> -->
 
     <!-- Property Badge -->
-    <div class="property-badge"
+    <!-- TODO -->
+    <!-- <div class="property-badge"
          [class.sale]="property().listingType === 'sale'"
          [class.rent]="property().listingType === 'rent'">
       {{ getListingTypeLabel() }}
-    </div>
+    </div> -->
 
     <!-- Favorite Button
     <button mat-icon-button
@@ -38,34 +40,38 @@
     </button>-->
 
     <!-- Image Count -->
-    @if (property().images.length > 1) {
+    <!-- TODO -->
+    <!-- @if (property().images.length > 1) {
       <div class="image-count">
         <mat-icon>photo_library</mat-icon>
         {{ property().images.length }}
       </div>
-    }
+    } -->
   </div>
 
   <!-- Property Content -->
   <mat-card-content class="property-content">
     <!-- Price -->
-    <div class="property-price">
+    <!-- TODO -->
+    <!-- <div class="property-price">
       {{ property().price | currency:'EUR':'symbol':'1.0-0' }}
       @if (property().listingType === 'rent') {
         <span class="price-period">/mese</span>
       }
-    </div>
+    </div> -->
 
     <!-- Title -->
-    <h3 class="property-title">{{ property().title }}</h3>
+    <!-- TODO -->
+    <!-- <h3 class="property-title">{{ property().title }}</h3> -->
 
     <!-- Property Type -->
-    <div class="property-type">{{ getPropertyTypeLabel() }}</div>
+    <!-- TODO -->
+    <!-- <div class="property-type">{{ getPropertyTypeLabel() }}</div> -->
 
     <!-- Location -->
     <div class="property-location">
       <mat-icon>location_on</mat-icon>
-      <span>{{ property().address.city }}, {{ property().address.province }}</span>
+      <!-- <span>{{ property().address.city }}, {{ property().address.province }}</span> --> <!-- TODO -->
     </div>
 
     <!-- Features -->

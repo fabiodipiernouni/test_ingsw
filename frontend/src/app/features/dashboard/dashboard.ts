@@ -4,9 +4,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
-import { RouterLink } from '@angular/router';
-import { AuthService } from '../../core/services/auth.service';
-import { User } from '@core/models/user.model';
+import { AuthService } from '../../core/services/auth/auth.service';
+import { User } from '../../core/services/auth/models/User';
 
 @Component({
   selector: 'app-dashboard',
@@ -16,8 +15,7 @@ import { User } from '@core/models/user.model';
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatChipsModule,
-    RouterLink
+    MatChipsModule
   ],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss']
