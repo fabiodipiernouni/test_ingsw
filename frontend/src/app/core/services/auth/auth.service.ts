@@ -105,19 +105,9 @@ export class AuthService {
   /**
    * Logout utente
    */
-  logout(): Observable<ApiResponse> {
-    const accessToken = this.getAccessToken();
-    const headers = accessToken ? new HttpHeaders().set('Authorization', `Bearer ${accessToken}`) : undefined;
-    
-    return this.http.post<ApiResponse>(`${this.API_URL}/logout`, {}, { headers })
-      .pipe(
-        tap(() => this.handleLogout()),
-        catchError((error) => {
-          // Anche se il logout fallisce, rimuoviamo i dati locali
-          this.handleLogout();
-          return throwError(() => error);
-        })
-      );
+  logout() {
+    // La chiamata al backend non è necessaria per il logout, i token scadranno da soli
+    this.handleLogout();
   }
 
   /**
@@ -287,8 +277,7 @@ export class AuthService {
     return user?.role === 'owner';
   }
 
-  // ===== PRIVATE METHODS =====
-  private handleApiAuthResponse(response: ApiResponse<AuthResponse>): void {
+  handleApiAuthResponse(response: ApiResponse<AuthResponse>): void {
     if (response.success && response.data) {
       if ('challenge' in response.data) {
         this.handleChallenge(response.data.challenge);
@@ -298,9 +287,11 @@ export class AuthService {
       }
     }
     else {
-      throw new Error(response.message || 'Authentication failed');
+      throw new Error(response.message || 'Autenticazione fallita');
     }
   }
+
+  // ===== PRIVATE METHODS =====
 
   /**
    * Carica utente dallo storage
@@ -320,6 +311,16 @@ export class AuthService {
     }
   }
 
+  /**
+   * Gestisce il successo dell'autenticazione
+   */
+  handleAuthSuccess(authResponse: AuthResponseUser): void {
+    this.storeTokens(authResponse.accessToken, authResponse.idToken, authResponse.refreshToken);
+    const user = this.convertToUser(authResponse.user);
+    this.storeUser(user);
+    this.setAuthenticationState(user);
+  }
+  
   /**
    * Converte UserResponse a User
    */
@@ -341,16 +342,6 @@ export class AuthService {
       createdAt: new Date(userResponse.createdAt),
       updatedAt: new Date(userResponse.updatedAt),
     };
-  }
-
-  /**
-   * Gestisce il successo dell'autenticazione
-   */
-  private handleAuthSuccess(authResponse: AuthResponseUser): void {
-    this.storeTokens(authResponse.accessToken, authResponse.idToken, authResponse.refreshToken);
-    const user = this.convertToUser(authResponse.user);
-    this.storeUser(user);
-    this.setAuthenticationState(user);
   }
 
   /**

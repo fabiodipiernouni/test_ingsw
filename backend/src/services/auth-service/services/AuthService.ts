@@ -20,7 +20,7 @@ import config from '@shared/config';
 import logger from '@shared/utils/logger';
 import { RegisterDto } from '@auth/dto/RegisterDto';
 import { LoginDto } from '@auth/dto/LoginDto';
-import { AuthResponse } from '@auth/dto/AuthResponse';
+import { AuthResponseUser, AuthResponseChallenge, AuthResponse } from '@auth/dto/AuthResponse';
 import { UserResponse } from '@auth/dto/UserResponse';
 import { AgencyResponse } from '@auth/dto/AgencyResponse';
 import {
@@ -508,7 +508,7 @@ export class AuthService {
   /**
    * Gestisci il callback OAuth e scambia il codice di autorizzazione per i token
    */
-  async handleOAuthCallback(data: OAuthCallbackData): Promise<AuthResponse> {
+  async handleOAuthCallback(data: OAuthCallbackData): Promise<AuthResponseUser> {
     try {
       const { code } = data;
       const { domain, callbackUrl } = config.cognito.oauth;
@@ -535,13 +535,14 @@ export class AuthService {
 
       logger.info('OAuth login successful', { email, cognitoSub });
 
-      return {
+      const authResponse: AuthResponseUser = {
         user: this.formatUserResponse(user),
         accessToken: access_token,
         idToken: id_token,
         refreshToken: refresh_token,
         tokenType: token_type || 'Bearer'
       };
+      return authResponse;
 
     } catch (error: any) {
       logger.error('Error in handleOAuthCallback:', error);

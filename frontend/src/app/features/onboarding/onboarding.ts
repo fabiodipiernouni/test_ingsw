@@ -5,8 +5,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatStepperModule } from '@angular/material/stepper';
 import { Router, RouterLink } from '@angular/router';
-import { AuthService } from '../../core/services/auth/auth.service';
-import { User } from '@core/models/user.model';
+import { AuthService } from '@core-services/auth/auth.service';
+import { UserModel } from '@core-services/auth/models/UserModel';
 
 @Component({
   selector: 'app-onboarding',
@@ -25,7 +25,7 @@ import { User } from '@core/models/user.model';
 export class Onboarding implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
-  currentUser: User | null = null;
+  currentUser: UserModel | null = null;
 
   ngOnInit() {
     this.currentUser = this.authService.getCurrentUser();
@@ -35,8 +35,4 @@ export class Onboarding implements OnInit {
     this.router.navigate(['/dashboard']);
   }
 
-  goToChangePassword(): void {
-    // Naviga alla pagina di cambio password
-    this.router.navigate(['/auth/change-password']);
-  }
 }

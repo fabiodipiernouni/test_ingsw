@@ -10,7 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services/auth/auth.service';
-import { OAuthProviders } from '../oauth/oauth-providers';
+import { OAuthProviders } from '../oauth-providers/oauth-providers';
 
 @Component({
   selector: 'app-login',
@@ -64,26 +64,8 @@ export class Login implements OnInit {
       this.authService.login(credentials).subscribe({
         next: (response) => {
           this.isLoading.set(false);
-          if (response.success) {
-            // Controlla se c'è una challenge (es. NEW_PASSWORD_REQUIRED)
-            if ('challenge' in response.data!) {
-              // gestisci la challenge
-              this.authService.handleChallenge(response.data!.challenge);
-            } else {
-              // Login completato, naviga alla destinazione
-              this.router.navigate([this.returnUrl()]);
-            }
-          }
-          else {
-            this.snackBar.open(
-              response.message || 'Errore durante l\'accesso',
-              'Chiudi',
-              {
-                duration: 5000,
-                panelClass: ['error-snackbar']
-              }
-            );
-          }
+          this.authService.handleApiAuthResponse(response);
+          this.router.navigateByUrl(this.returnUrl()); //TODO: passarlo al metodo handleApiAuthResponse e fare redirect solo se non c'è challenge oppure passarlo alla challenge
         },
         error: (error) => {
           this.isLoading.set(false);

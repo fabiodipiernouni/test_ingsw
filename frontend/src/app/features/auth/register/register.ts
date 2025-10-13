@@ -11,7 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services/auth/auth.service';
-import { OAuthProviders } from '../oauth/oauth-providers';
+import { OAuthProviders } from '../oauth-providers/oauth-providers';
 
 @Component({
   selector: 'app-register',
