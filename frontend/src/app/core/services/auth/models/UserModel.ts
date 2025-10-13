@@ -13,11 +13,8 @@ export interface UserModel {
   isVerified: boolean;
   isActive: boolean;
   linkedProviders: Array<OAuthProvider>;
-  cognitoSub?: string;
-  cognitoUsername?: string;
   lastLoginAt?: Date;
-  agencyId?: string;
-  Agency?: Agency;
+  agency?: Agency;
   createdAt: Date;
   updatedAt: Date;
 }

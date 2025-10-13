@@ -66,18 +66,23 @@ export class Login implements OnInit {
           this.isLoading.set(false);
           if (response.success) {
             // Controlla se c'è una challenge (es. NEW_PASSWORD_REQUIRED)
-            if ('challengeName' in response.data!) {
-              // Naviga alla pagina per gestire la challenge
-              this.router.navigate(['/auth/new-password'], {
-                queryParams: {
-                  session: (response.data as any).session,
-                  email: credentials.email
-                }
-              });
+            if ('challenge' in response.data!) {
+              // gestisci la challenge
+              this.authService.handleChallenge(response.data!.challenge);
             } else {
               // Login completato, naviga alla destinazione
               this.router.navigate([this.returnUrl()]);
             }
+          }
+          else {
+            this.snackBar.open(
+              response.message || 'Errore durante l\'accesso',
+              'Chiudi',
+              {
+                duration: 5000,
+                panelClass: ['error-snackbar']
+              }
+            );
           }
         },
         error: (error) => {
