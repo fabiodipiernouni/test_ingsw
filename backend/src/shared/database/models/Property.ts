@@ -187,9 +187,6 @@ export class Property extends Model {
 
   // Status and counters
   @AllowNull(false)
-  @Default(true)
-
-  @AllowNull(false)
   @Default(0)
   @Column(DataType.INTEGER)
   views!: number;
