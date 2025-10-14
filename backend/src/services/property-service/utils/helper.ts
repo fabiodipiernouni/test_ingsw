@@ -1,6 +1,8 @@
 import { User } from '@shared/database/models/User';
 import { UserModel } from '@user/models/UserModel';
 import { UserRole } from '@user/models/UserRole';
+import { Op } from 'sequelize';
+import { SearchPropertyFilter } from '@property/dto/SearchPropertyFilter';
 
 /**
  * Helper class per conversioni e utility varie
@@ -30,6 +32,43 @@ export class Helper {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
     };
+  }
+
+  static applySearchFilters(whereClause: any, filters: SearchPropertyFilter): void {
+    // Filtro prezzo
+    if (filters.priceMin !== undefined && filters.priceMax !== undefined) {
+      whereClause.price = { [Op.between]: [filters.priceMin, filters.priceMax] };
+    } else if (filters.priceMin !== undefined || filters.priceMax !== undefined) {
+      whereClause.price = {};
+
+      if (filters.priceMin !== undefined) {
+        whereClause.price[Op.gte] = filters.priceMin;
+      }
+
+      if (filters.priceMax !== undefined) {
+        whereClause.price[Op.lte] = filters.priceMax;
+      }
+    }
+
+    // Filtro tipo proprietà
+    if (filters.propertyType) {
+      whereClause.propertyType = filters.propertyType;
+    }
+
+    // Filtro tipo annuncio
+    if (filters.listingType) {
+      whereClause.listingType = filters.listingType;
+    }
+
+    // Filtro camere da letto
+    if (filters.bedrooms !== undefined) {
+      whereClause.bedrooms = { [Op.gte]: filters.bedrooms };
+    }
+
+    // Filtro bagni
+    if (filters.bathrooms !== undefined) {
+      whereClause.bathrooms = { [Op.gte]: filters.bathrooms };
+    }
   }
 }
 

@@ -358,6 +358,7 @@ export class PropertyService {
       ];
 
       whereClause.status = options.status ?? 'active';
+      Helper.applySearchFilters(whereClause, options.filters);
 
       // Filtro per agenzia (per admin): filtra attraverso l'agente
       if (options.agencyId) {
