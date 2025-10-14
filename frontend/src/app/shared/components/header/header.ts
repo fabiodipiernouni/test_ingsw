@@ -59,7 +59,7 @@ export class Header implements OnInit {
   }
 
   onLogout(): void {
-    this.authService.logout().subscribe();
+    this.authService.logout();
     this.isMobileMenuOpen.set(false);
   }
 

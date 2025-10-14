@@ -28,8 +28,14 @@ export const routes: Routes = [
     title: 'Registrati - DietiEstates25'
   },
   {
+    path: 'forgot-password',
+    loadComponent: () => import('./features/auth/forgot-password/forgot-password').then(m => m.ForgotPassword),
+    canActivate: [guestGuard],
+    title: 'Recupera Password - DietiEstates25'
+  },
+  {
     path: 'auth/callback',
-    loadComponent: () => import('./features/auth/components/oauth-callback.component').then(m => m.OAuthCallbackComponent),
+    loadComponent: () => import('./features/auth/oauth-callback/oauth-callback').then(m => m.OAuthCallback),
     title: 'Autenticazione in corso... - DietiEstates25'
   },
 

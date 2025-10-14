@@ -605,22 +605,9 @@ export class AuthController {
         state: state as string
       });
 
-      // OAuth non dovrebbe mai restituire una challenge, ma verifichiamo per sicurezza
-      if ('challenge' in result) {
-        logger.error('Unexpected challenge in OAuth callback', { challengeName: result.challenge.name });
-        const errorUrl = `${config.frontendUrl}/auth/error?message=${encodeURIComponent('OAuth authentication requires additional steps')}`;
-        res.redirect(errorUrl);
-        return;
-      }
-
       // Redirect al frontend con token nei query params
       const callbackUrl = new URL(`${config.frontendUrl}/auth/callback`);
-      callbackUrl.searchParams.append('access_token', result.accessToken);
-      callbackUrl.searchParams.append('id_token', result.idToken);
-      callbackUrl.searchParams.append('refresh_token', result.refreshToken);
-      callbackUrl.searchParams.append('token_type', result.tokenType);
-      callbackUrl.searchParams.append('email', result.user.email);
-      callbackUrl.searchParams.append('is_new_user', (!result.user.isVerified).toString());
+      callbackUrl.searchParams.append('response', JSON.stringify(result));
 
       logger.info('OAuth login successful, redirecting to frontend', { email: result.user.email });
       res.redirect(callbackUrl.toString());

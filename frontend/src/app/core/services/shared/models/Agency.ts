@@ -1,5 +1,5 @@
-import { Address } from './Address';
-import { Contacts } from './Contacts';
+import { Address } from './address';
+import { Contacts } from './contacts';
 
 export interface Agency {
   id: string;

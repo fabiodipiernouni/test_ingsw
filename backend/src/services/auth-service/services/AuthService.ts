@@ -20,7 +20,7 @@ import config from '@shared/config';
 import logger from '@shared/utils/logger';
 import { RegisterDto } from '@auth/dto/RegisterDto';
 import { LoginDto } from '@auth/dto/LoginDto';
-import { AuthResponse } from '@auth/dto/AuthResponse';
+import { AuthResponseUser, AuthResponseChallenge, AuthResponse } from '@auth/dto/AuthResponse';
 import { UserResponse } from '@auth/dto/UserResponse';
 import { AgencyResponse } from '@auth/dto/AgencyResponse';
 import {
@@ -277,13 +277,30 @@ export class AuthService {
 
       const response = await cognitoClient.send(respondCommand);
 
+      // 2. GESTISCI EVENTUALI CHALLENGE SUCCESSIVE (es. MFA_SETUP, SMS_MFA)
+      if (response.ChallengeName) {
+        logger.info('Additional challenge required after password change', {
+          email,
+          challengeName: response.ChallengeName
+        });
+
+        const authResponse: AuthResponse = {
+          challenge: {
+            name: response.ChallengeName,
+            session: response.Session || ''
+          }
+        };
+        return authResponse;
+      }
+
+      // 3. OTTIENI TOKEN DA COGNITO
       const { AccessToken, IdToken, RefreshToken } = response.AuthenticationResult || {};
 
       if (!AccessToken || !IdToken || !RefreshToken) {
         throw new AuthenticationError('Failed to complete password challenge');
       }
 
-      // 2. DECODIFICA TOKEN E RECUPERA UTENTE
+      // 4. DECODIFICA TOKEN E RECUPERA UTENTE
       const idTokenDecoded = this.decodeToken(IdToken);
       const cognitoSub = idTokenDecoded.sub;
 
@@ -296,7 +313,7 @@ export class AuthService {
         throw new NotFoundError('User not found');
       }
 
-      // 3. AGGIORNA isVerified (primo login completato)
+      // 5. AGGIORNA isVerified (primo login completato)
       if (!user.isVerified) {
         await user.update({ isVerified: true });
       }
@@ -491,7 +508,7 @@ export class AuthService {
   /**
    * Gestisci il callback OAuth e scambia il codice di autorizzazione per i token
    */
-  async handleOAuthCallback(data: OAuthCallbackData): Promise<AuthResponse> {
+  async handleOAuthCallback(data: OAuthCallbackData): Promise<AuthResponseUser> {
     try {
       const { code } = data;
       const { domain, callbackUrl } = config.cognito.oauth;
@@ -518,13 +535,14 @@ export class AuthService {
 
       logger.info('OAuth login successful', { email, cognitoSub });
 
-      return {
+      const authResponse: AuthResponseUser = {
         user: this.formatUserResponse(user),
         accessToken: access_token,
         idToken: id_token,
         refreshToken: refresh_token,
         tokenType: token_type || 'Bearer'
       };
+      return authResponse;
 
     } catch (error: any) {
       logger.error('Error in handleOAuthCallback:', error);

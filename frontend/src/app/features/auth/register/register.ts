@@ -11,7 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services/auth/auth.service';
-import { OAuthProviders } from '../oauth/oauth-providers';
+import { OAuthProviders } from '../oauth-providers/oauth-providers';
 
 @Component({
   selector: 'app-register',
@@ -73,14 +73,22 @@ export class Register {
         next: (response) => {
           this.isLoading.set(false);
           if (response.success) {
-            this.snackBar.open('Registrazione completata! Controlla la tua email per la verifica.', 'Chiudi', {
+            this.snackBar.open('Registrazione completata!', 'Chiudi', {
               duration: 5000,
               panelClass: ['success-snackbar']
             });
-            // Naviga alla pagina di verifica email
-            this.router.navigate(['/auth/verify-email'], {
-              queryParams: { email: userData.email }
-            });
+            // Naviga alla pagina di login
+            this.router.navigate(['/auth/login']);
+          }
+          else {
+            this.snackBar.open(
+              response.message || 'Errore durante la registrazione',
+              'Chiudi',
+              {
+                duration: 5000,
+                panelClass: ['error-snackbar']
+              }
+            );
           }
         },
         error: (error) => {

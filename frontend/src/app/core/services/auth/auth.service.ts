@@ -5,9 +5,8 @@ import { Observable, BehaviorSubject, throwError, catchError, tap, map } from 'r
 import { environment } from '../../../../environments/environment';
 import { UserModel } from './models/UserModel';
 
-import { AuthResponse } from './dto/AuthResponse';
+import { AuthResponseUser, AuthResponseChallenge, AuthResponse } from './dto/AuthResponse';
 import { ChangePasswordRequest } from './dto/ChangePasswordRequest';
-import { ChallengeResponse } from './dto/ChallengeResponse';
 import { CompleteNewPasswordRequest } from './dto/CompleteNewPasswordRequest';
 import { ConfirmEmailRequest } from './dto/ConfirmEmailRequest';
 import { ConfirmForgotPasswordRequest } from './dto/ConfirmForgotPasswordRequest';
@@ -67,7 +66,7 @@ export class AuthService {
             this.router.navigate(['/auth/login']);
           }
           else {
-            this.snackBar.open(response.message || 'Registration failed', 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
+            throw new Error(response.message || 'Registration failed');
           }
         }),
         catchError(this.handleError.bind(this)),
@@ -78,20 +77,12 @@ export class AuthService {
   /**
    * Login utente
    */
-  login(request: LoginRequest): Observable<ApiResponse<AuthResponse> | ApiResponse<ChallengeResponse>> {
+  login(request: LoginRequest): Observable<ApiResponse<AuthResponse>> {
     this.isLoading.set(true);
     
-    return this.http.post<ApiResponse<AuthResponse> | ApiResponse<ChallengeResponse>>(`${this.API_URL}/login`, request)
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.API_URL}/login`, request)
       .pipe(
-        tap(response => {
-          if (response.success && response.data) {
-            // Se è una risposta di auth normale
-            if ('user' in response.data) {
-              this.handleAuthSuccess(response.data as AuthResponse);
-            }
-            // Se è una challenge, non salviamo nulla
-          }
-        }),
+        tap(response => this.handleApiAuthResponse(response)),
         catchError(this.handleError.bind(this)),
         tap(() => this.isLoading.set(false))
       );
@@ -105,11 +96,7 @@ export class AuthService {
     
     return this.http.post<ApiResponse<AuthResponse>>(`${this.API_URL}/complete-new-password`, request)
       .pipe(
-        tap(response => {
-          if (response.success && response.data) {
-            this.handleAuthSuccess(response.data);
-          }
-        }),
+        tap(response => this.handleApiAuthResponse(response)),
         catchError(this.handleError.bind(this)),
         tap(() => this.isLoading.set(false))
       );
@@ -118,19 +105,9 @@ export class AuthService {
   /**
    * Logout utente
    */
-  logout(): Observable<ApiResponse> {
-    const accessToken = this.getAccessToken();
-    const headers = accessToken ? new HttpHeaders().set('Authorization', `Bearer ${accessToken}`) : undefined;
-    
-    return this.http.post<ApiResponse>(`${this.API_URL}/logout`, {}, { headers })
-      .pipe(
-        tap(() => this.handleLogout()),
-        catchError((error) => {
-          // Anche se il logout fallisce, rimuoviamo i dati locali
-          this.handleLogout();
-          return throwError(() => error);
-        })
-      );
+  logout() {
+    // La chiamata al backend non è necessaria per il logout, i token scadranno da soli
+    this.handleLogout();
   }
 
   /**
@@ -214,6 +191,31 @@ export class AuthService {
     window.location.href = `${this.API_URL}/oauth/authorize?${params.toString()}`;
   }
 
+  /**
+   * Gestisce le challenge di autenticazione e naviga alla pagina appropriata
+   */
+  handleChallenge(challenge: AuthResponseChallenge['challenge']): void {
+    const challengeName = challenge.name;
+    const session = challenge.session;
+
+    switch (challengeName) {
+      // TODO
+      default:
+        // Challenge non supportata
+        console.error('Unsupported challenge type:', challengeName);
+        this.snackBar.open(
+          `Authentication challenge not supported: ${challengeName}`,
+          'Close',
+          {
+            duration: 5000,
+            panelClass: ['error-snackbar']
+          }
+        );
+        this.router.navigate(['/auth/login']);
+        break;
+    }
+  }
+
   // ===== TOKEN MANAGEMENT =====
 
   /**
@@ -275,6 +277,20 @@ export class AuthService {
     return user?.role === 'owner';
   }
 
+  handleApiAuthResponse(response: ApiResponse<AuthResponse>): void {
+    if (response.success && response.data) {
+      if ('challenge' in response.data) {
+        this.handleChallenge(response.data.challenge);
+      }
+      else {
+        this.handleAuthSuccess(response.data);
+      }
+    }
+    else {
+      throw new Error(response.message || 'Autenticazione fallita');
+    }
+  }
+
   // ===== PRIVATE METHODS =====
 
   /**
@@ -296,6 +312,16 @@ export class AuthService {
   }
 
   /**
+   * Gestisce il successo dell'autenticazione
+   */
+  handleAuthSuccess(authResponse: AuthResponseUser): void {
+    this.storeTokens(authResponse.accessToken, authResponse.idToken, authResponse.refreshToken);
+    const user = this.convertToUser(authResponse.user);
+    this.storeUser(user);
+    this.setAuthenticationState(user);
+  }
+  
+  /**
    * Converte UserResponse a User
    */
   private convertToUser(userResponse: UserResponse): UserModel {
@@ -316,16 +342,6 @@ export class AuthService {
       createdAt: new Date(userResponse.createdAt),
       updatedAt: new Date(userResponse.updatedAt),
     };
-  }
-
-  /**
-   * Gestisce il successo dell'autenticazione
-   */
-  private handleAuthSuccess(authResponse: AuthResponse): void {
-    this.storeTokens(authResponse.accessToken, authResponse.idToken, authResponse.refreshToken);
-    const user = this.convertToUser(authResponse.user);
-    this.storeUser(user);
-    this.setAuthenticationState(user);
   }
 
   /**

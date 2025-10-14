@@ -4,8 +4,9 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
-import { AuthService } from '../../core/services/auth/auth.service';
-import { User } from '../../core/services/auth/models/User';
+import { AuthService } from '@core/services/auth/auth.service';
+import { UserModel } from '@core-services/auth/models/UserModel';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-dashboard',
@@ -22,7 +23,8 @@ import { User } from '../../core/services/auth/models/User';
 })
 export class Dashboard implements OnInit {
   private authService = inject(AuthService);
-  currentUser: User | null = null;
+  currentUser: UserModel | null = null;
+  private snackbar = inject(MatSnackBar);
 
   ngOnInit() {
     this.currentUser = this.authService.getCurrentUser();
@@ -52,6 +54,7 @@ export class Dashboard implements OnInit {
   getUserRoleLabel(): string {
     if (!this.currentUser) return '';
     switch (this.currentUser.role) {
+      case 'owner': return 'Proprietario';
       case 'agent': return 'Agente Immobiliare';
       case 'admin': return 'Amministratore';
       case 'client': return 'Cliente';
@@ -60,6 +63,8 @@ export class Dashboard implements OnInit {
   }
 
   logout(): void {
-    this.authService.logout().subscribe();
+    this.authService.logout();
+
+    this.snackbar.open('Logout effettuato con successo', 'Chiudi', { duration: 3000 });
   }
 }

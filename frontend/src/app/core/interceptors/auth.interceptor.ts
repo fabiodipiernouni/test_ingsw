@@ -41,13 +41,13 @@ export const authInterceptor: HttpInterceptorFn = (
             }),
             catchError(refreshError => {
               // Refresh failed, logout user
-              authService.logout().subscribe();
+              authService.logout();
               return throwError(() => refreshError);
             })
           );
         } else {
           // No refresh token or already trying to refresh, logout user
-          authService.logout().subscribe();
+          authService.logout();
           return throwError(() => error);
         }
       }

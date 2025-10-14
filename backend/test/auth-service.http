@@ -1,6 +1,6 @@
 ### Test dell'API Auth Service
 
-### Login Admin
+### Login
 POST http://localhost:3001/api/login
 Content-Type: application/json
 

@@ -7,27 +7,6 @@
     </p>
     </div>
 
-    @if(currentUser?.shouldChangePassword) {
-    <!-- Messaggio per cambio password se necessario -->
-    <mat-card class="password-notice-card">
-    <mat-card-header>
-        <mat-icon mat-card-avatar color="warn">security</mat-icon>
-        <mat-card-title>Sicurezza Account</mat-card-title>
-        <mat-card-subtitle>Consigliato per la tua sicurezza</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-        <p><strong>Il tuo account è stato creato con credenziali predefinite.</strong></p>
-        <p>Per garantire la massima sicurezza del tuo account, ti consigliamo vivamente di cambiare la password con una personalizzata.</p>
-    </mat-card-content>
-    <mat-card-actions>
-        <button mat-raised-button color="warn" (click)="goToChangePassword()">
-        <mat-icon>lock_reset</mat-icon>
-        Cambia Password Ora
-        </button>
-    </mat-card-actions>
-    </mat-card>
-    }
-
     <div class="features-grid">
     <!-- Ricerca Immobili -->
     <mat-card class="feature-card">
