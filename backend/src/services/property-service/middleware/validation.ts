@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { setResponseAsValidationError } from '@shared/utils/helpers';
 import { isValidGeoJSONPoint } from '@shared/types/geojson.types';
 import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequest';
-import { validatePropertyCreate, validatePropertyId, validatePropertySearchFilters } from '../middleware/validation';
 
 /**
  * Middleware per validare i dati di creazione proprietà

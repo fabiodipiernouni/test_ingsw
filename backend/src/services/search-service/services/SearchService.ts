@@ -429,7 +429,6 @@ export class SearchService {
         email: property.agent.email,
         phone: property.agent.phone
       } : undefined,
-      isActive: property.isActive,
       views: property.views,
       favorites: property.favorites,
       createdAt: property.createdAt.toISOString(),

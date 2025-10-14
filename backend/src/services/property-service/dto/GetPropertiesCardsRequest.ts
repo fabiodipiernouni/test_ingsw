@@ -1,10 +1,23 @@
 import { SearchPropertyFilter } from '@property/dto/SearchPropertyFilter';
 import { PagedRequest } from '@shared/dto/pagedRequest';
 import { PropertyStatus } from '@property/models/types';
+import { IsOptional, ValidateNested, IsUUID, IsEnum } from 'class-validator';
+import { Type } from 'class-transformer';
 
-export interface GetPropertiesCardsRequest {
-  filters: SearchPropertyFilter;
+export class GetPropertiesCardsRequest {
+  @ValidateNested()
+  @Type(() => SearchPropertyFilter)
+  filters!: SearchPropertyFilter;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PagedRequest)
   pagedRequest?: PagedRequest;
+
+  @IsOptional()
   status?: PropertyStatus;
-  agencyId?: string; // Filtra per agenzia specifica
+
+  @IsOptional()
+  @IsUUID('4', { message: 'Agency ID must be a valid UUID' })
+  agencyId?: string;
 }
