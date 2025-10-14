@@ -25,6 +25,37 @@ export const validate = (validations: ValidationChain[]) => {
 };
 
 /**
+ * DTO for property search filters
+ * @param req
+ * @param res
+ * @param next
+ */
+export const validatePropertySearchFilters = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const filters = plainToClass(PropertySearchFiltersDto, req.body);
+  const errors = await validate(filters);
+
+  if (errors.length > 0) {
+    const formattedErrors = errors.map(err => ({
+      field: err.property,
+      errors: Object.values(err.constraints || {})
+    }));
+
+    return res.status(400).json({
+      success: false,
+      message: 'Validazione filtri fallita',
+      errors: formattedErrors
+    });
+  }
+
+  req.body = filters; // Sostituisci con l'oggetto validato
+  next();
+};
+
+/**
  * Validation chains for common fields
  */
 

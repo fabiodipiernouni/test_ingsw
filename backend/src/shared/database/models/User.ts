@@ -21,6 +21,7 @@ import { NotificationPreferences } from './NotificationPreferences';
 import { UserPreferences } from './UserPreferences';
 import { PropertyFavorite } from './PropertyFavorite';
 import { PropertyView } from './PropertyView';
+import { OAuthProvider } from '@auth/models/OAuthProvider';
 
 @Table({
   tableName: 'users',
@@ -80,7 +81,7 @@ export class User extends Model {
 
   @AllowNull(true)
   @Column(DataType.JSON)
-  linkedProviders?: Array<'google' | 'github'>;
+  linkedProviders?: Array<OAuthProvider>;
 
   @AllowNull(true)
   @Column(DataType.DATE)

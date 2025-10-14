@@ -1,22 +1,21 @@
 import swaggerJsdoc from 'swagger-jsdoc';
-import { config } from '../../../config/index';
 
-const options = {
+const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
       title: 'Property Service API',
       version: '1.0.0',
-      description: 'Servizio di gestione delle proprietà immobiliari - Gestisce creazione, modifica, visualizzazione e gestione delle proprietà.',
+      description: 'API per la gestione delle proprietà immobiliari',
       contact: {
-        name: 'API Support',
-        email: 'support@example.com'
+        name: 'DietiEstates',
+        email: 'support@dietiestates.com'
       }
     },
     servers: [
       {
-        url: `http://localhost:${config.property.port || 3002}/api`,
-        description: 'Server di sviluppo'
+        url: 'http://localhost:3002',
+        description: 'Development server'
       }
     ],
     components: {
@@ -24,453 +23,315 @@ const options = {
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
-          bearerFormat: 'JWT',
-          description: 'Token JWT per l\'autenticazione. Formato: Bearer {token}'
+          bearerFormat: 'JWT'
         }
       },
       schemas: {
-        PropertyAddress: {
+        // Request DTOs
+        CreatePropertyRequest: {
           type: 'object',
-          required: ['street', 'city', 'province', 'zipCode', 'country'],
+          required: ['title', 'description', 'price', 'propertyType', 'listingType', 'bedrooms', 'bathrooms', 'area', 'address', 'location'],
+          properties: {
+            title: {
+              type: 'string',
+              minLength: 10,
+              maxLength: 200,
+              example: 'Appartamento luminoso in centro'
+            },
+            description: {
+              type: 'string',
+              minLength: 50,
+              maxLength: 2000,
+              example: 'Splendido appartamento di 100mq situato nel cuore della città...'
+            },
+            price: {
+              type: 'number',
+              minimum: 1,
+              example: 250000
+            },
+            propertyType: {
+              type: 'string',
+              enum: ['apartment', 'house', 'villa', 'land', 'commercial', 'office', 'garage'],
+              example: 'apartment'
+            },
+            listingType: {
+              type: 'string',
+              enum: ['sale', 'rent'],
+              example: 'sale'
+            },
+            bedrooms: {
+              type: 'integer',
+              minimum: 0,
+              maximum: 20,
+              example: 3
+            },
+            bathrooms: {
+              type: 'integer',
+              minimum: 0,
+              maximum: 20,
+              example: 2
+            },
+            area: {
+              type: 'number',
+              minimum: 1,
+              maximum: 10000,
+              example: 100
+            },
+            floor: {
+              type: 'string',
+              example: '2'
+            },
+            energyClass: {
+              type: 'string',
+              enum: ['A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G'],
+              example: 'B'
+            },
+            hasElevator: {
+              type: 'boolean',
+              example: true
+            },
+            hasBalcony: {
+              type: 'boolean',
+              example: true
+            },
+            hasGarden: {
+              type: 'boolean',
+              example: false
+            },
+            hasParking: {
+              type: 'boolean',
+              example: true
+            },
+            features: {
+              type: 'array',
+              items: {
+                type: 'string'
+              },
+              maxItems: 20,
+              example: ['aria condizionata', 'riscaldamento autonomo', 'doppi vetri']
+            },
+            address: {
+              $ref: '#/components/schemas/Address'
+            },
+            location: {
+              $ref: '#/components/schemas/GeoJSONPoint'
+            }
+          }
+        },
+
+        // Response DTOs
+        PropertyModel: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid'
+            },
+            title: { type: 'string' },
+            description: { type: 'string' },
+            price: { type: 'number' },
+            propertyType: { type: 'string' },
+            listingType: { type: 'string' },
+            status: {
+              type: 'string',
+              enum: ['active', 'pending', 'sold', 'rented', 'withdrawn']
+            },
+            bedrooms: { type: 'integer' },
+            bathrooms: { type: 'integer' },
+            area: { type: 'number' },
+            floor: { type: 'string' },
+            energyClass: { type: 'string' },
+            hasElevator: { type: 'boolean' },
+            hasBalcony: { type: 'boolean' },
+            hasGarden: { type: 'boolean' },
+            hasParking: { type: 'boolean' },
+            features: {
+              type: 'array',
+              items: { type: 'string' }
+            },
+            address: {
+              $ref: '#/components/schemas/Address'
+            },
+            location: {
+              $ref: '#/components/schemas/GeoJSONPoint'
+            },
+            images: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/PropertyImageModel'
+              }
+            },
+            agentId: { type: 'string' },
+            agent: {
+              $ref: '#/components/schemas/UserModel'
+            },
+            isActive: { type: 'boolean' },
+            views: { type: 'integer' },
+            favorites: { type: 'integer' },
+            createdAt: {
+              type: 'string',
+              format: 'date-time'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time'
+            }
+          }
+        },
+
+        PropertyCardDto: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            title: { type: 'string' },
+            description: { type: 'string' },
+            price: { type: 'number' },
+            propertyType: { type: 'string' },
+            listingType: { type: 'string' },
+            status: { type: 'string' },
+            bedrooms: { type: 'integer' },
+            bathrooms: { type: 'integer' },
+            area: { type: 'number' },
+            floor: { type: 'string' },
+            city: { type: 'string' },
+            province: { type: 'string' },
+            primaryImage: {
+              $ref: '#/components/schemas/PropertyImageModel'
+            },
+            energyClass: { type: 'string' },
+            hasElevator: { type: 'boolean' },
+            hasBalcony: { type: 'boolean' },
+            hasGarden: { type: 'boolean' },
+            hasParking: { type: 'boolean' },
+            agentId: { type: 'string' },
+            views: { type: 'integer' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' }
+          }
+        },
+
+        PropertyImageModel: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            fileName: { type: 'string' },
+            contentType: { type: 'string' },
+            fileSize: { type: 'integer' },
+            width: { type: 'integer' },
+            height: { type: 'integer' },
+            caption: { type: 'string' },
+            alt: { type: 'string' },
+            isPrimary: { type: 'boolean' },
+            order: { type: 'integer' },
+            uploadDate: { type: 'string', format: 'date-time' },
+            urls: {
+              type: 'object',
+              properties: {
+                original: { type: 'string' },
+                small: { type: 'string' },
+                medium: { type: 'string' },
+                large: { type: 'string' }
+              }
+            }
+          }
+        },
+
+        UserModel: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            firstName: { type: 'string' },
+            lastName: { type: 'string' },
+            email: { type: 'string', format: 'email' },
+            phone: { type: 'string' }
+          }
+        },
+
+        Address: {
+          type: 'object',
+          required: ['street', 'city', 'province', 'zipCode'],
           properties: {
             street: {
               type: 'string',
-              description: 'Indirizzo via e numero civico',
+              minLength: 5,
               example: 'Via Roma 123'
             },
             city: {
               type: 'string',
-              description: 'Città',
-              example: 'Milano'
+              minLength: 2,
+              example: 'Napoli'
             },
             province: {
               type: 'string',
-              description: 'Provincia',
-              example: 'MI'
+              minLength: 2,
+              example: 'NA'
             },
             zipCode: {
               type: 'string',
-              description: 'Codice postale',
-              example: '20121'
+              pattern: '^\\d{5}$',
+              example: '80100'
             },
             country: {
               type: 'string',
-              description: 'Paese',
               example: 'Italy'
             }
           }
         },
-        PropertyLocation: {
+
+        GeoJSONPoint: {
           type: 'object',
           required: ['type', 'coordinates'],
           properties: {
             type: {
               type: 'string',
               enum: ['Point'],
-              description: 'Tipo di geometria GeoJSON',
               example: 'Point'
             },
             coordinates: {
               type: 'array',
               items: {
-                type: 'number',
-                format: 'double'
+                type: 'number'
               },
               minItems: 2,
               maxItems: 2,
-              description: 'Coordinate [longitude, latitude] in formato GeoJSON standard RFC 7946',
-              example: [9.1900, 45.4642]
-            }
-          },
-          description: 'Posizione geografica in formato GeoJSON Point'
-        },
-        PropertyImage: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              format: 'uuid',
-              description: 'ID univoco dell\'immagine',
-              example: '507f1f77-bcf8-6cd7-9943-9011abcd1234'
-            },
-            fileName: {
-              type: 'string',
-              description: 'Nome del file',
-              example: 'property-123-0.jpg'
-            },
-            contentType: {
-              type: 'string',
-              description: 'Tipo MIME dell\'immagine',
-              example: 'image/webp'
-            },
-            fileSize: {
-              type: 'integer',
-              description: 'Dimensione del file in bytes',
-              example: 245678
-            },
-            width: {
-              type: 'integer',
-              description: 'Larghezza in pixel',
-              example: 1920
-            },
-            height: {
-              type: 'integer',
-              description: 'Altezza in pixel',
-              example: 1080
-            },
-            uploadDate: {
-              type: 'string',
-              format: 'date-time',
-              description: 'Data di caricamento',
-              example: '2025-10-03T10:30:00Z'
-            },
-            caption: {
-              type: 'string',
-              description: 'Didascalia dell\'immagine',
-              example: 'Vista del soggiorno'
-            },
-            alt: {
-              type: 'string',
-              description: 'Testo alternativo per accessibilità',
-              example: 'Soggiorno con finestre panoramiche'
-            },
-            isPrimary: {
-              type: 'boolean',
-              description: 'Indica se è l\'immagine principale della proprietà',
-              example: true
-            },
-            order: {
-              type: 'integer',
-              description: 'Ordine di visualizzazione nella galleria',
-              example: 0
-            },
-            urls: {
-              type: 'object',
-              description: 'URL firmati temporanei per accedere all\'immagine in diverse dimensioni',
-              properties: {
-                original: {
-                  type: 'string',
-                  format: 'uri',
-                  description: 'URL dell\'immagine originale (WebP 95% quality)',
-                  example: 'https://s3.amazonaws.com/bucket/image-original.webp?signature=...'
-                },
-                small: {
-                  type: 'string',
-                  format: 'uri',
-                  description: 'URL thumbnail (400x300)',
-                  example: 'https://s3.amazonaws.com/bucket/image-small.webp?signature=...'
-                },
-                medium: {
-                  type: 'string',
-                  format: 'uri',
-                  description: 'URL media (800x600)',
-                  example: 'https://s3.amazonaws.com/bucket/image-medium.webp?signature=...'
-                },
-                large: {
-                  type: 'string',
-                  format: 'uri',
-                  description: 'URL grande (1920x1440)',
-                  example: 'https://s3.amazonaws.com/bucket/image-large.webp?signature=...'
-                }
-              }
+              example: [14.2681244, 40.8517746]
             }
           }
         },
-        Agent: {
+
+        PagedResultPropertyCardDto: {
           type: 'object',
           properties: {
-            id: {
-              type: 'string',
-              description: 'ID univoco dell\'agente',
-              example: '507f1f77bcf86cd799439011'
-            },
-            firstName: {
-              type: 'string',
-              description: 'Nome dell\'agente',
-              example: 'Mario'
-            },
-            lastName: {
-              type: 'string',
-              description: 'Cognome dell\'agente',
-              example: 'Rossi'
-            },
-            email: {
-              type: 'string',
-              format: 'email',
-              description: 'Email dell\'agente',
-              example: 'mario.rossi@agency.com'
-            },
-            phone: {
-              type: 'string',
-              description: 'Numero di telefono',
-              example: '+39 123 456 7890'
-            },
-            avatar: {
-              type: 'string',
-              format: 'uri',
-              description: 'URL dell\'avatar dell\'agente',
-              example: 'https://example.com/avatars/agent1.jpg'
-            },
-            agencyName: {
-              type: 'string',
-              description: 'Nome dell\'agenzia',
-              example: 'Immobiliare Milano'
-            },
-            licenseNumber: {
-              type: 'string',
-              description: 'Numero di licenza professionale',
-              example: 'LIC123456'
-            },
-            rating: {
-              type: 'number',
-              format: 'float',
-              minimum: 0,
-              maximum: 5,
-              description: 'Valutazione media (0-5)',
-              example: 4.5
-            },
-            reviewsCount: {
-              type: 'integer',
-              description: 'Numero di recensioni ricevute',
-              example: 127
-            }
-          }
-        },
-        PropertyCreateRequest: {
-          type: 'object',
-          required: ['title', 'description', 'price', 'propertyType', 'listingType', 'bedrooms', 'bathrooms', 'area', 'address', 'location'],
-          properties: {
-            title: {
-              type: 'string',
-              minLength: 5,
-              maxLength: 200,
-              description: 'Titolo della proprietà',
-              example: 'Appartamento moderno con vista panoramica'
-            },
-            description: {
-              type: 'string',
-              minLength: 20,
-              maxLength: 2000,
-              description: 'Descrizione dettagliata della proprietà',
-              example: 'Splendido appartamento di 120mq completamente ristrutturato...'
-            },
-            price: {
-              type: 'number',
-              minimum: 0,
-              description: 'Prezzo in euro',
-              example: 450000
-            },
-            propertyType: {
-              type: 'string',
-              enum: ['apartment', 'villa', 'house', 'loft', 'office', 'commercial', 'land'],
-              description: 'Tipo di proprietà',
-              example: 'apartment'
-            },
-            listingType: {
-              type: 'string',
-              enum: ['sale', 'rent'],
-              description: 'Tipo di annuncio',
-              example: 'sale'
-            },
-            bedrooms: {
-              type: 'integer',
-              minimum: 0,
-              description: 'Numero di camere da letto',
-              example: 3
-            },
-            bathrooms: {
-              type: 'integer',
-              minimum: 1,
-              description: 'Numero di bagni',
-              example: 2
-            },
-            area: {
-              type: 'number',
-              minimum: 1,
-              description: 'Superficie in metri quadri',
-              example: 120
-            },
-            floor: {
-              type: 'string',
-              description: 'Piano dell\'immobile',
-              example: '3'
-            },
-            energyClass: {
-              type: 'string',
-              enum: ['A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G'],
-              description: 'Classe energetica',
-              example: 'B'
-            },
-            hasElevator: {
-              type: 'boolean',
-              description: 'Presenza di ascensore',
-              example: true
-            },
-            hasBalcony: {
-              type: 'boolean',
-              description: 'Presenza di balcone/terrazzo',
-              example: true
-            },
-            hasGarden: {
-              type: 'boolean',
-              description: 'Presenza di giardino',
-              example: false
-            },
-            hasParking: {
-              type: 'boolean',
-              description: 'Presenza di parcheggio/box',
-              example: true
-            },
-            features: {
+            data: {
               type: 'array',
               items: {
-                type: 'string'
-              },
-              description: 'Caratteristiche aggiuntive',
-              example: ['aria condizionata', 'riscaldamento autonomo', 'infissi nuovi']
-            },
-            address: {
-              $ref: '#/components/schemas/PropertyAddress'
-            },
-            location: {
-              $ref: '#/components/schemas/PropertyLocation'
-            }
-          }
-        },
-        PropertyResponse: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              description: 'ID univoco della proprietà',
-              example: '507f1f77bcf86cd799439011'
-            },
-            title: {
-              type: 'string',
-              description: 'Titolo della proprietà',
-              example: 'Appartamento moderno con vista panoramica'
-            },
-            description: {
-              type: 'string',
-              description: 'Descrizione dettagliata',
-              example: 'Splendido appartamento di 120mq completamente ristrutturato...'
-            },
-            price: {
-              type: 'number',
-              description: 'Prezzo in euro',
-              example: 450000
-            },
-            propertyType: {
-              type: 'string',
-              enum: ['apartment', 'villa', 'house', 'loft', 'office', 'commercial', 'land'],
-              example: 'apartment'
-            },
-            listingType: {
-              type: 'string',
-              enum: ['sale', 'rent'],
-              example: 'sale'
-            },
-            status: {
-              type: 'string',
-              enum: ['active', 'pending', 'sold', 'rented', 'withdrawn'],
-              description: 'Stato dell\'annuncio',
-              example: 'active'
-            },
-            bedrooms: {
-              type: 'integer',
-              example: 3
-            },
-            bathrooms: {
-              type: 'integer',
-              example: 2
-            },
-            area: {
-              type: 'number',
-              example: 120
-            },
-            floor: {
-              type: 'string',
-              example: '3'
-            },
-            energyClass: {
-              type: 'string',
-              enum: ['A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G'],
-              example: 'B'
-            },
-            hasElevator: {
-              type: 'boolean',
-              example: true
-            },
-            hasBalcony: {
-              type: 'boolean',
-              example: true
-            },
-            hasGarden: {
-              type: 'boolean',
-              example: false
-            },
-            hasParking: {
-              type: 'boolean',
-              example: true
-            },
-            features: {
-              type: 'array',
-              items: {
-                type: 'string'
-              },
-              example: ['aria condizionata', 'riscaldamento autonomo']
-            },
-            address: {
-              $ref: '#/components/schemas/PropertyAddress'
-            },
-            location: {
-              $ref: '#/components/schemas/PropertyLocation',
-              description: 'Posizione geografica in formato GeoJSON Point'
-            },
-            images: {
-              type: 'array',
-              items: {
-                $ref: '#/components/schemas/PropertyImage'
+                $ref: '#/components/schemas/PropertyCardDto'
               }
             },
-            agentId: {
-              type: 'string',
-              description: 'ID dell\'agente responsabile',
-              example: '507f1f77bcf86cd799439011'
+            totalCount: {
+              type: 'integer',
+              example: 100
             },
-            agent: {
-              $ref: '#/components/schemas/Agent'
+            currentPage: {
+              type: 'integer',
+              example: 1
             },
-            isActive: {
+            totalPages: {
+              type: 'integer',
+              example: 5
+            },
+            hasNextPage: {
               type: 'boolean',
-              description: 'Indica se l\'annuncio è attivo',
               example: true
             },
-            views: {
-              type: 'integer',
-              description: 'Numero di visualizzazioni',
-              example: 245
-            },
-            favorites: {
-              type: 'integer',
-              description: 'Numero di utenti che hanno aggiunto ai preferiti',
-              example: 12
-            },
-            createdAt: {
-              type: 'string',
-              format: 'date-time',
-              description: 'Data di creazione',
-              example: '2025-09-28T10:30:00.000Z'
-            },
-            updatedAt: {
-              type: 'string',
-              format: 'date-time',
-              description: 'Data ultimo aggiornamento',
-              example: '2025-09-28T15:45:00.000Z'
+            hasPreviousPage: {
+              type: 'boolean',
+              example: false
             }
           }
         },
-        PropertiesListResponse: {
+
+        CreatePropertyResponse: {
           type: 'object',
           properties: {
             success: {
@@ -478,76 +339,32 @@ const options = {
               example: true
             },
             data: {
-              type: 'object',
-              properties: {
-                properties: {
-                  type: 'array',
-                  items: {
-                    $ref: '#/components/schemas/PropertyResponse'
-                  }
-                },
-                totalCount: {
-                  type: 'integer',
-                  description: 'Numero totale di proprietà',
-                  example: 150
-                },
-                currentPage: {
-                  type: 'integer',
-                  description: 'Pagina corrente',
-                  example: 1
-                },
-                totalPages: {
-                  type: 'integer',
-                  description: 'Numero totale di pagine',
-                  example: 8
-                },
-                hasNextPage: {
-                  type: 'boolean',
-                  description: 'Indica se esiste una pagina successiva',
-                  example: true
-                },
-                hasPreviousPage: {
-                  type: 'boolean',
-                  description: 'Indica se esiste una pagina precedente',
-                  example: false
-                }
-              }
-            }
-          }
-        },
-        PropertyViewRequest: {
-          type: 'object',
-          properties: {
-            source: {
-              type: 'string',
-              description: 'Origine della visualizzazione',
-              example: 'web',
-              default: 'web'
-            }
-          }
-        },
-        SuccessResponse: {
-          type: 'object',
-          properties: {
-            success: {
-              type: 'boolean',
-              example: true
-            },
-            data: {
-              type: 'object',
-              description: 'Dati della risposta (varia in base all\'endpoint)'
+              $ref: '#/components/schemas/PropertyModel'
             },
             message: {
               type: 'string',
-              example: 'Operation successful'
-            },
-            timestamp: {
-              type: 'string',
-              format: 'date-time',
-              example: '2025-09-28T10:30:00.000Z'
+              example: 'Property created successfully'
             }
           }
         },
+
+        ApiSuccessResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true
+            },
+            data: {
+              type: 'object'
+            },
+            timestamp: {
+              type: 'string',
+              format: 'date-time'
+            }
+          }
+        },
+
         ErrorResponse: {
           type: 'object',
           properties: {
@@ -557,58 +374,46 @@ const options = {
             },
             error: {
               type: 'string',
-              description: 'Codice dell\'errore',
+              example: 'INTERNAL_SERVER_ERROR'
+            },
+            message: {
+              type: 'string',
+              example: 'An error occurred'
+            },
+            timestamp: {
+              type: 'string',
+              format: 'date-time'
+            },
+            path: {
+              type: 'string'
+            }
+          }
+        },
+
+        ValidationErrorResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: false
+            },
+            error: {
+              type: 'string',
               example: 'VALIDATION_ERROR'
             },
             message: {
               type: 'string',
-              description: 'Messaggio di errore leggibile',
-              example: 'Invalid input data'
+              example: 'Validation failed'
             },
             details: {
               type: 'array',
               items: {
-                type: 'object',
-                properties: {
-                  field: {
-                    type: 'string',
-                    example: 'price'
-                  },
-                  message: {
-                    type: 'string',
-                    example: 'Price must be greater than 0'
-                  }
-                }
-              },
-              description: 'Dettagli degli errori di validazione'
+                type: 'string'
+              }
             },
             timestamp: {
               type: 'string',
-              format: 'date-time',
-              example: '2025-09-28T10:30:00.000Z'
-            },
-            path: {
-              type: 'string',
-              description: 'Percorso dell\'endpoint che ha generato l\'errore',
-              example: '/properties'
-            }
-          }
-        },
-        HealthResponse: {
-          type: 'object',
-          properties: {
-            service: {
-              type: 'string',
-              example: 'property-service'
-            },
-            status: {
-              type: 'string',
-              example: 'healthy'
-            },
-            timestamp: {
-              type: 'string',
-              format: 'date-time',
-              example: '2025-09-28T10:30:00.000Z'
+              format: 'date-time'
             }
           }
         }
@@ -618,21 +423,11 @@ const options = {
       {
         name: 'Properties',
         description: 'Gestione delle proprietà immobiliari'
-      },
-      {
-        name: 'Property Views', //TODO: rimuovere nel caso non lo implementassimo
-        description: 'Tracking delle visualizzazioni delle proprietà'
-      },
-      {
-        name: 'Health',
-        description: 'Endpoint per il controllo dello stato del servizio'
       }
     ]
   },
-  apis: [
-    './src/services/property-service/routes/*.ts',
-    './src/services/property-service/index.ts'
-  ]
+  apis: ['./src/services/property-service/routes/*.ts']
 };
 
 export const specs = swaggerJsdoc(options);
+export const swaggerSpec = specs; // alias per retrocompatibilità

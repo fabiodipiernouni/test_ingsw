@@ -3,12 +3,11 @@ import logger from '@shared/utils/logger';
 import { imageService } from '@shared/services/ImageService';
 import config from '@shared/config';
 import { PropertyCardDto } from '@property/dto/PropertyCardDto';
-import { PagedResult } from '@shared/models/pagedResult';
 import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequest';
 import { CreatePropertyResponse } from '@property/dto/CreatePropertyResponse';
 import { PropertyModel } from '@property/models/PropertyModel';
 import { isValidGeoJSONPoint } from '@shared/types/geojson.types';
-import { Helper } from '@services/property-service/utils/Helper';
+import { Helper } from '@services/property-service/utils/helper';
 
 // Custom error classes for better error handling
 class ValidationError extends Error {
@@ -137,6 +136,7 @@ export class PropertyService {
       propertyType: property.propertyType,
       listingType: property.listingType,
       status: property.status,
+      rooms: property.rooms,
       bedrooms: property.bedrooms,
       bathrooms: property.bathrooms,
       area: property.area,
@@ -183,8 +183,6 @@ export class PropertyService {
     return await this.formatPropertyToModel(property);
   }
 
-
-
   /**
    * Formatta la risposta della proprietà per l'API
    */
@@ -224,6 +222,7 @@ export class PropertyService {
       propertyType: property.propertyType,
       listingType: property.listingType,
       status: property.status,
+      rooms: property.rooms,
       bedrooms: property.bedrooms,
       bathrooms: property.bathrooms,
       area: property.area,
@@ -245,7 +244,6 @@ export class PropertyService {
       images: imagesWithUrls as any,
       agentId: property.agentId,
       agent: Helper.userToUserModel(property.agent),
-      isActive: property.isActive,
       views: property.views,
       favorites: property.favorites,
       createdAt: property.createdAt.toISOString(),
@@ -319,178 +317,6 @@ export class PropertyService {
 
     if (errors.length > 0) {
       throw new ValidationError('Validation failed', { errors });
-    }
-  }
-
-    /**
-   * Ottiene lista proprietà con filtri e paginazione
-   */
-  async getPropertiesCards(options: {
-    page: number;
-    limit: number;
-    filters: any;
-    sortBy?: string;
-    sortOrder?: 'ASC' | 'DESC';
-  }): Promise<PagedResult<PropertyCardDto>> {
-    try {
-      const { page, limit, filters, sortBy = 'createdAt', sortOrder = 'DESC' } = options;
-      const offset = (page - 1) * limit;
-
-      logger.info('Getting properties with filters', { filters, page, limit });
-
-      // Costruisce la query con i filtri
-      const whereClause: any = {};
-      const includeClause: any[] = [
-        {
-          association: 'agent',
-          attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'agencyId']
-        },
-        {
-          association: 'images',
-          attributes: ['id', 's3KeyOriginal', 's3KeySmall', 's3KeyMedium', 's3KeyLarge',
-                      'bucketName', 'fileName', 'contentType', 'fileSize', 'width', 'height',
-                      'caption', 'alt', 'isPrimary', 'order', 'uploadDate'],
-          where: { isPrimary: true },
-          required: false
-        }
-      ];
-
-      if (filters.status) {
-        whereClause.status = filters.status;
-      }
-      if (filters.isActive !== undefined) {
-        whereClause.isActive = filters.isActive;
-      }
-      if (filters.agentId) {
-        whereClause.agentId = filters.agentId;
-      }
-
-      // Filtro per agenzia (per admin): filtra attraverso l'agente
-      if (filters.agencyId) {
-        includeClause[0].where = { agencyId: filters.agencyId };
-        includeClause[0].required = true; // INNER JOIN per garantire che l'agente appartenga all'agenzia
-
-        // Se specificato anche un agente particolare (solo della stessa agenzia)
-        if (filters.specificAgentId) {
-          includeClause[0].where.id = filters.specificAgentId;
-        }
-      }
-
-      // Esegue la query con conteggio
-      const { rows: properties, count: totalCount } = await Property.findAndCountAll({
-        where: whereClause,
-        include: includeClause,
-        order: [[sortBy, sortOrder]],
-        limit,
-        offset,
-        distinct: true
-      });
-
-      const totalPages = Math.ceil(totalCount / limit);
-
-      // Formatta le proprietà per la risposta (gestisce Promise.all per gli URL S3)
-      const formattedProperties = await Promise.all(
-        properties.map(property => this.formatPropertyCardResponse(property))
-      );
-
-      const result: PagedResult<PropertyCardDto> = {
-        data: formattedProperties,
-        totalCount,
-        currentPage: page,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1
-      };
-
-      return result;
-    } catch (error) {
-      logger.error('Error getting properties:', error);
-      throw error;
-    }
-  }
-
-
-  /**
-   * Ottiene lista proprietà con filtri e paginazione
-   */
-  /*async getProperties(options: {
-    page: number;
-    limit: number;
-    filters: any;
-  }): Promise<SearchResult> {
-    try {
-      const { page, limit, filters } = options;
-      const offset = (page - 1) * limit;
-
-      logger.info('Getting properties with filters', { filters, page, limit });
-
-      // Costruisce la query con i filtri
-      const whereClause: any = {};
-      const includeClause: any[] = [
-        {
-          association: 'agent',
-          attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'agencyId']
-        },
-        {
-          association: 'images',
-          attributes: ['id', 's3KeyOriginal', 's3KeySmall', 's3KeyMedium', 's3KeyLarge',
-                      'bucketName', 'fileName', 'contentType', 'fileSize', 'width', 'height',
-                      'caption', 'alt', 'isPrimary', 'order', 'uploadDate'],
-          where: { isPrimary: true },
-          required: false
-        }
-      ];
-      
-      if (filters.status) {
-        whereClause.status = filters.status;
-      }
-      if (filters.isActive !== undefined) {
-        whereClause.isActive = filters.isActive;
-      }
-      if (filters.agentId) {
-        whereClause.agentId = filters.agentId;
-      }
-
-      // Filtro per agenzia (per admin): filtra attraverso l'agente
-      if (filters.agencyId) {
-        includeClause[0].where = { agencyId: filters.agencyId };
-        includeClause[0].required = true; // INNER JOIN per garantire che l'agente appartenga all'agenzia
-        
-        // Se specificato anche un agente particolare (solo della stessa agenzia)
-        if (filters.specificAgentId) {
-          includeClause[0].where.id = filters.specificAgentId;
-        }
-      }
-
-      // Esegue la query con conteggio
-      const { rows: properties, count: totalCount } = await Property.findAndCountAll({
-        where: whereClause,
-        include: includeClause,
-        order: [['createdAt', 'DESC']],
-        limit,
-        offset,
-        distinct: true
-      });
-
-      const totalPages = Math.ceil(totalCount / limit);
-
-      // Formatta le proprietà per la risposta (gestisce Promise.all per gli URL S3)
-      const formattedProperties = await Promise.all(
-        properties.map(property => this.formatPropertyToModel(property))
-      );
-
-      return {
-        properties: formattedProperties,
-        totalCount,
-        currentPage: page,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1
-      };
-
-    } catch (error) {
-      logger.error('Error getting properties:', error);
-      throw error;
     }
   }
 

@@ -68,6 +68,10 @@ export class Property extends Model {
 
   @AllowNull(false)
   @Column(DataType.INTEGER)
+  rooms!: number;
+
+  @AllowNull(false)
+  @Column(DataType.INTEGER)
   bedrooms!: number;
 
   @AllowNull(false)
@@ -185,9 +189,6 @@ export class Property extends Model {
   @AllowNull(false)
   @Default(true)
 
-  @Column({ type: DataType.BOOLEAN, field: 'is_active' })
-  isActive!: boolean;
-
   @AllowNull(false)
   @Default(0)
   @Column(DataType.INTEGER)
@@ -251,10 +252,6 @@ export class Property extends Model {
     if (this.favorites > 0) {
       await this.decrement('favorites');
     }
-  }
-
-  isAvailable(): boolean {
-    return this.isActive && this.status === 'active';
   }
 
   // JSON serialization

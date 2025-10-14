@@ -4,6 +4,7 @@ import { AuthenticatedRequest } from '@shared/dto/AuthenticatedRequest';
 import { setResponseAsSuccess, setResponseAsError, setResponseAsValidationError, setResponseAsNotFound } from '@shared/utils/helpers';
 import logger from '@shared/utils/logger';
 import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequest';
+import { GetPropertiesCardsRequest } from '@property/dto/GetPropertiesCardsRequest';
 
 export class PropertyController {
   /**
@@ -88,6 +89,39 @@ export class PropertyController {
     }
   }
 
+  /**
+   * Lista proprietà con paginazione - logica basata su ruoli
+   * POST /properties/cards
+   */
+  async getPropertiesCardsPost(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+    const getPropertiesCardsRequest: GetPropertiesCardsRequest = req.body.filters || {};
+
+    const page = getPropertiesCardsRequest.pagedRequest?.page || 1;
+    const limit = Math.min(getPropertiesCardsRequest.pagedRequest?.limit || 20, 200);
+    const sortBy = getPropertiesCardsRequest.pagedRequest?.sortBy || 'createdAt';
+    const sortOrder = getPropertiesCardsRequest.pagedRequest?.sortOrder || 'DESC';
+    const filters = getPropertiesCardsRequest.filters || {};
+    const status = getPropertiesCardsRequest.status;
+    const agencyId = getPropertiesCardsRequest.agencyId;
+
+    try {
+      // Chiama il service per ottenere le proprietà
+      const result = await propertyService.getPropertiesCards({
+        page,
+        limit,
+        filters,
+        status,
+        agencyId,
+        sortBy,
+        sortOrder
+      });
+
+      setResponseAsSuccess(res, result);
+    } catch (error: any) {
+      logger.error('Error in getPropertiesCardsPost PropertyController:', error);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get properties', 500);
+    }
+  }
 
   /**
    * Lista proprietà con paginazione - logica basata su ruoli
@@ -98,6 +132,8 @@ export class PropertyController {
       const page = Number.parseInt(req.query.page as string) || 1;
       const limit = Math.min(Number.parseInt(req.query.limit as string) || 20, 100);
       const status = req.query.status as string;
+      const sortBy = req.query.sortBy as string;
+      const sortOrder = (req.query.sortOrder as 'ASC' | 'DESC') || 'DESC';
       const requestedAgentId = req.query.agentId as string;
 
       // Determina filtri basati sul ruolo dell'utente
@@ -106,8 +142,7 @@ export class PropertyController {
       if (!req.user || req.user.role === 'client') {
         // UTENTI NON AUTENTICATI e CLIENTI: Solo proprietà pubbliche e attive
         filters = {
-          status: 'active',
-          isActive: true
+          status: 'active'
         };
         logger.info('Properties list request - public access', { 
           userId: req.user?.id || 'anonymous' 
@@ -169,7 +204,9 @@ export class PropertyController {
       const result = await propertyService.getPropertiesCards({
         page,
         limit,
-        filters
+        filters,
+        sortBy,
+        sortOrder
       });
 
       setResponseAsSuccess(res, result);
