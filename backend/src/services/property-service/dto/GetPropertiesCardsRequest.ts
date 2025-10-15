@@ -8,7 +8,7 @@ import { GeoSearchPropertiesFilters } from '@property/dto/GeoSearchPropertiesFil
 export class GetPropertiesCardsRequest {
   @ValidateNested()
   @Type(() => SearchPropertiesFilters)
-  filters!: SearchPropertiesFilters;
+  filters?: SearchPropertiesFilters;
 
   @IsOptional()
   @ValidateNested()
