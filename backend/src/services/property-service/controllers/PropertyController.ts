@@ -103,6 +103,7 @@ export class PropertyController {
     const filters = getPropertiesCardsRequest.filters || {};
     const status = getPropertiesCardsRequest.status;
     const agencyId = getPropertiesCardsRequest.agencyId;
+    const geoFilters = getPropertiesCardsRequest.geoFilters;
 
     try {
       // Chiama il service per ottenere le proprietà
@@ -110,6 +111,7 @@ export class PropertyController {
         page,
         limit,
         filters,
+        geoFilters,
         status,
         agencyId,
         sortBy,
