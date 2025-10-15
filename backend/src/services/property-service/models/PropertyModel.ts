@@ -4,6 +4,7 @@ import { Address } from '@shared/models/address';
 import { GeoJSONPoint } from '@shared/types/geojson.types';
 import { UserModel } from '@user/models/UserModel';
 
+
 export interface PropertyModel {
   id: string;
   title: string;
@@ -12,6 +13,7 @@ export interface PropertyModel {
   propertyType: PropertyType;
   listingType: ListingType;
   status: PropertyStatus;
+  rooms: number;
   bedrooms: number;
   bathrooms: number;
   area: number;
@@ -26,7 +28,6 @@ export interface PropertyModel {
   location: GeoJSONPoint;
   images: PropertyImageModel[];
   agentId: string;
-  isActive: boolean;
   views: number;
   favorites: number;
   createdAt: Date;

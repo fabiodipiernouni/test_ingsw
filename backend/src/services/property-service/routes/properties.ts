@@ -2,6 +2,7 @@ import express from 'express';
 import { propertyController } from '../controllers/PropertyController';
 import { authenticateToken, optionalAuth } from '@shared/middleware/auth';
 import { validatePropertyCreate, validatePropertyId } from '../middleware/validation';
+import { validatePropertySearchFilters } from '@shared/middleware/validation';
 
 const router = express.Router();
 
@@ -67,7 +68,8 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/cards', optionalAuth, propertyController.getPropertiesCards.bind(propertyController));
+//router.get('/cards', optionalAuth, propertyController.getPropertiesCards.bind(propertyController));
+router.post('/cards', optionalAuth, validatePropertySearchFilters, propertyController.getPropertiesCardsPost.bind(propertyController));
 
 /**
  * @swagger

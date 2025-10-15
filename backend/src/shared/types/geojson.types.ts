@@ -3,6 +3,8 @@
  * Standard RFC 7946 - https://tools.ietf.org/html/rfc7946
  */
 
+import { ArrayMaxSize, ArrayMinSize, IsArray, ValidateIf } from 'class-validator';
+
 /**
  * GeoJSON Point
  * Rappresenta un punto geografico in formato GeoJSON standard
@@ -10,9 +12,14 @@
  * 
  * ⚠️ IMPORTANTE: L'ordine delle coordinate è [longitude, latitude], non [lat, lng]!
  */
-export interface GeoJSONPoint {
-  type: 'Point';
-  coordinates: [number, number]; // [longitude, latitude]
+export class GeoJSONPoint {
+  type: string = 'Point';
+
+  @IsArray()
+  @ArrayMinSize(2)
+  @ArrayMaxSize(2)
+  @ValidateIf((o) => { return o.coordinates[0] >= -180 && o.coordinates[0] <= 180 && o.coordinates[1] >= -90 && o.coordinates[1] <= 90; }, { message: 'Coordinates must be valid longitude and latitude values' })
+  coordinates: Array<number>; // [longitude, latitude]
 }
 
 /**
@@ -53,7 +60,7 @@ export function createGeoJSONPoint(longitude: number, latitude: number): GeoJSON
 /**
  * Helper per estrarre latitude e longitude da GeoJSON Point
  */
-export function extractCoordinates(point: GeoJSONPoint): { longitude: number; latitude: number } {
+function extractCoordinates(point: GeoJSONPoint): { longitude: number; latitude: number } {
   return {
     longitude: point.coordinates[0],
     latitude: point.coordinates[1]

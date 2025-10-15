@@ -3,12 +3,15 @@ import logger from '@shared/utils/logger';
 import { imageService } from '@shared/services/ImageService';
 import config from '@shared/config';
 import { PropertyCardDto } from '@property/dto/PropertyCardDto';
-import { PagedResult } from '@shared/models/pagedResult';
+import { PagedResult } from '@shared/dto/pagedResult';
 import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequest';
 import { CreatePropertyResponse } from '@property/dto/CreatePropertyResponse';
 import { PropertyModel } from '@property/models/PropertyModel';
 import { isValidGeoJSONPoint } from '@shared/types/geojson.types';
-import { Helper } from '@services/property-service/utils/Helper';
+import { Helper } from '@services/property-service/utils/helper';
+import { SearchPropertiesFilters } from '@property/dto/SearchPropertiesFilters';
+import { PropertyStatus } from '@property/models/types';
+import { GeoSearchPropertiesFilters } from '@property/dto/GeoSearchPropertiesFilters';
 
 // Custom error classes for better error handling
 class ValidationError extends Error {
@@ -137,6 +140,7 @@ export class PropertyService {
       propertyType: property.propertyType,
       listingType: property.listingType,
       status: property.status,
+      rooms: property.rooms,
       bedrooms: property.bedrooms,
       bathrooms: property.bathrooms,
       area: property.area,
@@ -183,8 +187,6 @@ export class PropertyService {
     return await this.formatPropertyToModel(property);
   }
 
-
-
   /**
    * Formatta la risposta della proprietà per l'API
    */
@@ -224,6 +226,7 @@ export class PropertyService {
       propertyType: property.propertyType,
       listingType: property.listingType,
       status: property.status,
+      rooms: property.rooms,
       bedrooms: property.bedrooms,
       bathrooms: property.bathrooms,
       area: property.area,
@@ -245,7 +248,6 @@ export class PropertyService {
       images: imagesWithUrls as any,
       agentId: property.agentId,
       agent: Helper.userToUserModel(property.agent),
-      isActive: property.isActive,
       views: property.views,
       favorites: property.favorites,
       createdAt: property.createdAt.toISOString(),
@@ -328,15 +330,17 @@ export class PropertyService {
   async getPropertiesCards(options: {
     page: number;
     limit: number;
-    filters: any;
-    sortBy?: string;
-    sortOrder?: 'ASC' | 'DESC';
+    filters?: SearchPropertiesFilters;
+    geoFilters?: GeoSearchPropertiesFilters;
+    status?: PropertyStatus;
+    agencyId?: string;       // Per admin: filtra tutte le proprietà di una certa agenzia
+    sortBy: string;
+    sortOrder: 'ASC' | 'DESC';
   }): Promise<PagedResult<PropertyCardDto>> {
     try {
-      const { page, limit, filters, sortBy = 'createdAt', sortOrder = 'DESC' } = options;
-      const offset = (page - 1) * limit;
+      const offset = (options.page - 1) * options.limit;
 
-      logger.info('Getting properties with filters', { filters, page, limit });
+      logger.info('Getting properties with filters', { filters: options.filters, page: options.page, limit: options.limit });
 
       // Costruisce la query con i filtri
       const whereClause: any = {};
@@ -355,38 +359,30 @@ export class PropertyService {
         }
       ];
 
-      if (filters.status) {
-        whereClause.status = filters.status;
-      }
-      if (filters.isActive !== undefined) {
-        whereClause.isActive = filters.isActive;
-      }
-      if (filters.agentId) {
-        whereClause.agentId = filters.agentId;
-      }
+      whereClause.status = options.status ?? 'active';
+
+      if(options.filters) Helper.applySearchFilters(whereClause, options.filters);
+      if(options.geoFilters) Helper.applyGeoSearchFilters(whereClause, options.geoFilters);
 
       // Filtro per agenzia (per admin): filtra attraverso l'agente
-      if (filters.agencyId) {
-        includeClause[0].where = { agencyId: filters.agencyId };
+      if (options.agencyId) {
+        includeClause[0].where = { agencyId: options.agencyId };
         includeClause[0].required = true; // INNER JOIN per garantire che l'agente appartenga all'agenzia
-
-        // Se specificato anche un agente particolare (solo della stessa agenzia)
-        if (filters.specificAgentId) {
-          includeClause[0].where.id = filters.specificAgentId;
-        }
       }
+
+      const { sortBy, sortOrder } = options;
 
       // Esegue la query con conteggio
       const { rows: properties, count: totalCount } = await Property.findAndCountAll({
         where: whereClause,
         include: includeClause,
         order: [[sortBy, sortOrder]],
-        limit,
+        limit: options.limit,
         offset,
         distinct: true
       });
 
-      const totalPages = Math.ceil(totalCount / limit);
+      const totalPages = Math.ceil(totalCount / options.limit);
 
       // Formatta le proprietà per la risposta (gestisce Promise.all per gli URL S3)
       const formattedProperties = await Promise.all(
@@ -396,10 +392,10 @@ export class PropertyService {
       const result: PagedResult<PropertyCardDto> = {
         data: formattedProperties,
         totalCount,
-        currentPage: page,
+        currentPage: options.page,
         totalPages,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1
+        hasNextPage: options.page < totalPages,
+        hasPreviousPage: options.page > 1
       };
 
       return result;
@@ -440,7 +436,7 @@ export class PropertyService {
           required: false
         }
       ];
-      
+
       if (filters.status) {
         whereClause.status = filters.status;
       }
@@ -455,7 +451,7 @@ export class PropertyService {
       if (filters.agencyId) {
         includeClause[0].where = { agencyId: filters.agencyId };
         includeClause[0].required = true; // INNER JOIN per garantire che l'agente appartenga all'agenzia
-        
+
         // Se specificato anche un agente particolare (solo della stessa agenzia)
         if (filters.specificAgentId) {
           includeClause[0].where.id = filters.specificAgentId;

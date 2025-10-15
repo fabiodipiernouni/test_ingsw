@@ -10,6 +10,7 @@ export interface PropertyCardDto {
   propertyType: PropertyType;
   listingType: ListingType;
   status: PropertyStatus;
+  rooms: number;
   bedrooms: number;
   bathrooms: number;
   area: number; // in square meters

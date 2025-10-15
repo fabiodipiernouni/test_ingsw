@@ -3,6 +3,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { body, param, query, validationResult, ValidationChain } from 'express-validator';
 import { setResponseAsValidationError } from '@shared/utils/helpers';
+import { plainToClass, plainToInstance } from 'class-transformer';
+import { validate as classValidate } from 'class-validator';
+import { GetPropertiesCardsRequest } from '../../services/property-service/dto/GetPropertiesCardsRequest';
+import { ApiResponse } from '@shared/dto/ApiResponse';
+
 
 
 /**
@@ -24,6 +29,42 @@ export const validate = (validations: ValidationChain[]) => {
     
     next();
   };
+};
+
+/**
+ * DTO for property search filters
+ * @param req
+ * @param res
+ * @param next
+ */
+export const validatePropertySearchFilters = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const filters = plainToInstance(GetPropertiesCardsRequest, req.body);
+  const errors = await classValidate(filters);
+
+  if (errors.length > 0) {
+    const formattedErrors = errors.map(err => ({
+      field: err.property,
+      errors: Object.values(err.constraints || {})
+    }));
+
+    const response: ApiResponse<never> = {
+      success: false,
+      message: 'Validazione filtri fallita',
+      error: 'VALIDATION_ERROR',
+      timestamp: new Date(),
+      details: formattedErrors.flatMap(e => e.errors),
+      path: res.req?.originalUrl || ''
+    };
+
+    return res.status(400).json(response);
+  }
+
+  req.body = filters; // Sostituisci con l'oggetto validato
+  next();
 };
 
 /**

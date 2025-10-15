@@ -4,6 +4,7 @@ import { AuthenticatedRequest } from '@shared/dto/AuthenticatedRequest';
 import { setResponseAsSuccess, setResponseAsError, setResponseAsValidationError, setResponseAsNotFound } from '@shared/utils/helpers';
 import logger from '@shared/utils/logger';
 import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequest';
+import { GetPropertiesCardsRequest } from '@property/dto/GetPropertiesCardsRequest';
 
 export class PropertyController {
   /**
@@ -88,189 +89,42 @@ export class PropertyController {
     }
   }
 
-
   /**
    * Lista proprietà con paginazione - logica basata su ruoli
-   * GET /properties/cards
+   * POST /properties/cards
    */
-  async getPropertiesCards(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+  async getPropertiesCardsPost(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+    const getPropertiesCardsRequest: GetPropertiesCardsRequest = req.body;
+
+    const page = getPropertiesCardsRequest.pagedRequest?.page || 1;
+    const limit = Math.min(getPropertiesCardsRequest.pagedRequest?.limit || 20, 200);
+    const sortBy = getPropertiesCardsRequest.pagedRequest?.sortBy || 'createdAt';
+    const sortOrder = getPropertiesCardsRequest.pagedRequest?.sortOrder || 'DESC';
+    const filters = getPropertiesCardsRequest.filters || {};
+    const status = getPropertiesCardsRequest.status;
+    const agencyId = getPropertiesCardsRequest.agencyId;
+    const geoFilters = getPropertiesCardsRequest.geoFilters;
+
     try {
-      const page = Number.parseInt(req.query.page as string) || 1;
-      const limit = Math.min(Number.parseInt(req.query.limit as string) || 20, 100);
-      const status = req.query.status as string;
-      const requestedAgentId = req.query.agentId as string;
-
-      // Determina filtri basati sul ruolo dell'utente
-      let filters: any = {};
-
-      if (!req.user || req.user.role === 'client') {
-        // UTENTI NON AUTENTICATI e CLIENTI: Solo proprietà pubbliche e attive
-        filters = {
-          status: 'active',
-          isActive: true
-        };
-        logger.info('Properties list request - public access', { 
-          userId: req.user?.id || 'anonymous' 
-        });
-        
-      } else {
-        const userRole = req.user.role;
-        const userId = req.user.id;
-
-        switch (userRole) {
-
-          case 'agent':
-            // AGENTI: Solo le proprie proprietà (tutte) + possibilità di vedere solo attive se specificato
-            filters = {
-              agentId: userId
-            };
-            
-            // Gli agenti possono filtrare per status se vogliono
-            if (status) {
-              filters.status = status;
-            }
-            
-            logger.info('Properties list request - agent (own properties)', { userId, status });
-            break;
-
-          case 'admin':
-            // ADMIN: Solo proprietà della propria agenzia
-            if (!req.user.agencyId) {
-              setResponseAsError(res, 'FORBIDDEN', 'Admin must be associated with an agency', 403);
-              return;
-            }
-            
-            // Gli admin vedono solo proprietà degli agenti della loro agenzia
-            filters.agencyId = req.user.agencyId;
-            
-            // Possono filtrare per agente specifico (solo della loro agenzia)
-            if (requestedAgentId) {
-              filters.specificAgentId = requestedAgentId;
-            }
-            if (status) {
-              filters.status = status;
-            }
-            
-            logger.info('Properties list request - admin (agency scope)', { 
-              userId, 
-              agencyId: req.user.agencyId,
-              requestedAgentId, 
-              status 
-            });
-            break;
-
-          default:
-            setResponseAsError(res, 'FORBIDDEN', 'Invalid user role', 403);
-            return;
-        }
-      }
-
       // Chiama il service per ottenere le proprietà
       const result = await propertyService.getPropertiesCards({
         page,
         limit,
-        filters
+        filters,
+        geoFilters,
+        status,
+        agencyId,
+        sortBy,
+        sortOrder
       });
 
       setResponseAsSuccess(res, result);
-
     } catch (error: any) {
-      logger.error('Error in getPropertiesCards PropertyController:', error);
+      logger.error('Error in getPropertiesCardsPost PropertyController:', error);
       setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get properties', 500);
     }
   }
 
-  /**
-   * Lista proprietà con paginazione - logica basata su ruoli
-   * GET /properties
-   */
-  /*async getProperties(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
-    try {
-      
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
-      const status = req.query.status as string;
-      const requestedAgentId = req.query.agentId as string;
-
-      // Determina filtri basati sul ruolo dell'utente
-      let filters: any = {};
-
-      if (!req.user || req.user.role === 'client') {
-        // UTENTI NON AUTENTICATI e CLIENTI: Solo proprietà pubbliche e attive
-        filters = {
-          status: 'active',
-          isActive: true
-        };
-        logger.info('Properties list request - public access', { 
-          userId: req.user?.id || 'anonymous' 
-        });
-        
-      } else {
-        const userRole = req.user.role;
-        const userId = req.user.id;
-
-        switch (userRole) {
-
-          case 'agent':
-            // AGENTI: Solo le proprie proprietà (tutte) + possibilità di vedere solo attive se specificato
-            filters = {
-              agentId: userId
-            };
-            
-            // Gli agenti possono filtrare per status se vogliono
-            if (status) {
-              filters.status = status;
-            }
-            
-            logger.info('Properties list request - agent (own properties)', { userId, status });
-            break;
-
-          case 'admin':
-            // ADMIN: Solo proprietà della propria agenzia
-            if (!req.user.agencyId) {
-              errorResponse(res, 'FORBIDDEN', 'Admin must be associated with an agency', 403);
-              return;
-            }
-            
-            // Gli admin vedono solo proprietà degli agenti della loro agenzia
-            filters.agencyId = req.user.agencyId;
-            
-            // Possono filtrare per agente specifico (solo della loro agenzia)
-            if (requestedAgentId) {
-              filters.specificAgentId = requestedAgentId;
-            }
-            if (status) {
-              filters.status = status;
-            }
-            
-            logger.info('Properties list request - admin (agency scope)', { 
-              userId, 
-              agencyId: req.user.agencyId,
-              requestedAgentId, 
-              status 
-            });
-            break;
-
-          default:
-            errorResponse(res, 'FORBIDDEN', 'Invalid user role', 403);
-            return;
-        }
-      }
-
-      // Chiama il service per ottenere le proprietà
-      const result = await propertyService.getProperties({
-        page,
-        limit,
-        filters
-      });
-
-      successResponse(res, result);
-
-    } catch (error: any) {
-      logger.error('Error in getProperties controller:', error);
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to get properties', 500);
-    }
-  }*/
 
   /**
    * Registra visualizzazione proprietà
