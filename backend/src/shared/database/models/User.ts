@@ -75,6 +75,11 @@ export class User extends Model {
   isVerified!: boolean;
 
   @AllowNull(false)
+  @Default(false)
+  @Column(DataType.BOOLEAN)
+  passwordChangeRequired!: boolean;
+
+  @AllowNull(false)
   @Default(true)
   @Column(DataType.BOOLEAN)
   isActive!: boolean;

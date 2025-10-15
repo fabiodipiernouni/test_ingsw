@@ -265,3 +265,51 @@ export const authenticateService = (
 
   next();
 };
+
+/**
+ * Middleware che controlla se l'utente deve cambiare password
+ * Ritorna errore 403 con codice PASSWORD_CHANGE_REQUIRED
+ */
+export const requirePasswordChanged = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!req.user) {
+    return unauthorizedResponse(res, 'Authentication required');
+  }
+
+  if (req.user.passwordChangeRequired) {
+    return res.status(403).json({
+      success: false,
+      error: 'PASSWORD_CHANGE_REQUIRED',
+      message: 'Password change is required before accessing this resource. Please change your password first.'
+    });
+  }
+
+  next();
+};
+
+/**
+ * Middleware che controlla se l'utente ha verificato l'email
+ * Ritorna errore 403 con codice EMAIL_VERIFICATION_REQUIRED
+ */
+export const requireEmailVerified = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!req.user) {
+    return unauthorizedResponse(res, 'Authentication required');
+  }
+
+  if (!req.user.isVerified) {
+    return res.status(403).json({
+      success: false,
+      error: 'EMAIL_VERIFICATION_REQUIRED',
+      message: 'Email verification is required before accessing this resource. Please verify your email first.'
+    });
+  }
+
+  next();
+};

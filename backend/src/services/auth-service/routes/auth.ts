@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/AuthController';
 import { validate, authValidations } from '@shared/middleware/validation';
-import { authenticateToken } from '@shared/middleware/auth';
+import { authenticateToken, requireEmailVerified, requirePasswordChanged } from '@shared/middleware/auth';
 import { requireAgencyAdmin, requireAgencyOwner } from '../../../shared/middleware/authorization';
 
 const router = Router();
@@ -135,49 +135,6 @@ router.post('/refresh-token', authController.refreshToken);
 
 /**
  * @swagger
- * /complete-new-password:
- *   post:
- *     summary: Completa la challenge NEW_PASSWORD_REQUIRED
- *     description: Imposta una nuova password quando richiesto da Cognito al primo login
- *     tags:
- *       - Authentication
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - newPassword
- *               - session
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *               newPassword:
- *                 type: string
- *                 minLength: 8
- *               session:
- *                 type: string
- *     responses:
- *       200:
- *         description: Password impostata con successo
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/AuthResponse'
- *       400:
- *         description: Dati mancanti
- *       401:
- *         description: Session non valida
- *       500:
- *         description: Errore interno del server
- */
-router.post('/complete-new-password', authController.completeNewPassword);
-
-/**
- * @swagger
  * /forgot-password:
  *   post:
  *     summary: Inizia il processo di recupero password
@@ -258,9 +215,11 @@ router.post('/confirm-forgot-password', authController.confirmForgotPassword);
  * /confirm-email:
  *   post:
  *     summary: Conferma email con codice di verifica
- *     description: Verifica l'indirizzo email dell'utente utilizzando il codice ricevuto via email dopo la registrazione
+ *     description: Verifica l'indirizzo email dell'utente autenticato utilizzando il codice ricevuto via email dopo la registrazione
  *     tags:
  *       - Authentication
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -268,13 +227,8 @@ router.post('/confirm-forgot-password', authController.confirmForgotPassword);
  *           schema:
  *             type: object
  *             required:
- *               - email
  *               - code
  *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 description: Email dell'utente da verificare
  *               code:
  *                 type: string
  *                 description: Codice di verifica ricevuto via email
@@ -295,29 +249,18 @@ router.post('/confirm-forgot-password', authController.confirmForgotPassword);
  *       500:
  *         description: Errore interno del server
  */
-router.post('/confirm-email', authController.confirmEmail);
+router.post('/confirm-email', authenticateToken, authController.confirmEmail);
 
 /**
  * @swagger
  * /resend-verification-code:
  *   post:
  *     summary: Reinvia codice di verifica email
- *     description: Reinvia il codice di verifica via email se l'utente non l'ha ricevuto o è scaduto
+ *     description: Reinvia il codice di verifica via email all'utente autenticato se non l'ha ricevuto o è scaduto
  *     tags:
  *       - Authentication
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 description: Email dell'utente
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Codice di verifica inviato
@@ -338,7 +281,8 @@ router.post('/confirm-email', authController.confirmEmail);
  *       500:
  *         description: Errore interno del server
  */
-router.post('/resend-verification-code', authController.resendVerificationCode);
+// Permetti resend-verification-code anche se l'email non è ancora verificata
+router.post('/resend-verification-code', authenticateToken, authController.resendVerificationCode);
 
 /**
  * @swagger
@@ -381,7 +325,7 @@ router.post('/resend-verification-code', authController.resendVerificationCode);
  *       500:
  *         description: Errore interno del server
  */
-router.post('/change-password', authenticateToken as any, validate(authValidations.changePassword), authController.changePassword);
+router.post('/change-password', authenticateToken, validate(authValidations.changePassword), authController.changePassword);
 
 /**
  * @swagger
@@ -639,7 +583,9 @@ router.get('/oauth/callback', authController.handleOAuthCallback);
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post('/create-agent', 
-  authenticateToken, 
+  authenticateToken,
+  requirePasswordChanged,
+  requireEmailVerified,
   requireAgencyAdmin, 
   authController.createAgent.bind(authController)
 );
@@ -781,7 +727,9 @@ router.post('/create-agent',
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post('/create-admin', 
-  authenticateToken, 
+  authenticateToken,
+  requirePasswordChanged,
+  requireEmailVerified,
   requireAgencyOwner, 
   authController.createAdmin.bind(authController)
 );

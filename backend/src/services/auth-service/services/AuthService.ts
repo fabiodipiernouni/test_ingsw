@@ -21,7 +21,7 @@ import config from '@shared/config';
 import logger from '@shared/utils/logger';
 import { RegisterDto } from '@auth/dto/RegisterDto';
 import { LoginDto } from '@auth/dto/LoginDto';
-import { AuthResponseUser, AuthResponseChallenge, AuthResponse } from '@auth/dto/AuthResponse';
+import { AuthResponse } from '@auth/dto/AuthResponse';
 import { UserResponse } from '@auth/dto/UserResponse';
 import { AgencyResponse } from '@auth/dto/AgencyResponse';
 import {
@@ -30,16 +30,15 @@ import {
   OAuthUrlParams
 } from '@auth/services/serviceTypes';
 
-import { CompleteNewPasswordDto } from '../dto/CompleteNewPasswordDto';
 import { RefreshTokenDto } from '../dto/RefreshTokenDto';
 import { ConfirmForgotPasswordDto } from '../dto/ConfirmForgotPasswordDto';
 import { ConfirmEmailDto } from '../dto/ConfirmEmailDto';
-import { ResendVerificationCodeDto } from '../dto/ResendVerificationCodeDto';
 import { ForgotPasswordDto } from '../dto/ForgotPasswordDto';
 import { ChangePasswordDto } from '../dto/ChangePasswordDto';
 import { RefreshTokenResponse } from '../dto/RefreshTokenResponse';
 import { CreateAgentDto } from '../dto/CreateAgentDto';
 import { CreateAdminDto } from '../dto/CreateAdminDto';
+import { UserModel } from '@services/user-service/models/UserModel';
 
 // Cognito Client
 const cognitoClient = new CognitoIdentityProviderClient({
@@ -192,21 +191,46 @@ export class AuthService {
 
       const cognitoResponse = await cognitoClient.send(authCommand);
 
-      // 2. GESTISCI CHALLENGE (se presente)
-      if (cognitoResponse.ChallengeName) {
+      // 2. GESTISCI CHALLENGE (se presente) - Rispondi automaticamente a NEW_PASSWORD_REQUIRED
+      let AccessToken: string | undefined;
+      let IdToken: string | undefined;
+      let RefreshToken: string | undefined;
 
-        const authResponse: AuthResponse = {
-          challenge: {
-            name: cognitoResponse.ChallengeName,
-            session: cognitoResponse.Session || ''
-          }
-        };
-        return authResponse;
+      if (cognitoResponse.ChallengeName === ChallengeNameType.NEW_PASSWORD_REQUIRED) {
+        // L'utente ha bisogno di cambiare password, ma lo facciamo loggare comunque
+        // Il middleware bloccherà le richieste successive
+        logger.warn('User needs password change', { email: credentials.email });
+        
+        // Per ora prendiamo i token dalla risposta challenge se disponibili
+        // Altrimenti dobbiamo gestire diversamente
+        if (cognitoResponse.AuthenticationResult) {
+          AccessToken = cognitoResponse.AuthenticationResult.AccessToken;
+          IdToken = cognitoResponse.AuthenticationResult.IdToken;
+          RefreshToken = cognitoResponse.AuthenticationResult.RefreshToken;
+        } else {
+          // Con NEW_PASSWORD_REQUIRED non ci sono token, quindi creiamo un flusso alternativo
+          // Impostiamo una password temporanea uguale alla corrente per ottenere i token
+          const respondCommand = new RespondToAuthChallengeCommand({
+            ChallengeName: ChallengeNameType.NEW_PASSWORD_REQUIRED,
+            ClientId: config.cognito.clientId,
+            Session: cognitoResponse.Session,
+            ChallengeResponses: {
+              USERNAME: credentials.email,
+              NEW_PASSWORD: credentials.password // Usiamo la stessa password temporaneamente
+            }
+          });
 
+          const challengeResponse = await cognitoClient.send(respondCommand);
+          AccessToken = challengeResponse.AuthenticationResult?.AccessToken;
+          IdToken = challengeResponse.AuthenticationResult?.IdToken;
+          RefreshToken = challengeResponse.AuthenticationResult?.RefreshToken;
+        }
+      } else {
+        // 3. OTTIENI TOKEN DA COGNITO (flusso normale)
+        AccessToken = cognitoResponse.AuthenticationResult?.AccessToken;
+        IdToken = cognitoResponse.AuthenticationResult?.IdToken;
+        RefreshToken = cognitoResponse.AuthenticationResult?.RefreshToken;
       }
-
-      // 3. OTTIENI TOKEN DA COGNITO
-      const { AccessToken, IdToken, RefreshToken } = cognitoResponse.AuthenticationResult || {};
 
       if (!AccessToken || !IdToken || !RefreshToken) {
         throw new AuthenticationError('Failed to obtain tokens from Cognito');
@@ -237,7 +261,13 @@ export class AuthService {
         throw new AuthenticationError('Account is disabled');
       }
 
-      // 6. AGGIORNA lastLoginAt
+      // 6. Segna se l'utente necessita di cambio password
+      const passwordChangeRequired = cognitoResponse.ChallengeName === ChallengeNameType.NEW_PASSWORD_REQUIRED;
+      if (passwordChangeRequired && !user.passwordChangeRequired) {
+        await user.update({ passwordChangeRequired: true });
+      }
+
+      // 7. AGGIORNA lastLoginAt
       await user.update({ lastLoginAt: new Date() });
 
       logger.info('User logged in successfully', { email: credentials.email, cognitoSub });
@@ -261,87 +291,6 @@ export class AuthService {
 
       if (error.name === 'UserNotConfirmedException') {
         throw new AuthenticationError('Email not verified. Please check your email.');
-      }
-
-      throw error;
-    }
-  }
-
-  /**
-   * Completa il cambio password obbligatorio (NEW_PASSWORD_REQUIRED challenge)
-   */
-  async completeNewPasswordChallenge(data: CompleteNewPasswordDto): Promise<AuthResponse> {
-    try {
-      const { email, newPassword, session } = data;
-
-      // 1. RISPONDI AL CHALLENGE COGNITO
-      const respondCommand = new RespondToAuthChallengeCommand({
-        ChallengeName: ChallengeNameType.NEW_PASSWORD_REQUIRED,
-        ClientId: config.cognito.clientId,
-        Session: session,
-        ChallengeResponses: {
-          USERNAME: email,
-          NEW_PASSWORD: newPassword
-        }
-      });
-
-      const response = await cognitoClient.send(respondCommand);
-
-      // 2. GESTISCI EVENTUALI CHALLENGE SUCCESSIVE (es. MFA_SETUP, SMS_MFA)
-      if (response.ChallengeName) {
-        logger.info('Additional challenge required after password change', {
-          email,
-          challengeName: response.ChallengeName
-        });
-
-        const authResponse: AuthResponse = {
-          challenge: {
-            name: response.ChallengeName,
-            session: response.Session || ''
-          }
-        };
-        return authResponse;
-      }
-
-      // 3. OTTIENI TOKEN DA COGNITO
-      const { AccessToken, IdToken, RefreshToken } = response.AuthenticationResult || {};
-
-      if (!AccessToken || !IdToken || !RefreshToken) {
-        throw new AuthenticationError('Failed to complete password challenge');
-      }
-
-      // 4. DECODIFICA TOKEN E RECUPERA UTENTE
-      const idTokenDecoded = this.decodeToken(IdToken);
-      const cognitoSub = idTokenDecoded.sub;
-
-      const user = await User.findOne({
-        where: { cognitoSub },
-        include: [{ model: Agency, as: 'agency' }]
-      });
-
-      if (!user) {
-        throw new NotFoundError('User not found');
-      }
-
-      // 5. AGGIORNA isVerified (primo login completato)
-      if (!user.isVerified) {
-        await user.update({ isVerified: true });
-      }
-
-      logger.info('Password challenge completed', { email, cognitoSub });
-
-      return {
-        user: this.formatUserResponse(user),
-        accessToken: AccessToken,
-        idToken: IdToken,
-        refreshToken: RefreshToken,
-        tokenType: 'Bearer'
-      };
-    } catch (error: any) {
-      logger.error('Error in completeNewPasswordChallenge:', error);
-
-      if (error.name === 'InvalidPasswordException') {
-        throw new ValidationError('Password does not meet requirements');
       }
 
       throw error;
@@ -405,6 +354,18 @@ export class AuthService {
       });
 
       await cognitoClient.send(changePasswordCommand);
+
+      // Decodifica il token per ottenere cognitoSub e resettare il flag passwordChangeRequired
+      const idTokenDecoded = this.decodeToken(accessToken);
+      const cognitoSub = idTokenDecoded.sub;
+
+      if (cognitoSub) {
+        const user = await User.findOne({ where: { cognitoSub } });
+        if (user && user.passwordChangeRequired) {
+          await user.update({ passwordChangeRequired: false });
+          logger.info('Password change requirement cleared', { userId: user.id });
+        }
+      }
 
       logger.info('Password changed successfully');
     } catch (error: any) {
@@ -518,7 +479,7 @@ export class AuthService {
   /**
    * Gestisci il callback OAuth e scambia il codice di autorizzazione per i token
    */
-  async handleOAuthCallback(data: OAuthCallbackData): Promise<AuthResponseUser> {
+  async handleOAuthCallback(data: OAuthCallbackData): Promise<AuthResponse> {
     try {
       const { code } = data;
       const { domain, callbackUrl } = config.cognito.oauth;
@@ -545,7 +506,7 @@ export class AuthService {
 
       logger.info('OAuth login successful', { email, cognitoSub });
 
-      const authResponse: AuthResponseUser = {
+      const authResponse: AuthResponse = {
         user: this.formatUserResponse(user),
         accessToken: access_token,
         idToken: id_token,
@@ -780,28 +741,28 @@ export class AuthService {
   /**
    * Conferma email con codice di verifica
    */
-  async confirmEmail(data: ConfirmEmailDto): Promise<void> {
+  async confirmEmail(userModel: UserModel, data: ConfirmEmailDto): Promise<void> {
     try {
-      const { email, code } = data;
-      logger.info('Confirming email', { email });
+
+      logger.info('Confirming email', { userEmail: userModel.email });
 
       // Conferma registrazione in Cognito
       const confirmCommand = new ConfirmSignUpCommand({
         ClientId: config.cognito.clientId,
-        Username: email,
-        ConfirmationCode: code
+        Username: userModel.email,
+        ConfirmationCode: data.code
       });
 
       await cognitoClient.send(confirmCommand);
 
       // Aggiorna stato verifica nel database locale
-      const user = await User.findOne({ where: { email } });
+      const user = await User.findOne({ where: { email: userModel.email } });
       if (user) {
         await user.update({ isVerified: true });
-        logger.info('User email verified in database', { userId: user.id });
+        logger.info('User email verified in database', { userId: userModel.id });
       }
 
-      logger.info('Email confirmed successfully', { email });
+      logger.info('Email confirmed successfully', { userEmail: userModel.email });
 
     } catch (error: any) {
       logger.error('Error confirming email:', error);
@@ -830,9 +791,9 @@ export class AuthService {
   /**
    * Reinvia codice di verifica email
    */
-  async resendVerificationCode(data: ResendVerificationCodeDto): Promise<void> {
+  async resendVerificationCode(user: UserModel): Promise<void> {
     try {
-      const { email } = data;
+      const email = user.email;
       logger.info('Resending verification code', { email });
 
       // Reinvia codice in Cognito

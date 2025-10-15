@@ -10,7 +10,11 @@ import { LoginDto } from '@auth/dto/LoginDto';
 import { CreateAgentDto } from '@auth/dto/CreateAgentDto';
 import { CreateAdminDto } from '@auth/dto/CreateAdminDto';
 import config from '@shared/config';
-import { AuthResponse } from '@auth/dto/AuthResponse';
+import { ConfirmForgotPasswordDto } from '../dto/ConfirmForgotPasswordDto';
+import { ConfirmEmailDto } from '../dto/ConfirmEmailDto';
+import { ForgotPasswordDto } from '../dto/ForgotPasswordDto';
+import { ChangePasswordDto } from '../dto/ChangePasswordDto';
+import { RefreshTokenDto } from '../dto/RefreshTokenDto';
 
 export class AuthController {
   /**
@@ -19,18 +23,18 @@ export class AuthController {
   async register(req: Request, res: Response) {
     try {
 
-      const registerData: RegisterDto = plainToInstance(RegisterDto, req.body);
-      const errors = await validate(registerData);
-
+      const registerDto: RegisterDto = plainToInstance(RegisterDto, req.body);
+      
+      const errors = await validate(registerDto);
       if (errors.length > 0) {
         const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
         setResponseAsValidationError(res, str_errors);
         return;
       }
 
-      logger.info('User registration request', { email: registerData.email });
+      logger.info('User registration request', { email: registerDto.email });
 
-      await authService.register(registerData);
+      await authService.register(registerDto);
 
       setResponseAsSuccess(
         res,
@@ -74,98 +78,26 @@ export class AuthController {
    * Login utente
    */
   async login(req: Request, res: Response) {
-
     try {
-      const { email, password } = req.body as LoginDto;
-
-      logger.info('User login request', { email });
-
-      const result = await authService.login({ email, password });
-
-      // Se c'è una challenge, gestiscila in base al tipo
-      if ('challenge' in result) {
-        const authResponse: AuthResponse = {
-          challenge: {
-            name: result.challenge.name,
-            session: result.challenge.session
-          }
-        };
-
-        // Gestione specifica per ogni tipo di challenge
-        switch (result.challenge.name) {
-          case 'NEW_PASSWORD_REQUIRED':
-            setResponseAsSuccess(
-              res,
-              authResponse,
-              'Password change required. Please set a new password to continue.',
-              200
-            );
-            break;
-
-          case 'SMS_MFA':
-            setResponseAsSuccess(
-              res,
-              authResponse,
-              'SMS verification required. Please enter the code sent to your phone.',
-              200
-            );
-            break;
-
-          case 'SOFTWARE_TOKEN_MFA':
-            setResponseAsSuccess(
-              res,
-              authResponse,
-              'MFA verification required. Please enter the code from your authenticator app.',
-              200
-            );
-            break;
-
-          case 'MFA_SETUP':
-            setResponseAsSuccess(
-              res,
-              authResponse,
-              'MFA setup required. Please configure multi-factor authentication.',
-              200
-            );
-            break;
-
-          case 'SELECT_MFA_TYPE':
-            setResponseAsSuccess(
-              res,
-              authResponse,
-              'Please select your preferred MFA method.',
-              200
-            );
-            break;
-
-          case 'CUSTOM_CHALLENGE':
-            setResponseAsSuccess(
-              res,
-              authResponse,
-              'Additional verification required. Please complete the authentication challenge.',
-              200
-            );
-            break;
-
-          default:
-            logger.warn('Unknown challenge type', { challengeName: result.challenge.name });
-            setResponseAsSuccess(
-              res,
-              authResponse,
-              'Additional authentication step required.',
-              200
-            );
-            break;
-        }
+      const loginDto: LoginDto = plainToInstance(LoginDto, req.body);
+      
+      const errors = await validate(loginDto);
+      if (errors.length > 0) {
+        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        setResponseAsValidationError(res, str_errors);
+        return;
       }
-      else {
-        // Login completato con successo - TypeScript type guard
-        setResponseAsSuccess(
-          res,
-          result,
-          'Login successful'
-        );
-      }
+
+      logger.info('User login request', { email: loginDto.email });
+
+      const result = await authService.login(loginDto);
+
+      // Login completato con successo - ritorna sempre user e token
+      setResponseAsSuccess(
+        res,
+        result,
+        'Login successful'
+      );
 
     } catch (error: any) {
       logger.error('Error in login controller:', error);
@@ -204,69 +136,22 @@ export class AuthController {
   }
 
   /**
-   * Completa la challenge NEW_PASSWORD_REQUIRED
-   */
-  async completeNewPassword(req: Request, res: Response) {
-    try {
-      const { email, newPassword, session } = req.body;
-
-      if (!email || !newPassword || !session) {
-        setResponseAsError(res, 'BAD_REQUEST', 'Email, new password and session are required', 400);
-        return;
-      }
-
-      logger.info('Complete new password challenge', { email });
-
-      const result = await authService.completeNewPasswordChallenge({ email, newPassword, session });
-
-      setResponseAsSuccess(
-        res,
-        result,
-        'Password updated successfully'
-      );
-
-    } catch (error: any) {
-      logger.error('Error in completeNewPassword controller:', error);
-
-      if (error.name === 'AuthenticationError') {
-        setResponseAsError(res, 'UNAUTHORIZED', error.message, 401);
-        return;
-      }
-
-      // Check for session expired or invalid session errors from Cognito
-      if (error.name === 'NotAuthorizedException' || 
-          (error.message && (
-            error.message.includes('session is expired') || 
-            error.message.includes('Invalid session')
-          ))) {
-        setResponseAsError(res, 'SESSION_EXPIRED', 'Session has expired. Please login again to get a new session.', 401);
-        return;
-      }
-
-      if (error.name === 'ValidationError') {
-        setResponseAsError(res, 'BAD_REQUEST', error.message, 400);
-        return;
-      }
-
-      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to complete password challenge', 500);
-    }
-  }
-
-  /**
    * Conferma il reset della password con il codice
    */
   async confirmForgotPassword(req: Request, res: Response) {
     try {
-      const { email, code, newPassword } = req.body;
-
-      if (!email || !code || !newPassword) {
-        setResponseAsError(res, 'BAD_REQUEST', 'Email, code and new password are required', 400);
+      const forgotPasswordDto: ConfirmForgotPasswordDto = plainToInstance(ConfirmForgotPasswordDto, req.body);
+      
+      const errors = await validate(forgotPasswordDto);
+      if (errors.length > 0) {
+        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        setResponseAsValidationError(res, str_errors);
         return;
       }
 
-      logger.info('Confirm forgot password', { email });
+      logger.info('Confirm forgot password', { email: forgotPasswordDto.email });
 
-      await authService.confirmForgotPassword({ email, code, newPassword });
+      await authService.confirmForgotPassword(forgotPasswordDto);
 
       setResponseAsSuccess(res, { message: 'Password reset successful. You can now login with your new password.' });
 
@@ -310,18 +195,25 @@ export class AuthController {
   /**
    * Conferma email con codice di verifica
    */
-  async confirmEmail(req: Request, res: Response) {
+  async confirmEmail(req: AuthenticatedRequest, res: Response) {
     try {
-      const { email, code } = req.body;
-
-      if (!email || !code) {
-        setResponseAsValidationError(res, ['Email and verification code are required']);
+      if (!req.user) {
+        setResponseAsError(res, 'UNAUTHORIZED', 'Authentication required', 401);
         return;
       }
 
-      logger.info('Email confirmation request', { email });
+      const confirmEmailDto: ConfirmEmailDto = plainToInstance(ConfirmEmailDto, req.body);
 
-      await authService.confirmEmail({email, code});
+      const errors = await validate(confirmEmailDto);
+      if (errors.length > 0) {
+        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        setResponseAsValidationError(res, str_errors);
+        return;
+      }
+
+      logger.info('Email confirmation request', { email: req.user.email });
+
+      await authService.confirmEmail( req.user, confirmEmailDto);
 
       setResponseAsSuccess(res, null, 'Email verified successfully', 200);
 
@@ -368,18 +260,16 @@ export class AuthController {
   /**
    * Reinvia codice di verifica email
    */
-  async resendVerificationCode(req: Request, res: Response) {
+  async resendVerificationCode(req: AuthenticatedRequest, res: Response) {
     try {
-      const { email } = req.body;
-
-      if (!email) {
-        setResponseAsValidationError(res, ['Email is required']);
+      if (!req.user) {
+        setResponseAsError(res, 'UNAUTHORIZED', 'Authentication required', 401);
         return;
       }
 
-      logger.info('Resend verification code request', { email });
+      logger.info('Resend verification code request', { email: req.user.email });
 
-      await authService.resendVerificationCode({email});
+      await authService.resendVerificationCode(req.user);
 
       setResponseAsSuccess(res, null, 'Verification code sent', 200);
 
@@ -415,16 +305,18 @@ export class AuthController {
    */
   async forgotPassword(req: Request, res: Response) {
     try {
-      const { email } = req.body;
-
-      if (!email) {
-        setResponseAsError(res, 'BAD_REQUEST', 'Email is required', 400);
+      const forgotPasswordDto = plainToInstance(ForgotPasswordDto, req.body);
+      
+      const errors = await validate(forgotPasswordDto);
+      if (errors.length > 0) {
+        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        setResponseAsValidationError(res, str_errors);
         return;
       }
 
-      logger.info('Forgot password request', { email });
+      logger.info('Forgot password request', { email: forgotPasswordDto.email });
 
-      await authService.forgotPassword({ email });
+      await authService.forgotPassword(forgotPasswordDto);
 
       setResponseAsSuccess(res, null, 'Password reset code sent to your email', 200);
 
@@ -446,14 +338,21 @@ export class AuthController {
    */
   async refreshToken(req: Request, res: Response) {
     try {
-      const { refreshToken } = req.body;
+      const refreshTokenDto = plainToInstance(RefreshTokenDto, req.body);
 
-      if (!refreshToken) {
+      const errors = await validate(refreshTokenDto);
+      if (errors.length > 0) {
+        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        setResponseAsValidationError(res, str_errors);
+        return;
+      }
+
+      if (!refreshTokenDto.refreshToken) {
         setResponseAsError(res, 'BAD_REQUEST', 'Refresh token is required', 400);
         return;
       }
 
-      const result = await authService.refreshToken({ refreshToken });
+      const result = await authService.refreshToken(refreshTokenDto);
 
       setResponseAsSuccess(res, result, 'Token refreshed successfully');
 
@@ -483,28 +382,22 @@ export class AuthController {
    */
   async changePassword(req: AuthenticatedRequest, res: Response) {
     try {
-      const authHeader = req.headers.authorization;
-      const accessToken = authHeader?.split(' ')[1];
-
+      const accessToken = req.headers.authorization?.split(' ')[1];
       if (!accessToken) {
-        setResponseAsError(res, 'UNAUTHORIZED', 'Access token is required', 401);
+        setResponseAsError(res, 'UNAUTHORIZED', 'Access token is missing', 401);
         return;
       }
 
-      const { currentPassword, newPassword } = req.body;
+      const changePasswordDto: ChangePasswordDto = plainToInstance(ChangePasswordDto, req.body);
 
-      if (!currentPassword || !newPassword) {
-        setResponseAsValidationError(res, ['Current password and new password are required']);
+      const errors = await validate(changePasswordDto);
+      if (errors.length > 0) {
+        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        setResponseAsValidationError(res, str_errors);
         return;
       }
 
-      const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/;
-      if (!passwordRegex.test(newPassword)) {
-        setResponseAsValidationError(res, ['New password must be at least 8 characters long and contain at least one letter and one number']);
-        return;
-      }
-
-      await authService.changePassword(accessToken, { currentPassword, newPassword });
+      await authService.changePassword(accessToken, changePasswordDto);
 
       setResponseAsSuccess(res, { message: 'Password changed successfully' });
 
