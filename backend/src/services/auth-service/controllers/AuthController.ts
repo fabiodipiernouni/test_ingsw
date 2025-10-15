@@ -7,6 +7,8 @@ import { AuthenticatedRequest } from '@shared/dto/AuthenticatedRequest';
 import { setResponseAsSuccess, setResponseAsError, setResponseAsValidationError, setResponseAsNotFound } from '@shared/utils/helpers';
 import { RegisterDto } from '@auth/dto/RegisterDto';
 import { LoginDto } from '@auth/dto/LoginDto';
+import { CreateAgentDto } from '@auth/dto/CreateAgentDto';
+import { CreateAdminDto } from '@auth/dto/CreateAdminDto';
 import config from '@shared/config';
 import { AuthResponse } from '@auth/dto/AuthResponse';
 
@@ -619,4 +621,125 @@ export class AuthController {
       res.redirect(errorUrl);
     }
   }
+
+  /**
+   * POST /users/agent
+   * Crea un nuovo agente (solo per admin di agenzia)
+   */
+  async createAgent(req: AuthenticatedRequest, res: Response) {
+    try {
+      const creatorId = req.user?.id;
+      if (!creatorId) {
+        setResponseAsError(res, 'UNAUTHORIZED', 'User not authenticated', 401);
+        return;
+      }
+
+      const agentData: CreateAgentDto = plainToInstance(CreateAgentDto, req.body);
+      const errors = await validate(agentData);
+
+      if (errors.length > 0) {
+        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        setResponseAsValidationError(res, str_errors);
+        return;
+      }
+
+      logger.info('Create agent request', { creatorId, email: agentData.email });
+
+      await authService.createAgent(creatorId, agentData);
+
+      setResponseAsSuccess(res, null, 'Agent created successfully', 201);
+
+    } catch (error: any) {
+      logger.error('Error in createAgent controller:', error);
+
+      if (error.name === 'ValidationError') {
+        setResponseAsValidationError(res, error.details?.errors || [error.message]);
+        return;
+      }
+
+      if (error.name === 'ForbiddenError') {
+        setResponseAsError(res, 'FORBIDDEN', error.message, 403);
+        return;
+      }
+
+      if (error.name === 'ConflictError') {
+        setResponseAsError(res, 'CONFLICT', error.message, 409);
+        return;
+      }
+
+      if (error.name === 'NotFoundError') {
+        setResponseAsNotFound(res, error.message);
+        return;
+      }
+
+      // Handle Cognito errors
+      if (error.name === 'UsernameExistsException') {
+        setResponseAsError(res, 'CONFLICT', 'User already exists in authentication system', 409);
+        return;
+      }
+
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to create agent', 500);
+    }
+  }
+
+  /**
+   * POST /users/admin
+   * Crea un nuovo admin (solo per il creatore dell'agenzia)
+   */
+  async createAdmin(req: AuthenticatedRequest, res: Response) {
+    try {
+      const creatorId = req.user?.id;
+      if (!creatorId) {
+        setResponseAsError(res, 'UNAUTHORIZED', 'User not authenticated', 401);
+        return;
+      }
+
+      const adminData: CreateAdminDto = plainToInstance(CreateAdminDto, req.body);
+      const errors = await validate(adminData);
+
+      if (errors.length > 0) {
+        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        setResponseAsValidationError(res, str_errors);
+        return;
+      }
+
+      logger.info('Create admin request', { creatorId, email: adminData.email });
+
+      await authService.createAdmin(creatorId, adminData);
+
+      setResponseAsSuccess(res, null, 'Admin created successfully', 201);
+
+    } catch (error: any) {
+      logger.error('Error in createAdmin controller:', error);
+
+      if (error.name === 'ValidationError') {
+        setResponseAsValidationError(res, error.details?.errors || [error.message]);
+        return;
+      }
+
+      if (error.name === 'ForbiddenError') {
+        setResponseAsError(res, 'FORBIDDEN', error.message, 403);
+        return;
+      }
+
+      if (error.name === 'ConflictError') {
+        setResponseAsError(res, 'CONFLICT', error.message, 409);
+        return;
+      }
+
+      if (error.name === 'NotFoundError') {
+        setResponseAsNotFound(res, error.message);
+        return;
+      }
+
+      // Handle Cognito errors
+      if (error.name === 'UsernameExistsException') {
+        setResponseAsError(res, 'CONFLICT', 'User already exists in authentication system', 409);
+        return;
+      }
+
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to create admin', 500);
+    }
+  }
+
 }

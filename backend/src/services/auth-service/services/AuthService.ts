@@ -4,6 +4,7 @@ import {
   InitiateAuthCommand,
   RespondToAuthChallengeCommand,
   AdminAddUserToGroupCommand,
+  AdminCreateUserCommand,
   ChangePasswordCommand,
   ForgotPasswordCommand,
   ConfirmForgotPasswordCommand,
@@ -37,6 +38,8 @@ import { ResendVerificationCodeDto } from '../dto/ResendVerificationCodeDto';
 import { ForgotPasswordDto } from '../dto/ForgotPasswordDto';
 import { ChangePasswordDto } from '../dto/ChangePasswordDto';
 import { RefreshTokenResponse } from '../dto/RefreshTokenResponse';
+import { CreateAgentDto } from '../dto/CreateAgentDto';
+import { CreateAdminDto } from '../dto/CreateAdminDto';
 
 // Cognito Client
 const cognitoClient = new CognitoIdentityProviderClient({
@@ -75,6 +78,13 @@ class ConflictError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'ConflictError';
+  }
+}
+
+class ForbiddenError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ForbiddenError';
   }
 }
 
@@ -848,6 +858,201 @@ export class AuthService {
 
       if (error.name === 'LimitExceededException') {
         throw new ValidationError('Too many requests. Please try again later.');
+      }
+
+      throw error;
+    }
+  }
+
+    /**
+   * Crea un nuovo agente (solo per admin/owner) - Cognito Version
+   */
+  async createAgent(adminUserId: string, agentData: CreateAgentDto): Promise<void> {
+    try {
+      // 1. VERIFICA PERMESSI ADMIN/OWNER
+      const adminUser = await User.findByPk(adminUserId);
+      if (!adminUser || !['admin', 'owner'].includes(adminUser.role)) {
+        throw new ForbiddenError('Only administrators can create agents');
+      }
+
+      if (!adminUser.agencyId) {
+        throw new ForbiddenError('Admin must be associated with an agency');
+      }
+
+      // 2. VERIFICA EMAIL DUPLICATA NEL DB LOCALE
+      const existingUser = await User.findOne({ where: { email: agentData.email } });
+      if (existingUser) {
+        throw new ConflictError('User with this email already exists');
+      }
+
+      // 3. CREA UTENTE IN COGNITO CON AdminCreateUser
+      const createUserCommand = new AdminCreateUserCommand({
+        UserPoolId: config.cognito.userPoolId,
+        Username: agentData.email,
+        UserAttributes: [
+          { Name: 'email', Value: agentData.email },
+          { Name: 'email_verified', Value: 'true' }, // Email già verificata dall'admin
+          { Name: 'given_name', Value: agentData.firstName },
+          { Name: 'family_name', Value: agentData.lastName },
+          ...(agentData.phone ? [{ Name: 'phone_number', Value: agentData.phone }] : [])
+        ],
+        DesiredDeliveryMediums: ['EMAIL'] // 📧 Cognito invia email con password temporanea
+      });
+
+      const cognitoResponse = await cognitoClient.send(createUserCommand);
+      
+      // Estrai cognitoSub dalla risposta
+      const cognitoSub = cognitoResponse.User?.Attributes?.find(attr => attr.Name === 'sub')?.Value;
+
+      if (!cognitoSub) {
+        throw new Error('Failed to create user in Cognito');
+      }
+
+      logger.info('Agent created in Cognito', { email: agentData.email, cognitoSub });
+
+      // 4. AGGIUNGI AL GRUPPO 'agents'
+      const addToGroupCommand = new AdminAddUserToGroupCommand({
+        UserPoolId: config.cognito.userPoolId,
+        Username: agentData.email,
+        GroupName: config.cognito.groups.agents
+      });
+
+      await cognitoClient.send(addToGroupCommand);
+
+      logger.info('Agent added to Cognito group', { email: agentData.email, group: 'agents' });
+
+      // 5. CREA RECORD NEL DB LOCALE
+      const agent = await User.create({
+        email: agentData.email,
+        cognitoSub: cognitoSub,
+        cognitoUsername: agentData.email,
+        firstName: agentData.firstName,
+        lastName: agentData.lastName,
+        phone: agentData.phone,
+        role: 'agent',
+        agencyId: adminUser.agencyId, // Stessa agenzia dell'admin
+        licenseNumber: agentData.licenseNumber,
+        isActive: true,
+        isVerified: true, // Verificato dall'admin
+        acceptedTermsAt: new Date(),
+        acceptedPrivacyAt: new Date()
+      });
+
+      // 6. CREA PREFERENZE PREDEFINITE
+      await UserPreferences.create({ userId: agent.id });
+      await NotificationPreferences.create({ userId: agent.id });
+
+      logger.info('Agent created in local DB', { userId: agent.id, email: agent.email });
+
+    } catch (error: any) {
+      logger.error('Error in createAgent service:', error);
+
+      // Gestione errori Cognito
+      if (error.name === 'UsernameExistsException') {
+        throw new ConflictError('User already exists in authentication system');
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Crea un nuovo admin (solo per owner dell'agenzia) - Cognito Version
+   */
+  async createAdmin(ownerUserId: string, adminData: CreateAdminDto): Promise<void> {
+    try {
+      // 1. VERIFICA CHE L'UTENTE SIA OWNER
+      const ownerUser = await User.findByPk(ownerUserId, {
+        include: [{ model: Agency, as: 'agency' }]
+      });
+
+      if (!ownerUser || ownerUser.role !== 'owner') {
+        throw new ForbiddenError('Only agency owners can create administrators');
+      }
+
+      if (!ownerUser.agency) {
+        throw new ForbiddenError('Owner must be associated with an agency');
+      }
+
+      // Verifica che sia il creator dell'agenzia
+      if (ownerUser.agency.createdBy !== ownerUserId) {
+        throw new ForbiddenError('Only the agency owner can create new admins');
+      }
+
+      const agencyId = ownerUser.agencyId;
+
+      if (!agencyId) {
+        throw new ForbiddenError('Owner must belong to an agency');
+      }
+
+      // 2. VERIFICA EMAIL DUPLICATA
+      const existingUser = await User.findOne({ where: { email: adminData.email } });
+      if (existingUser) {
+        throw new ConflictError('User with this email already exists');
+      }
+
+      // 3. CREA ADMIN IN COGNITO
+      const createUserCommand = new AdminCreateUserCommand({
+        UserPoolId: config.cognito.userPoolId,
+        Username: adminData.email,
+        UserAttributes: [
+          { Name: 'email', Value: adminData.email },
+          { Name: 'email_verified', Value: 'true' },
+          { Name: 'given_name', Value: adminData.firstName },
+          { Name: 'family_name', Value: adminData.lastName },
+          ...(adminData.phone ? [{ Name: 'phone_number', Value: adminData.phone }] : [])
+        ],
+        DesiredDeliveryMediums: ['EMAIL'] // 📧 Email con credenziali temporanee
+      });
+
+      const cognitoResponse = await cognitoClient.send(createUserCommand);
+
+      const cognitoSub = cognitoResponse.User?.Attributes?.find(attr => attr.Name === 'sub')?.Value;
+
+      if (!cognitoSub) {
+        throw new Error('Failed to create admin in Cognito');
+      }
+
+      logger.info('Admin created in Cognito', { email: adminData.email, cognitoSub });
+
+      // 4. AGGIUNGI AL GRUPPO 'admins'
+      const addToGroupCommand = new AdminAddUserToGroupCommand({
+        UserPoolId: config.cognito.userPoolId,
+        Username: adminData.email,
+        GroupName: config.cognito.groups.admins
+      });
+
+      await cognitoClient.send(addToGroupCommand);
+
+      logger.info('Admin added to Cognito group', { email: adminData.email, group: 'admins' });
+
+      // 5. CREA ADMIN NEL DB LOCALE
+      const newAdmin = await User.create({
+        email: adminData.email,
+        cognitoSub: cognitoSub,
+        cognitoUsername: adminData.email,
+        firstName: adminData.firstName,
+        lastName: adminData.lastName,
+        phone: adminData.phone,
+        role: 'admin',
+        agencyId: agencyId, // Stessa agenzia dell'owner
+        isActive: true,
+        isVerified: true,
+        acceptedTermsAt: new Date(),
+        acceptedPrivacyAt: new Date()
+      });
+
+      // 6. CREA PREFERENZE
+      await UserPreferences.create({ userId: newAdmin.id });
+      await NotificationPreferences.create({ userId: newAdmin.id });
+
+      logger.info('Admin created in local DB', { userId: newAdmin.id, email: newAdmin.email });
+
+    } catch (error: any) {
+      logger.error('Error in createAdmin service:', error);
+
+      if (error.name === 'UsernameExistsException') {
+        throw new ConflictError('User already exists in authentication system');
       }
 
       throw error;

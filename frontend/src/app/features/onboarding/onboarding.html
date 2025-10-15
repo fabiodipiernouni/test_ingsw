@@ -8,6 +8,50 @@
     </div>
 
     <div class="features-grid">
+    <!-- Gestione Admin (solo per owner) -->
+    <mat-card class="feature-card" *ngIf="canCreateAdmins()">
+        <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #ff9800">admin_panel_settings</mat-icon>
+        <mat-card-title>Gestione Amministratori</mat-card-title>
+        <mat-card-subtitle>Crea e gestisci amministratori</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+        <p>Come proprietario, hai il controllo completo sulla piattaforma e puoi creare account amministratori.</p>
+        <ul>
+            <li>Crea nuovi amministratori</li>
+            <li>Gestisci permessi e accessi</li>
+            <li>Monitora l'attività degli admin</li>
+        </ul>
+        </mat-card-content>
+        <mat-card-actions>
+        <button mat-raised-button style="background-color: #ff9800; color: white;" routerLink="/create-admin">
+            Crea Amministratore
+        </button>
+        </mat-card-actions>
+    </mat-card>
+
+    <!-- Gestione Agenti (per owner e admin) -->
+    <mat-card class="feature-card" *ngIf="canCreateAgents()">
+        <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #4caf50">person_add</mat-icon>
+        <mat-card-title>Gestione Agenti</mat-card-title>
+        <mat-card-subtitle>Crea e gestisci agenti immobiliari</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+        <p>Aggiungi nuovi agenti immobiliari al tuo team per gestire le proprietà.</p>
+        <ul>
+            <li>Crea account per agenti</li>
+            <li>Assegna licenze e permessi</li>
+            <li>Monitora le performance</li>
+        </ul>
+        </mat-card-content>
+        <mat-card-actions>
+        <button mat-raised-button style="background-color: #4caf50; color: white;" routerLink="/create-agent">
+            Crea Agente
+        </button>
+        </mat-card-actions>
+    </mat-card>
+
     <!-- Ricerca Immobili -->
     <mat-card class="feature-card">
         <mat-card-header>
@@ -53,7 +97,7 @@
     </mat-card>
 
     <!-- Funzionalità Agente (solo per agenti) -->
-    <mat-card class="feature-card" *ngIf="currentUser?.role === 'agent'">
+    <mat-card class="feature-card" *ngIf="isAgent()">
         <mat-card-header>
         <mat-icon mat-card-avatar style="color: #4caf50">home_work</mat-icon>
         <mat-card-title>Gestione Immobili</mat-card-title>

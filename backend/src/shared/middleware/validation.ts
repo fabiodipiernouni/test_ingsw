@@ -1,3 +1,5 @@
+// TODO: controllare se si può eliminare questo file, mi sembra che non venga più usato
+
 import { Request, Response, NextFunction } from 'express';
 import { body, param, query, validationResult, ValidationChain } from 'express-validator';
 import { setResponseAsValidationError } from '@shared/utils/helpers';

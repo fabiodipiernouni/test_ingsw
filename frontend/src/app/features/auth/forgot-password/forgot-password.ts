@@ -1,14 +1,14 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
-import { Router, RouterLink, ActivatedRoute } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services/auth/auth.service';
+import { AuthLayoutComponent, AuthLayoutConfig } from '../../../shared/components/auth-layout/auth-layout';
 
 @Component({
   selector: 'app-reset-password',
@@ -16,12 +16,11 @@ import { AuthService } from '../../../core/services/auth/auth.service';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
     MatIconModule,
-    RouterLink
+    AuthLayoutComponent
   ],
   templateUrl: './forgot-password.html',
   styleUrls: ['./forgot-password.scss']
@@ -38,6 +37,7 @@ export class ForgotPassword implements OnInit {
   isLoading = signal(false);
   passwordReset = signal(false);
   passwordRequirements = signal(false);
+  codeSent = signal(false); // New signal to track if code was sent
   passwordChecks = signal({
     hasLower: false,
     hasUpper: false,
@@ -46,8 +46,21 @@ export class ForgotPassword implements OnInit {
     hasLength: false
   });
 
+  authConfig: AuthLayoutConfig = {
+    title: 'Reimposta password',
+    subtitle: 'Inserisci la tua email per ricevere il codice di verifica',
+    footerText: 'Ricordi la password?',
+    footerLinkText: 'Accedi',
+    footerLinkRoute: '/login'
+  };
+
+  // Step 1: Email form
+  emailForm: FormGroup = this.fb.group({
+    email: ['', [Validators.required, Validators.email]]
+  });
+
+  // Step 2: Reset password form
   resetPasswordForm: FormGroup = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
     code: ['', [Validators.required, Validators.minLength(6)]],
     password: ['', [Validators.required, Validators.minLength(8), this.passwordValidator.bind(this)]],
     confirmPassword: ['', Validators.required]
@@ -57,9 +70,10 @@ export class ForgotPassword implements OnInit {
     // Pre-populate email from URL if available
     const emailFromUrl = this.route.snapshot.queryParams['email'];
     if (emailFromUrl) {
-      this.resetPasswordForm.patchValue({ email: emailFromUrl });
+      this.emailForm.patchValue({ email: emailFromUrl });
     }
-        // Monitor password changes for requirements display
+    
+    // Monitor password changes for requirements display
     this.resetPasswordForm.get('password')?.valueChanges.subscribe(value => {
       if (value) {
         this.passwordRequirements.set(true);
@@ -70,12 +84,55 @@ export class ForgotPassword implements OnInit {
     });
   }
 
+  // Step 1: Send verification code (also used for resending)
+  sendCode(): void {
+    if (this.emailForm.valid) {
+      this.isLoading.set(true);
+
+      const request = { email: this.emailForm.value.email };
+
+      this.authService.forgotPassword(request).subscribe({
+        next: () => {
+          this.codeSent.set(true);
+          this.isLoading.set(false);
+          this.authConfig = {
+            title: 'Reimposta password',
+            subtitle: 'Inserisci il codice ricevuto via email e la tua nuova password',
+            footerText: 'Ricordi la password?',
+            footerLinkText: 'Accedi',
+            footerLinkRoute: '/login'
+          };
+          this.snackBar.open(
+            'Codice di verifica inviato alla tua email',
+            'Chiudi',
+            {
+              duration: 5000,
+              panelClass: ['success-snackbar']
+            }
+          );
+        },
+        error: (error: any) => {
+          this.isLoading.set(false);
+          this.snackBar.open(
+            error.error?.message || 'Errore durante l\'invio del codice',
+            'Chiudi',
+            {
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            }
+          );
+        }
+      });
+    }
+  }
+
+  // Step 2: Reset password with code
   onSubmit(): void {
     if (this.resetPasswordForm.valid) {
       this.isLoading.set(true);
 
       const resetData = {
-        email: this.resetPasswordForm.value.email,
+        email: this.emailForm.value.email,
         code: this.resetPasswordForm.value.code,
         newPassword: this.resetPasswordForm.value.password
       };
@@ -102,6 +159,19 @@ export class ForgotPassword implements OnInit {
 
   goToLogin(): void {
     this.router.navigate(['/login']);
+  }
+
+  // Go back to email step
+  goBackToEmail(): void {
+    this.codeSent.set(false);
+    this.resetPasswordForm.reset();
+    this.authConfig = {
+      title: 'Reimposta password',
+      subtitle: 'Inserisci la tua email per ricevere il codice di verifica',
+      footerText: 'Ricordi la password?',
+      footerLinkText: 'Accedi',
+      footerLinkRoute: '/login'
+    };
   }
 
   private updatePasswordChecks(password: string): void {
@@ -149,12 +219,21 @@ export class ForgotPassword implements OnInit {
   }
 
   getErrorMessage(field: string): string {
+    // Check email form first (step 1)
+    if (field === 'email' && !this.codeSent()) {
+      const control = this.emailForm.get(field);
+      if (control?.hasError('required')) {
+        return 'Campo obbligatorio';
+      }
+      if (control?.hasError('email')) {
+        return 'Email non valida';
+      }
+    }
+    
+    // Check reset password form (step 2)
     const control = this.resetPasswordForm.get(field);
     if (control?.hasError('required')) {
       return 'Campo obbligatorio';
-    }
-    if (control?.hasError('email')) {
-      return 'Email non valida';
     }
     if (control?.hasError('minlength')) {
       const requiredLength = control.getError('minlength').requiredLength;

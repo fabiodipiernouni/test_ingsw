@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { AuthController } from '../controllers/AuthController';
 import { validate, authValidations } from '@shared/middleware/validation';
 import { authenticateToken } from '@shared/middleware/auth';
+import { requireAgencyAdmin, requireAgencyOwner } from '../../../shared/middleware/authorization';
 
 const router = Router();
 const authController = new AuthController();
@@ -492,5 +493,297 @@ router.get('/oauth/authorize', authController.getOAuthUrl);
  *               example: http://localhost:3000/auth/callback?access_token=eyJra...&refresh_token=eyJra...
  */
 router.get('/oauth/callback', authController.handleOAuthCallback);
+
+/**
+ * @swagger
+ * /create-agent:
+ *   post:
+ *     summary: Crea nuovo agente
+ *     description: |
+ *       Crea un nuovo account agente per l'agenzia. 
+ *       L'agente sarà associato automaticamente all'agenzia dell'admin che lo crea.
+ *       Cognito invierà una email con le credenziali temporanee all'agente.
+ *       Accessibile solo agli admin di agenzia autenticati.
+ *     tags:
+ *       - User Management
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - firstName
+ *               - lastName
+ *               - licenseNumber
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email dell'agente (deve essere valida e univoca)
+ *                 example: "agent@example.com"
+ *               firstName:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 50
+ *                 description: Nome dell'agente
+ *                 example: "Marco"
+ *               lastName:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 50
+ *                 description: Cognome dell'agente
+ *                 example: "Bianchi"
+ *               phone:
+ *                 type: string
+ *                 pattern: '^[\d\s()+-]+$'
+ *                 description: Numero di telefono (opzionale)
+ *                 example: "+39 345 678 9012"
+ *               licenseNumber:
+ *                 type: string
+ *                 minLength: 3
+ *                 maxLength: 50
+ *                 description: Numero di licenza dell'agente immobiliare (obbligatorio)
+ *                 example: "LIC789012"
+ *               biography:
+ *                 type: string
+ *                 maxLength: 1000
+ *                 description: Biografia dell'agente (opzionale)
+ *                 example: "Esperto in immobili residenziali con 10 anni di esperienza"
+ *               specializations:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Specializzazioni dell'agente (opzionale)
+ *                 example: ["residential", "commercial"]
+ *     responses:
+ *       201:
+ *         description: Agente creato con successo. Le credenziali sono state inviate via email.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Agent created successfully"
+ *                 data:
+ *                   type: null
+ *                   example: null
+ *       400:
+ *         description: Errori di validazione nei dati di input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: "VALIDATION_ERROR"
+ *                 message:
+ *                   type: string
+ *                   example: "Validation failed"
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["Email non valida", "Il numero di licenza deve contenere almeno 3 caratteri"]
+ *       401:
+ *         description: Utente non autenticato
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Permessi insufficienti (solo admin di agenzia)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Risorsa non trovata (es. agenzia non trovata)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       409:
+ *         description: Email già esistente nel sistema
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: "CONFLICT"
+ *                 message:
+ *                   type: string
+ *                   example: "User with this email already exists"
+ *       500:
+ *         description: Errore interno del server
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post('/create-agent', 
+  authenticateToken, 
+  requireAgencyAdmin, 
+  authController.createAgent.bind(authController)
+);
+
+/**
+ * @swagger
+ * /create-admin:
+ *   post:
+ *     summary: Crea nuovo admin di agenzia
+ *     description: |
+ *       Crea un nuovo account admin per l'agenzia.
+ *       L'admin sarà associato automaticamente all'agenzia del creatore.
+ *       Cognito invierà una email con le credenziali temporanee all'admin.
+ *       Accessibile solo al creatore (owner) dell'agenzia.
+ *     tags:
+ *       - User Management
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - firstName
+ *               - lastName
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email dell'admin (deve essere valida e univoca)
+ *                 example: "admin@example.com"
+ *               firstName:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 50
+ *                 description: Nome dell'admin
+ *                 example: "Giulia"
+ *               lastName:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 50
+ *                 description: Cognome dell'admin
+ *                 example: "Verdi"
+ *               phone:
+ *                 type: string
+ *                 pattern: '^[\d\s()+-]+$'
+ *                 description: Numero di telefono (opzionale)
+ *                 example: "+39 345 678 9012"
+ *     responses:
+ *       201:
+ *         description: Admin creato con successo. Le credenziali sono state inviate via email.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Admin created successfully"
+ *                 data:
+ *                   type: null
+ *                   example: null
+ *       400:
+ *         description: Errori di validazione nei dati di input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: "VALIDATION_ERROR"
+ *                 message:
+ *                   type: string
+ *                   example: "Validation failed"
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["Email non valida", "Il nome deve contenere almeno 2 caratteri"]
+ *       401:
+ *         description: Utente non autenticato
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Permessi insufficienti (solo creatore dell'agenzia)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: "FORBIDDEN"
+ *                 message:
+ *                   type: string
+ *                   example: "Only agency owners can create administrators"
+ *       404:
+ *         description: Risorsa non trovata (es. agenzia non trovata)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       409:
+ *         description: Email già esistente nel sistema
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: "CONFLICT"
+ *                 message:
+ *                   type: string
+ *                   example: "User with this email already exists"
+ *       500:
+ *         description: Errore interno del server
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post('/create-admin', 
+  authenticateToken, 
+  requireAgencyOwner, 
+  authController.createAdmin.bind(authController)
+);
 
 export default router;

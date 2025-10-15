@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, BehaviorSubject, throwError, catchError, tap, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
@@ -10,6 +10,8 @@ import { ChangePasswordRequest } from './dto/ChangePasswordRequest';
 import { CompleteNewPasswordRequest } from './dto/CompleteNewPasswordRequest';
 import { ConfirmEmailRequest } from './dto/ConfirmEmailRequest';
 import { ConfirmForgotPasswordRequest } from './dto/ConfirmForgotPasswordRequest';
+import { CreateAdminRequest } from './dto/CreateAdminRequest';
+import { CreateAgentRequest } from './dto/CreateAgentRequest';
 import { ForgotPasswordRequest } from './dto/ForgotPasswordRequest';
 import { LoginRequest } from './dto/LoginRequest';
 import { RefreshTokenRequest } from './dto/RefreshTokenRequest';
@@ -55,10 +57,10 @@ export class AuthService {
   /**
    * Registrazione nuovo utente
    */
-  register(request: RegisterRequest): Observable<ApiResponse> {
+  register(request: RegisterRequest): Observable<ApiResponse<null>> {
     this.isLoading.set(true);
     
-    return this.http.post<ApiResponse>(`${this.API_URL}/register`, request)
+    return this.http.post<ApiResponse<null>>(`${this.API_URL}/register`, request)
       .pipe(
         tap(response => {
           if (response.success) {
@@ -139,43 +141,56 @@ export class AuthService {
   /**
    * Inizia il processo di recupero password
    */
-  forgotPassword(request: ForgotPasswordRequest): Observable<ApiResponse> {
-    return this.http.post<ApiResponse>(`${this.API_URL}/forgot-password`, request)
+  forgotPassword(request: ForgotPasswordRequest): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(`${this.API_URL}/forgot-password`, request)
       .pipe(catchError(this.handleError.bind(this)));
   }
 
   /**
    * Conferma il reset della password
    */
-  confirmForgotPassword(request: ConfirmForgotPasswordRequest): Observable<ApiResponse> {
-    return this.http.post<ApiResponse>(`${this.API_URL}/confirm-forgot-password`, request)
+  confirmForgotPassword(request: ConfirmForgotPasswordRequest): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(`${this.API_URL}/confirm-forgot-password`, request)
       .pipe(catchError(this.handleError.bind(this)));
   }
 
   /**
    * Conferma email con codice di verifica
    */
-  confirmEmail(request: ConfirmEmailRequest): Observable<ApiResponse> {
-    return this.http.post<ApiResponse>(`${this.API_URL}/confirm-email`, request)
+  confirmEmail(request: ConfirmEmailRequest): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(`${this.API_URL}/confirm-email`, request)
       .pipe(catchError(this.handleError.bind(this)));
   }
 
   /**
    * Reinvia codice di verifica email
    */
-  resendVerificationCode(request: ResendVerificationCodeRequest): Observable<ApiResponse> {
-    return this.http.post<ApiResponse>(`${this.API_URL}/resend-verification-code`, request)
+  resendVerificationCode(request: ResendVerificationCodeRequest): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(`${this.API_URL}/resend-verification-code`, request)
       .pipe(catchError(this.handleError.bind(this)));
   }
 
   /**
    * Cambia password utente autenticato
    */
-  changePassword(request: ChangePasswordRequest): Observable<ApiResponse> {
-    const accessToken = this.getAccessToken();
-    const headers = new HttpHeaders().set('Authorization', `Bearer ${accessToken}`);
-    
-    return this.http.post<ApiResponse>(`${this.API_URL}/change-password`, request, { headers })
+  changePassword(request: ChangePasswordRequest): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(`${this.API_URL}/change-password`, request)
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  /**
+   * Crea un nuovo amministratore (solo per owner)
+   */
+  createAdmin(request: CreateAdminRequest): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(`${this.API_URL}/create-admin`, request)
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  /**
+   * Crea un nuovo agente (per owner e admin)
+   */
+  createAgent(request: CreateAgentRequest): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(`${this.API_URL}/create-agent`, request)
       .pipe(catchError(this.handleError.bind(this)));
   }
 

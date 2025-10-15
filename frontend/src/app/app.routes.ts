@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard, agentGuard } from './core/guards/auth-guard';
+import { authGuard, guestGuard, agentGuard, ownerGuard, adminOrOwnerGuard } from './core/guards/auth-guard';
+
 
 export const routes: Routes = [
   // Public routes
@@ -34,6 +35,12 @@ export const routes: Routes = [
     title: 'Recupera Password - DietiEstates25'
   },
   {
+    path: 'verify-email',
+    loadComponent: () => import('./features/auth/verify-email/verify-email').then(m => m.VerifyEmail),
+    canActivate: [guestGuard],
+    title: 'Verifica Email - DietiEstates25'
+  },
+  {
     path: 'auth/callback',
     loadComponent: () => import('./features/auth/oauth-callback/oauth-callback').then(m => m.OAuthCallback),
     title: 'Autenticazione in corso... - DietiEstates25'
@@ -51,6 +58,19 @@ export const routes: Routes = [
     loadComponent: () => import('./features/onboarding/onboarding').then(m => m.Onboarding),
     canActivate: [authGuard],
     title: 'Benvenuto - DietiEstates25'
+  },
+  // Admin management routes
+  {
+    path: 'create-admin',
+    loadComponent: () => import('./features/admin/create-admin/create-admin').then(m => m.CreateAdmin),
+    canActivate: [authGuard, ownerGuard],
+    title: 'Crea Amministratore - DietiEstates25'
+  },
+  {
+    path: 'create-agent',
+    loadComponent: () => import('./features/admin/create-agent/create-agent').then(m => m.CreateAgent),
+    canActivate: [authGuard, adminOrOwnerGuard],
+    title: 'Crea Agente - DietiEstates25'
   },
   {
     path: 'profile',

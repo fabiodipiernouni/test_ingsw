@@ -4,6 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
+import { RouterModule } from '@angular/router';
 import { AuthService } from '@core/services/auth/auth.service';
 import { UserModel } from '@core-services/auth/models/UserModel';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -16,7 +17,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatChipsModule
+    MatChipsModule,
+    RouterModule
   ],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss']
@@ -60,6 +62,37 @@ export class Dashboard implements OnInit {
       case 'client': return 'Cliente';
       default: return 'Cliente';
     }
+  }
+
+  getRoleDescription(): string {
+    if (!this.currentUser) return '';
+    switch (this.currentUser.role) {
+      case 'owner': return 'Gestisci amministratori e agenti';
+      case 'admin': return 'Gestisci agenti immobiliari';
+      case 'agent': return 'Gestisci i tuoi immobili';
+      case 'client': return 'Trova la casa dei tuoi sogni';
+      default: return '';
+    }
+  }
+
+  isOwner(): boolean {
+    return this.currentUser?.role === 'owner';
+  }
+
+  isAdmin(): boolean {
+    return this.currentUser?.role === 'admin';
+  }
+
+  isAgent(): boolean {
+    return this.currentUser?.role === 'agent';
+  }
+
+  canCreateAdmins(): boolean {
+    return this.isOwner();
+  }
+
+  canCreateAgents(): boolean {
+    return this.isOwner() || this.isAdmin();
   }
 
   logout(): void {

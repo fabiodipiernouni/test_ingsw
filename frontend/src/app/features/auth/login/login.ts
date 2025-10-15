@@ -1,8 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, ActivatedRoute, RouterLink } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,6 +10,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { OAuthProviders } from '../oauth-providers/oauth-providers';
+import { AuthLayoutComponent, AuthLayoutConfig } from '../../../shared/components/auth-layout/auth-layout';
 
 @Component({
   selector: 'app-login',
@@ -18,14 +18,13 @@ import { OAuthProviders } from '../oauth-providers/oauth-providers';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
     MatIconModule,
     MatCheckboxModule,
-    RouterLink,
-    OAuthProviders
+    OAuthProviders,
+    AuthLayoutComponent
   ],
   templateUrl: './login.html',
   styleUrl: './login.scss'
@@ -40,6 +39,14 @@ export class Login implements OnInit {
   hidePassword = signal(true);
   isLoading = signal(false);
   returnUrl = signal<string>('/dashboard');
+
+  authConfig: AuthLayoutConfig = {
+    title: 'Accedi al tuo account',
+    subtitle: 'Benvenuto! Inserisci le tue credenziali per accedere',
+    footerText: 'Non hai ancora un account?',
+    footerLinkText: 'Registrati gratis',
+    footerLinkRoute: '/register'
+  };
 
   loginForm: FormGroup = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -96,5 +103,14 @@ export class Login implements OnInit {
       return `Minimo ${control.getError('minlength').requiredLength} caratteri`;
     }
     return '';
+  }
+
+  goToForgotPassword(): void {
+    const email = this.loginForm.get('email')?.value;
+    if (email) {
+      this.router.navigate(['/forgot-password'], { queryParams: { email } });
+    } else {
+      this.router.navigate(['/forgot-password']);
+    }
   }
 }

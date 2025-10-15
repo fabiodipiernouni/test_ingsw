@@ -1,0 +1,126 @@
+// Variabili principali
+$color-primary: #3f51b5;
+$color-secondary: #718096;
+$color-title: #1a202c;
+$color-bg-card: rgba(255, 255, 255, 0.95);
+$color-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+$radius-card: 20px;
+$gap-sm: 0.75rem;
+
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: $color-gradient;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600"><defs><pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grid)"/></svg>');
+    pointer-events: none;
+  }
+}
+
+.auth-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 2rem;
+
+  .mat-mdc-card {
+    border-radius: $radius-card;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    background: $color-bg-card;
+  }
+
+  .mat-mdc-card-header {
+    display: flex;
+    justify-content: center;
+  }
+}
+
+.auth-header {
+  text-align: center;
+  padding: 1rem 0;
+
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: $color-title;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    color: $color-secondary;
+    font-size: 1rem;
+    margin: 0;
+  }
+}
+
+.mat-mdc-card-content {
+  padding: 2rem;
+}
+
+.mat-mdc-card-footer {
+  padding: 1.5rem 2rem;
+  background: rgba(247, 250, 252, 0.8);
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.footer-link {
+  text-align: center;
+  font-size: 0.95rem;
+  color: $color-secondary;
+
+  .link-button {
+    color: $color-primary;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 640px) {
+  .auth-container {
+    padding: 1rem;
+  }
+
+  .auth-card {
+    max-width: 100%;
+  }
+
+  .mat-mdc-card-content {
+    padding: 1.5rem;
+  }
+
+  .auth-header {
+    .logo {
+      span {
+        font-size: 1.25rem;
+      }
+    }
+
+    h1 {
+      font-size: 1.5rem;
+    }
+
+    p {
+      font-size: 0.9rem;
+    }
+  }
+}

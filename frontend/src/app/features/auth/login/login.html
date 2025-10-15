@@ -1,88 +1,63 @@
-<div class="login-container">
-  <div class="login-card">
-    <mat-card>
-      <mat-card-header>
-        <div class="login-header">
-          <div class="logo">
-            <mat-icon>home</mat-icon>
-            <span>DietiEstates25</span>
-          </div>
-          <h1>Accedi al tuo account</h1>
-          <p>Benvenuto! Inserisci le tue credenziali per accedere</p>
-        </div>
-      </mat-card-header>
+<app-auth-layout [config]="authConfig">
+  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+    <div class="form-fields">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Email</mat-label>
+        <input matInput
+               type="email"
+               formControlName="email"
+               placeholder="mario.rossi@email.com"
+               autocomplete="username">
+        <mat-icon matSuffix>email</mat-icon>
+        <mat-error>{{ getErrorMessage('email') }}</mat-error>
+      </mat-form-field>
 
-      <mat-card-content>
-        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-          <div class="form-fields">
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Email</mat-label>
-              <input matInput
-                     type="email"
-                     formControlName="email"
-                     placeholder="mario.rossi@email.com"
-                     autocomplete="username">
-              <mat-icon matSuffix>email</mat-icon>
-              <mat-error>{{ getErrorMessage('email') }}</mat-error>
-            </mat-form-field>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Password</mat-label>
+        <input matInput
+               [type]="hidePassword() ? 'password' : 'text'"
+               formControlName="password"
+               placeholder="La tua password"
+               autocomplete="current-password">
+        <button mat-icon-button
+                matSuffix
+                type="button"
+                (click)="hidePassword.set(!hidePassword())"
+                [attr.aria-label]="'Hide password'"
+                [attr.aria-pressed]="hidePassword()">
+          <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error>{{ getErrorMessage('password') }}</mat-error>
+      </mat-form-field>
+    </div>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Password</mat-label>
-              <input matInput
-                     [type]="hidePassword() ? 'password' : 'text'"
-                     formControlName="password"
-                     placeholder="La tua password"
-                     autocomplete="current-password">
-              <button mat-icon-button
-                      matSuffix
-                      type="button"
-                      (click)="hidePassword.set(!hidePassword())"
-                      [attr.aria-label]="'Hide password'"
-                      [attr.aria-pressed]="hidePassword()">
-                <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
-              </button>
-              <mat-error>{{ getErrorMessage('password') }}</mat-error>
-            </mat-form-field>
-          </div>
+    <div class="form-options">
+      <mat-checkbox formControlName="rememberMe">
+        Ricordami
+      </mat-checkbox>
+      <a (click)="goToForgotPassword()" class="forgot-password-link">
+        Password dimenticata?
+      </a>
+    </div>
 
-          <div class="form-options">
-            <mat-checkbox formControlName="rememberMe">
-              Ricordami
-            </mat-checkbox>
-            <a routerLink="/forgot-password" class="forgot-password-link">
-              Password dimenticata?
-            </a>
-          </div>
+    <button mat-raised-button
+            color="primary"
+            type="submit"
+            class="login-button"
+            [disabled]="!loginForm.valid || isLoading()">
+      @if (isLoading()) {
+        <ng-container>
+          <mat-icon class="spin">refresh</mat-icon>
+          Accesso in corso...
+        </ng-container>
+      } @else {
+        <ng-container>
+          <mat-icon>login</mat-icon>
+          Accedi
+        </ng-container>
+      }
+    </button>
+  </form>
 
-          <button mat-raised-button
-                  color="primary"
-                  type="submit"
-                  class="login-button"
-                  [disabled]="!loginForm.valid || isLoading()">
-            @if (isLoading()) {
-              <ng-container>
-                <mat-icon class="spin">refresh</mat-icon>
-                Accesso in corso...
-              </ng-container>
-            } @else {
-              <ng-container>
-                <mat-icon>login</mat-icon>
-                Accedi
-              </ng-container>
-            }
-          </button>
-        </form>
-
-        <app-oauth-providers mode="login"></app-oauth-providers>
-      </mat-card-content>
-
-      <mat-card-footer>
-        <div class="register-link">
-          <span>Non hai ancora un account? </span>
-          <a routerLink="/register" class="register-button">
-            Registrati gratis
-          </a>
-        </div>
-      </mat-card-footer>
-    </mat-card>
-  </div>
+  <app-oauth-providers mode="login"></app-oauth-providers>
+</app-auth-layout>

@@ -40,3 +40,39 @@ export const agentGuard: CanActivateFn = (route, state) => {
   router.navigate(['/unauthorized']);
   return false;
 };
+
+export const adminGuard: CanActivateFn = (route, state) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (authService.isAuthenticated() && authService.isAdmin()) {
+    return true;
+  }
+
+  router.navigate(['/unauthorized']);
+  return false;
+};
+
+export const ownerGuard: CanActivateFn = (route, state) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (authService.isAuthenticated() && authService.isOwner()) {
+    return true;
+  }
+
+  router.navigate(['/unauthorized']);
+  return false;
+};
+
+export const adminOrOwnerGuard: CanActivateFn = (route, state) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (authService.isAuthenticated() && (authService.isAdmin() || authService.isOwner())) {
+    return true;
+  }
+
+  router.navigate(['/unauthorized']);
+  return false;
+};

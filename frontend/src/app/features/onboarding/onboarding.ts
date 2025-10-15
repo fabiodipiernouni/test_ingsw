@@ -31,6 +31,26 @@ export class Onboarding implements OnInit {
     this.currentUser = this.authService.getCurrentUser();
   }
 
+  isOwner(): boolean {
+    return this.currentUser?.role === 'owner';
+  }
+
+  isAdmin(): boolean {
+    return this.currentUser?.role === 'admin';
+  }
+
+  isAgent(): boolean {
+    return this.currentUser?.role === 'agent';
+  }
+
+  canCreateAdmins(): boolean {
+    return this.isOwner();
+  }
+
+  canCreateAgents(): boolean {
+    return this.isOwner() || this.isAdmin();
+  }
+
   goToDashboard(): void {
     this.router.navigate(['/dashboard']);
   }

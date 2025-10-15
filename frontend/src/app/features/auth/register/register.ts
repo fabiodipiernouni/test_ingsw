@@ -1,8 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
+import { Router } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,6 +11,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { OAuthProviders } from '../oauth-providers/oauth-providers';
+import { AuthLayoutComponent, AuthLayoutConfig } from '../../../shared/components/auth-layout/auth-layout';
 
 @Component({
   selector: 'app-register',
@@ -19,15 +19,14 @@ import { OAuthProviders } from '../oauth-providers/oauth-providers';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
     MatIconModule,
     MatSelectModule,
     MatCheckboxModule,
-    RouterLink,
-    OAuthProviders
+    OAuthProviders,
+    AuthLayoutComponent
   ],
   templateUrl: './register.html',
   styleUrl: './register.scss'
@@ -41,6 +40,14 @@ export class Register {
   hidePassword = signal(true);
   hideConfirmPassword = signal(true);
   isLoading = signal(false);
+
+  authConfig: AuthLayoutConfig = {
+    title: 'Crea il tuo account',
+    subtitle: 'Unisciti alla nostra community immobiliare',
+    footerText: 'Hai già un account?',
+    footerLinkText: 'Accedi',
+    footerLinkRoute: '/login'
+  };
 
   // Single registration form for clients only
   registrationForm: FormGroup = this.fb.group({
@@ -73,12 +80,14 @@ export class Register {
         next: (response) => {
           this.isLoading.set(false);
           if (response.success) {
-            this.snackBar.open('Registrazione completata!', 'Chiudi', {
+            this.snackBar.open('Registrazione completata! Verifica la tua email.', 'Chiudi', {
               duration: 5000,
               panelClass: ['success-snackbar']
             });
-            // Naviga alla pagina di login
-            this.router.navigate(['/auth/login']);
+            // Naviga alla pagina di verifica email con l'email come parametro
+            this.router.navigate(['/verify-email'], { 
+              queryParams: { email: formValue.email } 
+            });
           }
           else {
             this.snackBar.open(

@@ -2,11 +2,39 @@
     <header class="dashboard-header">
     <h1>Benvenuto, {{ currentUser?.firstName }}!</h1>
     <p class="subtitle">
-        {{ currentUser?.role === 'agent' ? 'Gestisci i tuoi immobili e trova nuovi clienti' : 'Trova la casa dei tuoi sogni' }}
+        {{ getUserRoleLabel() }} - {{ getRoleDescription() }}
     </p>
     </header>
 
     <div class="dashboard-grid">
+    <!-- Card per Creazione Admin (solo per owner) -->
+    <mat-card class="action-card" *ngIf="canCreateAdmins()">
+        <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #ff9800">admin_panel_settings</mat-icon>
+        <mat-card-title>Crea Amministratore</mat-card-title>
+        <mat-card-subtitle>Crea un nuovo account amministratore</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-actions>
+        <button mat-raised-button style="background-color: #ff9800; color: white;" routerLink="/create-admin">
+            Crea Admin
+        </button>
+        </mat-card-actions>
+    </mat-card>
+
+    <!-- Card per Creazione Agenti (per owner e admin) -->
+    <mat-card class="action-card" *ngIf="canCreateAgents()">
+        <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #4caf50">person_add</mat-icon>
+        <mat-card-title>Crea Agente</mat-card-title>
+        <mat-card-subtitle>Aggiungi un nuovo agente immobiliare</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-actions>
+        <button mat-raised-button style="background-color: #4caf50; color: white;" routerLink="/create-agent">
+            Crea Agente
+        </button>
+        </mat-card-actions>
+    </mat-card>
+
     <!-- Card per Ricerca -->
     <mat-card class="action-card">
         <mat-card-header>
@@ -36,7 +64,7 @@
     </mat-card>
 
     <!-- Card per Agenti (solo per agenti) -->
-    <mat-card class="action-card" *ngIf="currentUser?.role === 'agent'">
+    <mat-card class="action-card" *ngIf="isAgent()">
         <mat-card-header>
         <mat-icon mat-card-avatar>home</mat-icon>
         <mat-card-title>I Miei Immobili</mat-card-title>
@@ -65,7 +93,7 @@
             <span class="stat-number">0</span>
             <span class="stat-label">Proprietà Preferite</span>
             </div>
-            <div class="stat-item" *ngIf="currentUser?.role === 'agent'">
+            <div class="stat-item" *ngIf="isAgent()">
             <span class="stat-number">0</span>
             <span class="stat-label">Immobili Pubblicati</span>
             </div>
