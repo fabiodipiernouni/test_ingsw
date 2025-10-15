@@ -9,8 +9,9 @@ import { CreatePropertyResponse } from '@property/dto/CreatePropertyResponse';
 import { PropertyModel } from '@property/models/PropertyModel';
 import { isValidGeoJSONPoint } from '@shared/types/geojson.types';
 import { Helper } from '@services/property-service/utils/helper';
-import { SearchPropertyFilter } from '@property/dto/SearchPropertyFilter';
+import { SearchPropertiesFilters } from '@property/dto/SearchPropertiesFilters';
 import { PropertyStatus } from '@property/models/types';
+import { GeoSearchPropertiesFilters } from '@property/dto/GeoSearchPropertiesFilters';
 
 // Custom error classes for better error handling
 class ValidationError extends Error {
@@ -329,7 +330,8 @@ export class PropertyService {
   async getPropertiesCards(options: {
     page: number;
     limit: number;
-    filters: SearchPropertyFilter;
+    filters?: SearchPropertiesFilters;
+    geoFilters?: GeoSearchPropertiesFilters;
     status?: PropertyStatus;
     agencyId?: string;       // Per admin: filtra tutte le proprietà di una certa agenzia
     sortBy: string;
@@ -358,7 +360,9 @@ export class PropertyService {
       ];
 
       whereClause.status = options.status ?? 'active';
-      Helper.applySearchFilters(whereClause, options.filters);
+
+      if(options.filters) Helper.applySearchFilters(whereClause, options.filters);
+      if(options.geoFilters) Helper.applyGeoSearchFilters(whereClause, options.geoFilters);
 
       // Filtro per agenzia (per admin): filtra attraverso l'agente
       if (options.agencyId) {

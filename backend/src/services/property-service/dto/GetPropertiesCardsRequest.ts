@@ -1,13 +1,19 @@
-import { SearchPropertyFilter } from '@property/dto/SearchPropertyFilter';
+import { SearchPropertiesFilters } from '@property/dto/SearchPropertiesFilters';
 import { PagedRequest } from '@shared/dto/pagedRequest';
 import { PropertyStatus } from '@property/models/types';
 import { IsOptional, ValidateNested, IsUUID, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
+import { GeoSearchPropertiesFilters } from '@property/dto/GeoSearchPropertiesFilters';
 
 export class GetPropertiesCardsRequest {
   @ValidateNested()
-  @Type(() => SearchPropertyFilter)
-  filters!: SearchPropertyFilter;
+  @Type(() => SearchPropertiesFilters)
+  filters!: SearchPropertiesFilters;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => GeoSearchPropertiesFilters)
+  getFilters?: GeoSearchPropertiesFilters;
 
   @IsOptional()
   @ValidateNested()

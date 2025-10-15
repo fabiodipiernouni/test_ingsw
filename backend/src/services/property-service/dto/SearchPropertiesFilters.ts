@@ -2,7 +2,7 @@ import { IsOptional, IsString, IsNumber, Min, Max  } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ListingType, PropertyType } from '@property/models/types';
 
-export class SearchPropertyFilter {
+export class SearchPropertiesFilters {
   @IsOptional()
   @IsString()
   location?: string;           // Città o CAP

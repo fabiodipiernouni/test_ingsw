@@ -12,4 +12,4 @@ export { PropertyView } from './PropertyView';
 export { Agency } from './Agency';
 
 // Re-export shared GeoJSON types for convenience
-export { GeoJSONPoint, GeoCoordinates, isValidGeoJSONPoint, createGeoJSONPoint, extractCoordinates } from '@shared/types/geojson.types';
+export { GeoJSONPoint, GeoCoordinates, isValidGeoJSONPoint, createGeoJSONPoint } from '@shared/types/geojson.types';
