@@ -1,0 +1,47 @@
+<div class="warning-container">
+  <!-- Verification Warning -->
+  @if(showVerificationWarning) {
+    <mat-card class="warning-card verification-warning" appearance="outlined">
+      <mat-card-content>
+        <div class="warning-content">
+          <div class="icon-section">
+            <mat-icon class="warning-icon">warning_amber</mat-icon>
+          </div>
+          <div class="text-section">
+            <h3 class="warning-title">Email non verificata</h3>
+            <p class="warning-description">
+              Per favore verifica la tua email per accedere a tutte le funzionalità. 
+              <a class="profile-link" (click)="goToProfile()">
+                Vai al profilo
+                <mat-icon class="link-icon">arrow_forward</mat-icon>
+              </a>
+            </p>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Password Change Warning -->
+  @if(showPasswordChangeWarning) {
+    <mat-card class="warning-card password-warning" appearance="outlined">
+      <mat-card-content>
+        <div class="warning-content">
+          <div class="icon-section">
+            <mat-icon class="warning-icon">lock_open</mat-icon>
+          </div>
+          <div class="text-section">
+            <h3 class="warning-title">Cambia la tua password</h3>
+            <p class="warning-description">
+              La tua password è stata creata con credenziali predefinite. Ti consigliamo fortemente di cambiarla per maggiore sicurezza.
+              <a class="profile-link" (click)="goToProfile()">
+                Vai al profilo
+                <mat-icon class="link-icon">arrow_forward</mat-icon>
+              </a>
+            </p>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

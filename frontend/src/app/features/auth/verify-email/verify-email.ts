@@ -63,8 +63,7 @@ export class VerifyEmail implements OnInit {
   sendCode(): void {
     if (this.emailForm.valid) {
       this.isLoading.set(true);
-      const request = { email: this.emailForm.value.email };
-      this.authService.resendVerificationCode(request).subscribe({
+      this.authService.resendVerificationCode().subscribe({
         next: () => {
           this.codeSent.set(true);
           this.isLoading.set(false);

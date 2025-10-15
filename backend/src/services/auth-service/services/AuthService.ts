@@ -1033,6 +1033,7 @@ export class AuthService {
       role: user.role,
       isActive: user.isActive,
       isVerified: user.isVerified,
+      passwordChangeRequired: user.passwordChangeRequired,
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
       agency: user.agency ? this.formatAgencyResponse(user.agency) : undefined

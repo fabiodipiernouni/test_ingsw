@@ -1,4 +1,6 @@
 <div class="onboarding-container">
+    <app-user-warning></app-user-warning>
+
     <div class="welcome-header">
     <mat-icon class="welcome-icon">celebration</mat-icon>
     <h1>Benvenuto in DietiEstates25, {{ currentUser?.firstName }}!</h1>
@@ -8,6 +10,7 @@
     </div>
 
     <div class="features-grid">
+
     <!-- Gestione Admin (solo per owner) -->
     <mat-card class="feature-card" *ngIf="canCreateAdmins()">
         <mat-card-header>

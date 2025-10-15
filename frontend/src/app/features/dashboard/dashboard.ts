@@ -8,6 +8,7 @@ import { RouterModule } from '@angular/router';
 import { AuthService } from '@core/services/auth/auth.service';
 import { UserModel } from '@core-services/auth/models/UserModel';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { UserWarning } from '@features/auth/user-warning/user-warning';
 
 @Component({
   selector: 'app-dashboard',
@@ -18,7 +19,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     MatButtonModule,
     MatIconModule,
     MatChipsModule,
-    RouterModule
+    RouterModule,
+    UserWarning
   ],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss']

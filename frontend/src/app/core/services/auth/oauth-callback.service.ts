@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from './auth.service';
-import { AuthResponseUser } from './dto/AuthResponse';
+import { AuthResponse } from './dto/AuthResponse';
 
 @Injectable({
   providedIn: 'root'
@@ -29,7 +29,7 @@ export class OAuthCallbackService {
       return;
     }
 
-    const authResponse : AuthResponseUser = queryParams['response'] ? JSON.parse(queryParams['response']) : null;
+    const authResponse : AuthResponse = queryParams['response'] ? JSON.parse(queryParams['response']) : null;
 
     if (authResponse) {
       

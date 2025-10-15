@@ -80,13 +80,9 @@ export class Register {
         next: (response) => {
           this.isLoading.set(false);
           if (response.success) {
-            this.snackBar.open('Registrazione completata! Verifica la tua email.', 'Chiudi', {
+            this.snackBar.open('Registrazione completata!', 'Chiudi', {
               duration: 5000,
               panelClass: ['success-snackbar']
-            });
-            // Naviga alla pagina di verifica email con l'email come parametro
-            this.router.navigate(['/verify-email'], { 
-              queryParams: { email: formValue.email } 
             });
           }
           else {

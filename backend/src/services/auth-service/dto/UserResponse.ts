@@ -9,6 +9,7 @@ export interface UserResponse {
   role: string;
   isActive: boolean;
   isVerified: boolean;
+  passwordChangeRequired: boolean;
   createdAt: string;
   updatedAt: string;
   agency?: AgencyResponse;

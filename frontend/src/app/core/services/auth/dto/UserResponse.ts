@@ -10,6 +10,7 @@ export interface UserResponse {
   role: UserRole;
   isActive: boolean;
   isVerified: boolean;
+  passwordChangeRequired: boolean;
   createdAt: string;
   updatedAt: string;
   agency?: AgencyResponse;

@@ -71,8 +71,9 @@ export class Login implements OnInit {
       this.authService.login(credentials).subscribe({
         next: (response) => {
           this.isLoading.set(false);
-          this.authService.handleApiAuthResponse(response);
-          this.router.navigateByUrl(this.returnUrl()); //TODO: passarlo al metodo handleApiAuthResponse e fare redirect solo se non c'è challenge oppure passarlo alla challenge
+          if(response.success) {
+            this.router.navigateByUrl(this.returnUrl());
+          }
         },
         error: (error) => {
           this.isLoading.set(false);

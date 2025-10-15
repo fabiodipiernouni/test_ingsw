@@ -11,6 +11,7 @@ export interface UserModel {
   avatar?: string;
   phone?: string;
   isVerified: boolean;
+  passwordChangeRequired: boolean;
   isActive: boolean;
   linkedProviders: Array<OAuthProvider>;
   lastLoginAt?: Date;

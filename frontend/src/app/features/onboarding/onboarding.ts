@@ -7,6 +7,7 @@ import { MatStepperModule } from '@angular/material/stepper';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '@core-services/auth/auth.service';
 import { UserModel } from '@core-services/auth/models/UserModel';
+import { UserWarning } from '@features/auth/user-warning/user-warning';
 
 @Component({
   selector: 'app-onboarding',
@@ -17,7 +18,8 @@ import { UserModel } from '@core-services/auth/models/UserModel';
     MatButtonModule,
     MatIconModule,
     MatStepperModule,
-    RouterLink
+    RouterLink,
+    UserWarning
   ],
   templateUrl: './onboarding.html',
   styleUrls: ['./onboarding.scss']

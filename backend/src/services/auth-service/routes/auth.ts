@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/AuthController';
 import { validate, authValidations } from '@shared/middleware/validation';
-import { authenticateToken, requireEmailVerified, requirePasswordChanged } from '@shared/middleware/auth';
+import { authenticateToken } from '@shared/middleware/auth';
 import { requireAgencyAdmin, requireAgencyOwner } from '../../../shared/middleware/authorization';
 
 const router = Router();
@@ -584,8 +584,6 @@ router.get('/oauth/callback', authController.handleOAuthCallback);
  */
 router.post('/create-agent', 
   authenticateToken,
-  requirePasswordChanged,
-  requireEmailVerified,
   requireAgencyAdmin, 
   authController.createAgent.bind(authController)
 );
@@ -728,8 +726,6 @@ router.post('/create-agent',
  */
 router.post('/create-admin', 
   authenticateToken,
-  requirePasswordChanged,
-  requireEmailVerified,
   requireAgencyOwner, 
   authController.createAdmin.bind(authController)
 );
