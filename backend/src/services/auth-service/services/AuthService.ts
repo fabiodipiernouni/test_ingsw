@@ -1034,8 +1034,8 @@ export class AuthService {
       isActive: user.isActive,
       isVerified: user.isVerified,
       passwordChangeRequired: user.passwordChangeRequired,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
       agency: user.agency ? this.formatAgencyResponse(user.agency) : undefined
     };
   }

@@ -10,7 +10,7 @@ export interface UserResponse {
   isActive: boolean;
   isVerified: boolean;
   passwordChangeRequired: boolean;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt?: Date;
   agency?: AgencyResponse;
 }
