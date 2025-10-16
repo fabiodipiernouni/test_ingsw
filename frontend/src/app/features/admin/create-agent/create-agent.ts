@@ -49,13 +49,16 @@ export class CreateAgent {
     email: ['', [Validators.required, Validators.email]],
     firstName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
     lastName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
-    phone: ['', [Validators.pattern(/^[\d\s()+-]+$/)]],
+    phone: ['', [Validators.pattern(/^\+\d{1,15}$/)]],
     licenseNumber: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
     biography: ['', [Validators.maxLength(1000)]],
     specializationInput: ['']
   });
 
-  addSpecialization(): void {
+  addSpecialization(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+    }
     const input = this.agentForm.get('specializationInput')?.value?.trim();
     if (input && !this.specializations().includes(input)) {
       this.specializations.update(specs => [...specs, input]);
@@ -135,7 +138,12 @@ export class CreateAgent {
       const maxLength = control.errors['maxlength'].requiredLength;
       return `Massimo ${maxLength} caratteri`;
     }
-    if (control.errors['pattern']) return 'Formato non valido';
+    if (control.errors['pattern']) {
+      if (fieldName === 'phone') {
+        return 'Il numero deve essere in formato E.164 (es. +391234567890)';
+      }
+      return 'Formato non valido';
+    }
 
     return 'Campo non valido';
   }

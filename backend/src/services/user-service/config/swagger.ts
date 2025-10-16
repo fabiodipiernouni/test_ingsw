@@ -121,7 +121,7 @@ const options = {
             phone: {
               type: 'string',
               description: 'Numero di telefono',
-              example: '+39 123 456 7890'
+              example: '+391234567890'
             },
             avatar: {
               type: 'string',
@@ -235,7 +235,7 @@ const options = {
             phone: {
               type: 'string',
               description: 'Numero di telefono',
-              example: '+39 123 456 7890'
+              example: '+391234567890'
             },
             licenseNumber: {
               type: 'string',

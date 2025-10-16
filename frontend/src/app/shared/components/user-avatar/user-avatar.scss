@@ -1,0 +1,80 @@
+@use 'sass:color';
+
+$color-primary: #667eea;
+$color-border: #f0f0f0;
+
+.user-avatar-container {
+  display: inline-block;
+  position: relative;
+
+  .avatar-image,
+  .avatar-initials {
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid $color-border;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .avatar-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .avatar-initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, $color-primary 0%, color.adjust($color-primary, $lightness: 15%) 100%);
+    color: white;
+    font-weight: 600;
+    width: 100%;
+    height: 100%;
+  }
+
+  // Size variants
+  &.size-small {
+    width: 32px;
+    height: 32px;
+
+    .avatar-initials {
+      font-size: 0.875rem;
+      border: 2px solid $color-border;
+    }
+  }
+
+  &.size-medium {
+    width: 40px;
+    height: 40px;
+
+    .avatar-initials {
+      font-size: 1rem;
+      border: 2px solid $color-border;
+    }
+  }
+
+  &.size-large {
+    width: 120px;
+    height: 120px;
+
+    .avatar-initials {
+      font-size: 2.5rem;
+      border: 4px solid $color-border;
+    }
+
+    .avatar-image {
+      border: 4px solid $color-border;
+    }
+  }
+
+  @media (max-width: 768px) {
+    &.size-large {
+      width: 80px;
+      height: 80px;
+
+      .avatar-initials {
+        font-size: 1.75rem;
+      }
+    }
+  }
+}

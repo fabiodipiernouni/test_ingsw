@@ -1,0 +1,172 @@
+.verify-email-container {
+  padding: 1rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.verify-email-card {
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+
+    .header-icon {
+      font-size: 2.5rem;
+      width: 2.5rem;
+      height: 2.5rem;
+      color: var(--primary-color);
+    }
+
+    mat-card-title {
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  mat-card-content {
+    padding: 2rem;
+  }
+}
+
+.verified-status {
+  text-align: center;
+  padding: 2rem;
+
+  .success-icon {
+    margin-bottom: 1rem;
+
+    mat-icon {
+      font-size: 4rem;
+      width: 4rem;
+      height: 4rem;
+      color: #4caf50;
+    }
+  }
+
+  h3 {
+    color: #4caf50;
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+  }
+
+  p {
+    color: rgba(0, 0, 0, 0.7);
+    font-size: 1rem;
+  }
+}
+
+.unverified-status {
+  .warning-section {
+    display: flex;
+    gap: 1rem;
+    padding: 1.5rem;
+    background-color: #fff3cd;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+
+    .warning-icon {
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+      color: #ff9800;
+      flex-shrink: 0;
+    }
+
+    h3 {
+      margin: 0 0 0.5rem 0;
+      color: #ff9800;
+      font-size: 1.25rem;
+    }
+
+    p {
+      margin: 0;
+      color: rgba(0, 0, 0, 0.7);
+      line-height: 1.5;
+    }
+  }
+
+  mat-divider {
+    margin: 2rem 0;
+  }
+
+  .send-code-section {
+    text-align: center;
+    padding: 1.5rem;
+
+    p {
+      margin-bottom: 1.5rem;
+      color: rgba(0, 0, 0, 0.7);
+    }
+
+    button {
+      mat-icon {
+        margin-right: 0.5rem;
+      }
+    }
+  }
+
+  .verify-form {
+    .code-sent-info {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem;
+      background-color: #e3f2fd;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+
+      mat-icon {
+        color: #2196f3;
+        flex-shrink: 0;
+      }
+
+      p {
+        margin: 0;
+        color: rgba(0, 0, 0, 0.7);
+        line-height: 1.5;
+      }
+    }
+
+    .full-width {
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+
+      button {
+        mat-icon {
+          margin-right: 0.5rem;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .verify-email-container {
+    padding: 0.5rem;
+  }
+
+  .verify-email-card mat-card-content {
+    padding: 1rem;
+  }
+
+  .unverified-status {
+    .warning-section {
+      flex-direction: column;
+      padding: 1rem;
+    }
+
+    .verify-form .form-actions {
+      flex-direction: column;
+
+      button {
+        width: 100%;
+      }
+    }
+  }
+}

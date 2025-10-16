@@ -42,7 +42,7 @@
           <input matInput 
                  type="tel"
                  formControlName="phone" 
-                 placeholder="+39 123 456 7890">
+                 placeholder="+391234567890">
           <mat-icon matSuffix>phone</mat-icon>
           <mat-error>{{ getErrorMessage('phone') }}</mat-error>
         </mat-form-field>
@@ -83,7 +83,7 @@
               <input matInput 
                      formControlName="specializationInput"
                      placeholder="Es: Residenziale, Commerciale, Lusso"
-                     (keyup.enter)="addSpecialization()">
+                     (keydown.enter)="addSpecialization($event)">
               <mat-icon matSuffix>category</mat-icon>
             </mat-form-field>
             <button mat-raised-button 

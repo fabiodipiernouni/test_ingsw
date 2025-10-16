@@ -46,7 +46,7 @@ export class CreateAdmin {
     email: ['', [Validators.required, Validators.email]],
     firstName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
     lastName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
-    phone: ['', [Validators.pattern(/^[\d\s()+-]+$/)]]
+    phone: ['', [Validators.pattern(/^\+\d{1,15}$/)]]
   });
 
   onSubmit(): void {
@@ -114,7 +114,12 @@ export class CreateAdmin {
       const maxLength = control.errors['maxlength'].requiredLength;
       return `Massimo ${maxLength} caratteri`;
     }
-    if (control.errors['pattern']) return 'Formato non valido';
+    if (control.errors['pattern']) {
+      if (fieldName === 'phone') {
+        return 'Il numero deve essere in formato E.164 (es. +391234567890)';
+      }
+      return 'Formato non valido';
+    }
 
     return 'Campo non valido';
   }

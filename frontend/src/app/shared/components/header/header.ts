@@ -10,6 +10,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '@core/services/auth/auth.service';
 import {MatDivider} from '@angular/material/divider';
 import {MatChip} from '@angular/material/chips';
+import { UserAvatar } from '../user-avatar/user-avatar';
 
 @Component({
   selector: 'app-header',
@@ -24,7 +25,8 @@ import {MatChip} from '@angular/material/chips';
     MatBadgeModule,
     MatTooltipModule,
     MatDivider,
-    MatChip
+    MatChip,
+    UserAvatar
   ],
   templateUrl: './header.html',
   styleUrl: './header.scss'
@@ -79,12 +81,6 @@ export class Header implements OnInit {
 
   toggleMobileMenu(): void {
     this.isMobileMenuOpen.update(current => !current);
-  }
-
-  getUserInitials(): string {
-    const user = this.currentUser();
-    if (!user) return '';
-    return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
   }
 
   getUserDisplayName(): string {

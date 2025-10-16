@@ -42,7 +42,10 @@ export class Helper {
       lastLoginAt: user.lastLoginAt,
       agencyId: user.agencyId,
       createdAt: user.createdAt,
-      updatedAt: user.updatedAt
+      updatedAt: user.updatedAt,
+      licenseNumber: user.licenseNumber,
+      biography: user.biography,
+      specializations: user.specializations,
     };
   }
 

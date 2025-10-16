@@ -170,6 +170,16 @@ export class AuthService {
         throw new ValidationError('Password does not meet requirements');
       }
 
+      // Gestione errore parametri non validi (es. phone number non in formato E.164)
+      if (error.name === 'InvalidParameterException') {
+        const validationError = new Error('Invalid parameters provided') as any;
+        validationError.name = 'ValidationError';
+        validationError.details = {
+          errors: [error.message || 'One or more parameters are invalid. Check phone number format (must be +countrycode+number)']
+        };
+        throw validationError;
+      }
+
       throw error;
     }
   }
@@ -913,6 +923,16 @@ export class AuthService {
         throw new ConflictError('User already exists in authentication system');
       }
 
+      // Gestione errore parametri non validi (es. phone number non in formato E.164)
+      if (error.name === 'InvalidParameterException') {
+        const validationError = new Error('Invalid parameters provided') as any;
+        validationError.name = 'ValidationError';
+        validationError.details = {
+          errors: [error.message || 'One or more parameters are invalid. Check phone number format (must be +countrycode+number)']
+        };
+        throw validationError;
+      }
+
       throw error;
     }
   }
@@ -1016,6 +1036,16 @@ export class AuthService {
         throw new ConflictError('User already exists in authentication system');
       }
 
+      // Gestione errore parametri non validi (es. phone number non in formato E.164)
+      if (error.name === 'InvalidParameterException') {
+        const validationError = new Error('Invalid parameters provided') as any;
+        validationError.name = 'ValidationError';
+        validationError.details = {
+          errors: [error.message || 'One or more parameters are invalid. Check phone number format (must be +countrycode+number)']
+        };
+        throw validationError;
+      }
+
       throw error;
     }
   }
@@ -1037,6 +1067,9 @@ export class AuthService {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       agency: user.agency ? this.formatAgencyResponse(user.agency) : undefined
+      licenseNumber: user.licenseNumber,
+      biography: user.biography,
+      specializations: user.specializations
     };
   }
 
