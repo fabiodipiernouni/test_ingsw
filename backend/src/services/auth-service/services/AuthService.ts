@@ -1066,7 +1066,7 @@ export class AuthService {
       passwordChangeRequired: user.passwordChangeRequired,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      agency: user.agency ? this.formatAgencyResponse(user.agency) : undefined
+      agency: user.agency ? this.formatAgencyResponse(user.agency) : undefined,
       licenseNumber: user.licenseNumber,
       biography: user.biography,
       specializations: user.specializations
