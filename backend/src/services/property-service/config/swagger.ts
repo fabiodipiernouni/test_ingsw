@@ -51,7 +51,7 @@ const options: swaggerJsdoc.Options = {
             },
             propertyType: {
               type: 'string',
-              enum: ['apartment', 'house', 'villa', 'land', 'commercial', 'office', 'garage'],
+              enum: ['apartment', 'villa', 'house', 'loft', 'office', 'commercial', 'land'],
               example: 'apartment'
             },
             listingType: {
@@ -119,6 +119,176 @@ const options: swaggerJsdoc.Options = {
           }
         },
 
+        GetPropertiesCardsRequest: {
+          type: 'object',
+          properties: {
+            filters: {
+              $ref: '#/components/schemas/SearchPropertiesFilters'
+            },
+            geoFilters: {
+              $ref: '#/components/schemas/GeoSearchPropertiesFilters'
+            },
+            pagedRequest: {
+              $ref: '#/components/schemas/PagedRequest'
+            },
+            status: {
+              type: 'string',
+              enum: ['active', 'pending', 'sold', 'rented', 'withdrawn'],
+              description: 'Filtra per stato (solo per agenti e admin)'
+            },
+            agencyId: {
+              type: 'string',
+              format: 'uuid',
+              description: 'Filtra per agenzia specifica (solo per admin)'
+            }
+          }
+        },
+
+        SearchPropertiesFilters: {
+          type: 'object',
+          properties: {
+            location: {
+              type: 'string',
+              description: 'Città o CAP',
+              example: 'Napoli'
+            },
+            propertyType: {
+              type: 'string',
+              enum: ['apartment', 'villa', 'house', 'loft', 'office', 'commercial', 'land'],
+              example: 'apartment'
+            },
+            listingType: {
+              type: 'string',
+              enum: ['sale', 'rent'],
+              example: 'sale'
+            },
+            priceMin: {
+              type: 'number',
+              minimum: 0,
+              maximum: 9990000,
+              example: 100000
+            },
+            priceMax: {
+              type: 'number',
+              minimum: 0,
+              maximum: 10000000,
+              example: 500000
+            },
+            rooms: {
+              type: 'integer',
+              minimum: 0,
+              description: 'Numero minimo di stanze',
+              example: 3
+            },
+            bedrooms: {
+              type: 'integer',
+              minimum: 0,
+              description: 'Numero minimo di camere',
+              example: 2
+            },
+            bathrooms: {
+              type: 'integer',
+              minimum: 0,
+              description: 'Numero minimo di bagni',
+              example: 1
+            },
+            hasElevator: {
+              type: 'boolean',
+              example: true
+            },
+            hasBalcony: {
+              type: 'boolean',
+              example: true
+            },
+            hasGarden: {
+              type: 'boolean',
+              example: false
+            },
+            hasParking: {
+              type: 'boolean',
+              example: true
+            }
+          }
+        },
+
+        GeoSearchPropertiesFilters: {
+          type: 'object',
+          properties: {
+            polygon: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/GeoJSONPoint'
+              },
+              minItems: 3,
+              maxItems: 100,
+              description: 'Ricerca per area poligonale (minimo 3 punti). Non può essere usato con radiusSearch.'
+            },
+            radiusSearch: {
+              $ref: '#/components/schemas/RadiusSearch',
+              description: 'Ricerca per raggio da punto centrale. Non può essere usato con polygon.'
+            }
+          }
+        },
+
+        RadiusSearch: {
+          type: 'object',
+          required: ['center', 'radius'],
+          properties: {
+            center: {
+              $ref: '#/components/schemas/GeoJSONPoint',
+              description: 'Punto centrale della ricerca'
+            },
+            radius: {
+              type: 'number',
+              minimum: 0,
+              maximum: 500,
+              description: 'Raggio in chilometri (max 500km)',
+              example: 10
+            }
+          }
+        },
+
+        PagedRequest: {
+          type: 'object',
+          properties: {
+            page: {
+              type: 'integer',
+              minimum: 1,
+              default: 1,
+              example: 1
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              default: 20,
+              example: 20
+            },
+            sortBy: {
+              type: 'string',
+              default: 'createdAt',
+              example: 'createdAt'
+            },
+            sortOrder: {
+              type: 'string',
+              enum: ['ASC', 'DESC'],
+              default: 'DESC',
+              example: 'DESC'
+            }
+          }
+        },
+
+        PropertyViewRequest: {
+          type: 'object',
+          properties: {
+            source: {
+              type: 'string',
+              default: 'web',
+              example: 'web',
+              description: 'Fonte della visualizzazione'
+            }
+          }
+        },
+
         // Response DTOs
         PropertyModel: {
           type: 'object',
@@ -130,8 +300,14 @@ const options: swaggerJsdoc.Options = {
             title: { type: 'string' },
             description: { type: 'string' },
             price: { type: 'number' },
-            propertyType: { type: 'string' },
-            listingType: { type: 'string' },
+            propertyType: {
+              type: 'string',
+              enum: ['apartment', 'villa', 'house', 'loft', 'office', 'commercial', 'land']
+            },
+            listingType: {
+              type: 'string',
+              enum: ['sale', 'rent']
+            },
             status: {
               type: 'string',
               enum: ['active', 'pending', 'sold', 'rented', 'withdrawn']
@@ -140,7 +316,10 @@ const options: swaggerJsdoc.Options = {
             bathrooms: { type: 'integer' },
             area: { type: 'number' },
             floor: { type: 'string' },
-            energyClass: { type: 'string' },
+            energyClass: {
+              type: 'string',
+              enum: ['A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G']
+            },
             hasElevator: { type: 'boolean' },
             hasBalcony: { type: 'boolean' },
             hasGarden: { type: 'boolean' },
@@ -186,9 +365,19 @@ const options: swaggerJsdoc.Options = {
             title: { type: 'string' },
             description: { type: 'string' },
             price: { type: 'number' },
-            propertyType: { type: 'string' },
-            listingType: { type: 'string' },
-            status: { type: 'string' },
+            propertyType: {
+              type: 'string',
+              enum: ['apartment', 'villa', 'house', 'loft', 'office', 'commercial', 'land']
+            },
+            listingType: {
+              type: 'string',
+              enum: ['sale', 'rent']
+            },
+            status: {
+              type: 'string',
+              enum: ['active', 'pending', 'sold', 'rented', 'withdrawn']
+            },
+            rooms: { type: 'integer' },
             bedrooms: { type: 'integer' },
             bathrooms: { type: 'integer' },
             area: { type: 'number' },
@@ -198,7 +387,10 @@ const options: swaggerJsdoc.Options = {
             primaryImage: {
               $ref: '#/components/schemas/PropertyImageModel'
             },
-            energyClass: { type: 'string' },
+            energyClass: {
+              type: 'string',
+              enum: ['A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G']
+            },
             hasElevator: { type: 'boolean' },
             hasBalcony: { type: 'boolean' },
             hasGarden: { type: 'boolean' },
@@ -249,7 +441,7 @@ const options: swaggerJsdoc.Options = {
 
         Address: {
           type: 'object',
-          required: ['street', 'city', 'province', 'zipCode'],
+          required: ['street', 'city', 'province', 'zipCode', 'country'],
           properties: {
             street: {
               type: 'string',
@@ -294,60 +486,13 @@ const options: swaggerJsdoc.Options = {
               },
               minItems: 2,
               maxItems: 2,
+              description: '[longitude, latitude]',
               example: [14.2681244, 40.8517746]
             }
           }
         },
 
-        PagedResultPropertyCardDto: {
-          type: 'object',
-          properties: {
-            data: {
-              type: 'array',
-              items: {
-                $ref: '#/components/schemas/PropertyCardDto'
-              }
-            },
-            totalCount: {
-              type: 'integer',
-              example: 100
-            },
-            currentPage: {
-              type: 'integer',
-              example: 1
-            },
-            totalPages: {
-              type: 'integer',
-              example: 5
-            },
-            hasNextPage: {
-              type: 'boolean',
-              example: true
-            },
-            hasPreviousPage: {
-              type: 'boolean',
-              example: false
-            }
-          }
-        },
-
-        CreatePropertyResponse: {
-          type: 'object',
-          properties: {
-            success: {
-              type: 'boolean',
-              example: true
-            },
-            data: {
-              $ref: '#/components/schemas/PropertyModel'
-            },
-            message: {
-              type: 'string',
-              example: 'Property created successfully'
-            }
-          }
-        },
-
+        // Success Responses
         ApiSuccessResponse: {
           type: 'object',
           properties: {
@@ -358,6 +503,9 @@ const options: swaggerJsdoc.Options = {
             data: {
               type: 'object'
             },
+            message: {
+              type: 'string'
+            },
             timestamp: {
               type: 'string',
               format: 'date-time'
@@ -365,6 +513,72 @@ const options: swaggerJsdoc.Options = {
           }
         },
 
+        PropertyCardsResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true
+            },
+            data: {
+              type: 'object',
+              properties: {
+                properties: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/PropertyCardDto'
+                  }
+                },
+                totalCount: {
+                  type: 'integer',
+                  example: 100
+                },
+                currentPage: {
+                  type: 'integer',
+                  example: 1
+                },
+                totalPages: {
+                  type: 'integer',
+                  example: 5
+                },
+                hasNextPage: {
+                  type: 'boolean',
+                  example: true
+                },
+                hasPreviousPage: {
+                  type: 'boolean',
+                  example: false
+                }
+              }
+            },
+            timestamp: {
+              type: 'string',
+              format: 'date-time'
+            }
+          }
+        },
+
+        PropertyResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true
+            },
+            data: {
+              $ref: '#/components/schemas/PropertyModel'
+            },
+            message: {
+              type: 'string'
+            },
+            timestamp: {
+              type: 'string',
+              format: 'date-time'
+            }
+          }
+        },
+
+        // Error Responses
         ErrorResponse: {
           type: 'object',
           properties: {
@@ -430,4 +644,4 @@ const options: swaggerJsdoc.Options = {
 };
 
 export const specs = swaggerJsdoc(options);
-export const swaggerSpec = specs; // alias per retrocompatibilità
+export const swaggerSpec = specs;

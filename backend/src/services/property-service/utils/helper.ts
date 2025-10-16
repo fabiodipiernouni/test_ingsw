@@ -35,6 +35,7 @@ export class Helper {
       phone: user.phone,
       isVerified: user.isVerified,
       isActive: user.isActive,
+      passwordChangeRequired: user.passwordChangeRequired,
       linkedProviders: user.linkedProviders || [],
       cognitoSub: user.cognitoSub,
       cognitoUsername: user.cognitoUsername,

@@ -57,12 +57,4 @@ export function createGeoJSONPoint(longitude: number, latitude: number): GeoJSON
   };
 }
 
-/**
- * Helper per estrarre latitude e longitude da GeoJSON Point
- */
-function extractCoordinates(point: GeoJSONPoint): { longitude: number; latitude: number } {
-  return {
-    longitude: point.coordinates[0],
-    latitude: point.coordinates[1]
-  };
-}
+
