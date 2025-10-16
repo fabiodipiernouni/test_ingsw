@@ -55,29 +55,21 @@
         <!-- User Menu -->
         <button mat-icon-button
                 [matMenuTriggerFor]="userMenu"
-                class="user-avatar"
+                class="user-avatar-btn"
                 matTooltip="{{ getUserDisplayName() }}">
-          @if (currentUser()?.avatar) {
-            <img [src]="currentUser()?.avatar"
-                 [alt]="getUserDisplayName()"
-                 class="avatar-image">
-          } @else {
-            <div class="avatar-initials">
-              {{ getUserInitials() }}
-            </div>
-          }
+          <app-user-avatar
+            [avatarUrl]="currentUser()?.avatar"
+            [firstName]="currentUser()?.firstName || ''"
+            [lastName]="currentUser()?.lastName || ''"
+            [altText]="getUserDisplayName()"
+            size="medium">
+          </app-user-avatar>
         </button>
 
         <mat-menu #userMenu="matMenu" class="user-menu">
           <div class="user-info">
             <div class="user-name">{{ getUserDisplayName() }}</div>
             <div class="user-email">{{ currentUser()?.email }}</div>
-            @if (isAgent()) {
-              <div class="user-role">Agente Immobiliare</div>
-              @if (currentUser()?.agency?.name) {
-                <div class="agency-name">{{ currentUser()?.agency?.name }}</div>
-              }
-            }
           </div>
 
           <mat-divider></mat-divider>
@@ -97,11 +89,6 @@
               <mat-icon>dashboard</mat-icon>
               <span>Dashboard</span>
             </button>
-          } @else {
-            <!--<button mat-menu-item routerLink="/favorites">
-              <mat-icon>favorite</mat-icon>
-              <span>I Miei Preferiti</span>
-            </button> -->
           }
 
           <button mat-menu-item routerLink="/saved-searches">
@@ -163,12 +150,13 @@
           <!-- User Info -->
           <div class="mobile-user-info">
             <div class="mobile-avatar">
-              @if (currentUser()?.avatar) {
-                <img [src]="currentUser()?.avatar"
-                     [alt]="getUserDisplayName()">
-              } @else {
-                <div class="avatar-initials">{{ getUserInitials() }}</div>
-              }
+              <app-user-avatar
+                [avatarUrl]="currentUser()?.avatar"
+                [firstName]="currentUser()?.firstName || ''"
+                [lastName]="currentUser()?.lastName || ''"
+                [altText]="getUserDisplayName()"
+                size="medium">
+              </app-user-avatar>
             </div>
             <div class="user-details">
               <div class="user-name">{{ getUserDisplayName() }}</div>
@@ -210,11 +198,6 @@
                 <mat-icon>dashboard</mat-icon>
                 <span>Dashboard</span>
               </a>
-            } @else {
-              <!-- <a mat-button routerLink="/favorites" (click)="toggleMobileMenu()">
-                <mat-icon>favorite</mat-icon>
-                <span>I Miei Preferiti</span>
-              </a> -->
             }
 
             <a mat-button routerLink="/profile" (click)="toggleMobileMenu()">

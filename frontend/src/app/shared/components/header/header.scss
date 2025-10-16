@@ -111,6 +111,24 @@ $radius: 8px;
   }
 }
 
+.user-avatar-btn {
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  
+  &.mat-mdc-icon-button {
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    
+    .mat-mdc-button-touch-target {
+      width: 40px;
+      height: 40px;
+    }
+  }
+}
+
 .user-avatar {
   width: 40px;
   height: 40px;
@@ -178,6 +196,7 @@ $radius: 8px;
 
   .mat-mdc-menu-content {
     min-width: 280px;
+    max-width: 320px;
   }
 }
 
@@ -189,12 +208,19 @@ $radius: 8px;
     font-weight: 600;
     color: #1a202c;
     margin-bottom: 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .user-email {
     color: #718096;
     font-size: 0.875rem;
     margin-bottom: 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
   }
 
   .user-role {
@@ -285,16 +311,23 @@ $radius: 8px;
 
   .user-details {
     flex: 1;
+    min-width: 0; // Importante per permettere l'ellipsis
 
     .user-name {
       font-weight: 600;
       color: #1a202c;
       margin-bottom: 0.25rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .user-email {
       color: #718096;
       font-size: 0.875rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 }

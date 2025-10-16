@@ -61,7 +61,7 @@ const userController = new UserController();
  *           example:
  *             firstName: "Mario"
  *             lastName: "Rossi"
- *             phone: "+39 123 456 7890"
+ *             phone: "+391234567890"
  *             licenseNumber: "LIC123456"
  *     responses:
  *       200:

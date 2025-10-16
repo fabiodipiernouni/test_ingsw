@@ -35,12 +35,6 @@ export const routes: Routes = [
     title: 'Recupera Password - DietiEstates25'
   },
   {
-    path: 'verify-email',
-    loadComponent: () => import('./features/auth/verify-email/verify-email').then(m => m.VerifyEmail),
-    canActivate: [guestGuard],
-    title: 'Verifica Email - DietiEstates25'
-  },
-  {
     path: 'auth/callback',
     loadComponent: () => import('./features/auth/oauth-callback/oauth-callback').then(m => m.OAuthCallback),
     title: 'Autenticazione in corso... - DietiEstates25'

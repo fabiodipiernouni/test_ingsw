@@ -7,6 +7,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { AuthService } from '../../../../core/services/auth/auth.service';
+import { finalize } from 'rxjs/operators';
 
 
 @Component({
@@ -28,7 +30,7 @@ export class ChangePassword implements OnInit {
   @Output() passwordChanged = new EventEmitter<void>();
 
   private fb = inject(FormBuilder);
-  // private userService = inject(UserService); //TODO
+  private authService = inject(AuthService);
   private snackBar = inject(MatSnackBar);
 
   isLoading = signal<boolean>(false);
@@ -117,48 +119,45 @@ export class ChangePassword implements OnInit {
   }
 
   onSubmit(): void {
-    /*
-    // TODO
     if (this.changePasswordForm.valid) {
       this.isLoading.set(true);
 
-      const changePasswordData: ChangePasswordRequest = {
+      const changePasswordData = {
         currentPassword: this.changePasswordForm.value.currentPassword,
         newPassword: this.changePasswordForm.value.newPassword
       };
 
-      this.userService.changePassword(changePasswordData).subscribe({
-        next: (response) => {
-          this.isLoading.set(false);
-          this.passwordChanged.emit();
-          this.changePasswordForm.reset();
-          this.passwordRequirements.set(false);
+      this.authService.changePassword(changePasswordData)
+        .pipe(finalize(() => this.isLoading.set(false)))
+        .subscribe({
+          next: (response) => {
+            this.passwordChanged.emit();
+            this.changePasswordForm.reset();
+            this.passwordRequirements.set(false);
 
-          this.snackBar.open(
-            response.message || 'Password cambiata con successo',
-            'Chiudi',
-            {
-              duration: 5000,
-              panelClass: ['success-snackbar']
-            }
-          );
-        },
-        error: (error) => {
-          this.isLoading.set(false);
-          this.snackBar.open(
-            error.error?.message || 'Errore durante il cambio password',
-            'Chiudi',
-            {
-              duration: 5000,
-              panelClass: ['error-snackbar']
-            }
-          );
-        }
-      });
+            this.snackBar.open(
+              'Password cambiata con successo',
+              'Chiudi',
+              {
+                duration: 5000,
+                panelClass: ['success-snackbar']
+              }
+            );
+          },
+          error: (error) => {
+            this.snackBar.open(
+              error.error?.message || 'Errore durante il cambio password',
+              'Chiudi',
+              {
+                duration: 5000,
+                panelClass: ['error-snackbar']
+              }
+            );
+          }
+        });
     } else {
       this.markFormGroupTouched();
     }
-    */
   }
 
   onReset(): void {

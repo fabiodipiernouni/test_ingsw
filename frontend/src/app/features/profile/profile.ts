@@ -10,13 +10,11 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, RouterModule } from '@angular/router';
 
 import { AuthService } from '../../core/services/auth/auth.service';
-import { User } from '../../core/services/auth/models/User';
-import {
-  PersonalData,
-  ContactInfo,
-  ChangePassword,
-  NotificationPreferences
-} from './components';
+import { UserModel } from '../../core/services/auth/models/UserModel';
+import { ChangePassword } from './components/change-password/change-password';
+import { VerifyEmail } from './components/verify-email/verify-email';
+import { NotificationPreferences } from './components/notification-preferences/notification-preferences';
+import { UserAvatar } from '../../shared/components/user-avatar/user-avatar';
 
 @Component({
   selector: 'app-profile',
@@ -30,28 +28,28 @@ import {
     MatChipsModule,
     MatDividerModule,
     RouterModule,
-    PersonalData,
-    ContactInfo,
     ChangePassword,
-    NotificationPreferences
+    VerifyEmail,
+    NotificationPreferences,
+    UserAvatar
   ],
   templateUrl: './profile.html',
   styleUrls: ['./profile.scss']
 })
 export class Profile implements OnInit {
   private authService = inject(AuthService);
-  // private userService = inject(UserService); //TODO
   private snackBar = inject(MatSnackBar);
   private router = inject(Router);
 
-  currentUser = signal<User | null>(null);
+  currentUser = signal<UserModel | null>(null);
   isLoading = signal<boolean>(false);
   selectedTab = signal<number>(0);
 
   // Computed values for UI
-  isAgent = computed(() => this.currentUser()?.role === 'agent');
-  isClient = computed(() => this.currentUser()?.role === 'client');
-  isAdmin = computed(() => this.currentUser()?.role === 'admin');
+  isAgent = computed(() => this.authService.isAgent());
+  isClient = computed(() => this.authService.isClient());
+  isAdmin = computed(() => this.authService.isAdmin());
+  isOwner = computed(() => this.authService.isOwner());
 
   fullName = computed(() => {
     const user = this.currentUser();
@@ -63,6 +61,7 @@ export class Profile implements OnInit {
     switch (role) {
       case 'agent': return 'Agente Immobiliare';
       case 'admin': return 'Amministratore';
+      case 'owner': return 'Proprietario';
       case 'client': return 'Cliente';
       default: return 'Cliente';
     }
@@ -73,42 +72,11 @@ export class Profile implements OnInit {
   }
 
   private loadUserProfile(): void {
-    this.isLoading.set(true);
-
-    // Get user from auth service first
+    // Get user from auth service
     const user = this.authService.getCurrentUser();
     if (user) {
       this.currentUser.set(user);
     }
-
-    // Then fetch updated profile from API
-    this.userService.getProfile().subscribe({
-      next: (profile) => {
-        this.currentUser.set(profile);
-        this.isLoading.set(false);
-        // Update auth service with fresh data
-        this.authService.currentUser.set(profile);
-      },
-      error: (error) => {
-        this.isLoading.set(false);
-        this.snackBar.open(
-          'Errore nel caricamento del profilo',
-          'Chiudi',
-          { duration: 3000, panelClass: ['error-snackbar'] }
-        );
-      }
-    });
-  }
-
-  onUserUpdated(user: User): void {
-    console.log('Profile update event received:', user);
-    this.currentUser.set(user);
-    this.authService.currentUser.set(user);
-    this.snackBar.open(
-      'Profilo aggiornato con successo',
-      'Chiudi',
-      { duration: 3000, panelClass: ['success-snackbar'] }
-    );
   }
 
   onPasswordChanged(): void {
@@ -119,17 +87,21 @@ export class Profile implements OnInit {
     );
   }
 
+  onEmailVerified(): void {
+    this.snackBar.open(
+      'Email verificata con successo',
+      'Chiudi',
+      { duration: 3000, panelClass: ['success-snackbar'] }
+    );
+    this.loadUserProfile();
+  }
+
   onTabChange(index: number): void {
     this.selectedTab.set(index);
   }
 
   goToDashboard(): void {
     this.router.navigate(['/dashboard']);
-  }
-
-  getAvatarUrl(): string {
-    const user = this.currentUser();
-    return user?.avatar || 'assets/images/default-avatar.png';
   }
 
   getJoinDateLabel(): string {

@@ -54,7 +54,7 @@ export class Register {
     firstName: ['', [Validators.required, Validators.minLength(2)]],
     lastName: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
-    phone: ['', [Validators.pattern(/^[0-9+\-\s()]+$/)]],
+    phone: ['', [Validators.pattern(/^\+\d{1,15}$/)]],
     password: ['', [Validators.required, Validators.minLength(8), this.passwordValidator]],
     confirmPassword: ['', Validators.required],
     acceptTerms: [false, Validators.requiredTrue],
@@ -159,6 +159,9 @@ export class Register {
       return `Minimo ${control.getError('minlength').requiredLength} caratteri`;
     }
     if (control?.hasError('pattern')) {
+      if (field === 'phone') {
+        return 'Il numero deve essere in formato E.164 (es. +391234567890)';
+      }
       return 'Formato non valido';
     }
     if (field === 'confirmPassword' && this.registrationForm.hasError('passwordMismatch')) {

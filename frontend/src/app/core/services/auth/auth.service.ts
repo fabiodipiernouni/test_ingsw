@@ -229,6 +229,14 @@ export class AuthService {
   }
 
   /**
+   *  Verifica se l'utente ha ruolo client
+   */
+  isClient(): boolean {
+    const user = this.getCurrentUser();
+    return user?.role === 'client';
+  }
+
+  /**
    *  Verifica se l'utente ha ruolo agent
    */
   isAgent(): boolean {
@@ -277,7 +285,7 @@ export class AuthService {
    */
   handleAuthSuccess(authResponse: AuthResponse): void {
     this.storeTokens(authResponse.accessToken, authResponse.idToken, authResponse.refreshToken);
-    const user = this.convertToUser(authResponse.user);
+    const user = this.convertUserResponseToUserModel(authResponse.user);
     this.storeUser(user);
     this.setAuthenticationState(user);
   }
@@ -285,7 +293,7 @@ export class AuthService {
   /**
    * Converte UserResponse a User
    */
-  private convertToUser(userResponse: UserResponse): UserModel {
+  private convertUserResponseToUserModel(userResponse: UserResponse): UserModel {
 
     return {
       id: userResponse.id,

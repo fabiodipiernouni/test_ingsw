@@ -16,7 +16,9 @@ export class CreateAdminDto {
 
   @IsOptional()
   @IsString({ message: 'Phone number must be a string' })
-  @Matches(/^[\d\s()+-]+$/, { message: 'Phone number format is invalid' })
+  @Matches(/^\+\d{1,15}$/, { 
+    message: 'Phone number must be in E.164 format (e.g., +391234567890)' 
+  })
   phone?: string;
 
 }

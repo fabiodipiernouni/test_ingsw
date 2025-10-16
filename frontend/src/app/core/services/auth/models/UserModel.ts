@@ -18,4 +18,7 @@ export interface UserModel {
   agency?: Agency;
   createdAt: Date;
   updatedAt: Date;
+  licenseNumber?: string;
+  biography?: string;
+  specializations?: string[];
 }
