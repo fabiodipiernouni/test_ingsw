@@ -1,5 +1,5 @@
 import { PropertyImageModel } from '../models/PropertyImageModel';
-import { EnergyClass, ListingType, PropertyStatus, PropertyType } from '@property/models/types';
+import { EnergyClass, ListingType, PropertyStatus, PropertyType } from '@core-services/property/models/types';
 
 
 export interface PropertyCardDto {
@@ -10,6 +10,7 @@ export interface PropertyCardDto {
   propertyType: PropertyType;
   listingType: ListingType;
   status: PropertyStatus;
+  rooms: number;
   bedrooms: number;
   bathrooms: number;
   area: number; // in square meters
@@ -25,6 +26,6 @@ export interface PropertyCardDto {
   agentId?: string; // per mostrare il nome dell'agente,
   //isFavorite?: boolean; // per mostrare l'icona del cuore
   views?: number;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt?: Date;
 }
