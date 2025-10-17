@@ -1,8 +1,8 @@
-import { EnergyClass, ListingType, PropertyStatus, PropertyType } from '@core/services/property/models/types';
-import { GeoJSONPoint } from '@service-shared/types/geojson.types';
-import { PropertyImageModel } from '@core/services/property/models/PropertyImageModel';
-import { UserModel } from '@core/services/auth/models/UserModel';
-import { Address } from '@service-shared/models/Address';
+import {UserModel} from '@core/services/auth/models/UserModel';
+import {EnergyClass, ListingType, PropertyStatus, PropertyType} from '@core/services/property/models/types';
+import {Address} from '@service-shared/models/Address';
+import {GeoJSONPoint} from '@service-shared/types/geojson.types';
+import {PropertyImageModel} from '@core/services/property/models/PropertyImageModel';
 
 export interface PropertyModel {
   id: string;

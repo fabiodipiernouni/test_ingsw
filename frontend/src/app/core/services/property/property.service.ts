@@ -2,14 +2,15 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError } from 'rxjs';
 import { map, tap, catchError } from 'rxjs/operators';
-import { environment } from '../../../../environments/environment';
+
 import { ApiResponse } from '@service-shared/dto/ApiResponse';
 import {PagedRequest} from '@service-shared/dto/pagedRequest';
-import {SearchPropertyFilter} from '@core/services/property/dto/SearchPropertyFilter';
+import {SearchPropertiesFilter} from '@core/services/property/dto/SearchPropertiesFilter';
 import {PagedResult} from '@service-shared/dto/pagedResult';
 import {PropertyCardDto} from '@core/services/property/dto/PropertyCardDto';
 import {PropertyModel} from '@features/properties/models/PropertyModel';
 import {Helper} from '@core/services/property/Utils/helper';
+import {environment} from '@src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -31,7 +32,7 @@ export class PropertyService {
 
   }
 
-  searchProperties(filters: SearchPropertyFilter, pagedRequest: PagedRequest): Observable<PagedResult<PropertyCardDto>> {
+  searchProperties(filters: SearchPropertiesFilter, pagedRequest: PagedRequest): Observable<PagedResult<PropertyCardDto>> {
     this.isLoading.set(true);
 
     // Costruisco il body della request secondo GetPropertiesCardsRequest

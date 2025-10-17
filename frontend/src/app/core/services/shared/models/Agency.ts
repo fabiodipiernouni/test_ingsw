@@ -1,5 +1,5 @@
-import { Address } from './address';
-import { Contacts } from './contacts';
+import {Address} from '@service-shared/models/Address';
+import {Contacts} from '@service-shared/models/Contacts';
 
 export interface Agency {
   id: string;

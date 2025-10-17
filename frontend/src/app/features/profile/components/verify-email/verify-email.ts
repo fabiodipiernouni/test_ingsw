@@ -7,7 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { AuthService } from '../../../../core/services/auth/auth.service';
+import { AuthService } from '@core/services/auth/auth.service';
 import { finalize } from 'rxjs/operators';
 import { MatDividerModule } from '@angular/material/divider';
 
@@ -109,15 +109,15 @@ export class VerifyEmail {
 
   getErrorMessage(fieldName: string): string {
     const field = this.verifyEmailForm.get(fieldName);
-    
+
     if (field?.hasError('required')) {
       return 'Campo obbligatorio';
     }
-    
+
     if (field?.hasError('minlength') || field?.hasError('maxlength')) {
       return 'Il codice deve essere di 6 cifre';
     }
-    
+
     return '';
   }
 }

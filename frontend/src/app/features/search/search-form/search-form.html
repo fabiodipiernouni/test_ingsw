@@ -9,6 +9,9 @@
                placeholder="es: Vomero, Napoli"
                autocomplete="off">
         <mat-icon matSuffix>location_on</mat-icon>
+        <mat-error *ngIf="locationControl?.hasError('required')">
+          La località è obbligatoria
+        </mat-error>
       </mat-form-field>
 
       <button mat-raised-button
@@ -119,10 +122,10 @@
 
         <!-- Price Range -->
         <div class="price-range-section">
-          <label class="range-label">
+          <div class="range-label">
             <mat-icon>euro</mat-icon>
             Fascia di Prezzo: {{ priceDisplay() }}
-          </label>
+          </div>
           <mat-slider min="0" max="10000000" step="10000" class="price-slider">
             <input matSliderStartThumb formControlName="priceMin">
             <input matSliderEndThumb formControlName="priceMax">

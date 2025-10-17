@@ -1,6 +1,6 @@
 import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -10,12 +10,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { PropertyService } from '@core/services/property/property.service';
-import { SearchPropertyFilter } from '@core/services/property/dto/SearchPropertyFilter';
-import { PropertyCardDto } from '@core/services/property/dto/PropertyCardDto';
-import { PagedResult } from '@service-shared/dto/pagedResult';
-import { PagedRequest } from '@service-shared/dto/pagedRequest';
-import { firstValueFrom } from 'rxjs';
+import { SearchPropertiesFilter } from '@core/services/property/dto/SearchPropertiesFilter';
 
 @Component({
   selector: 'app-search-form',
@@ -36,23 +31,13 @@ import { firstValueFrom } from 'rxjs';
   templateUrl: './search-form.html',
   styleUrls: ['./search-form.scss']
 })
-export class SearchFormComponent implements OnInit {
+export class SearchForm implements OnInit {
   searchForm!: FormGroup;
   filtersExpanded = false;
-  isSearching = false;
 
-  // Gestione paginazione
-  private currentPage = 1;
-  private readonly defaultPageSize = 20;
+  @Output() searchStarted = new EventEmitter<SearchPropertiesFilter>();
 
-  @Output() searchResults = new EventEmitter<PagedResult<PropertyCardDto>>();
-  @Output() searchError = new EventEmitter<any>();
-  @Output() searchStarted = new EventEmitter<void>();
-
-  constructor(
-    private fb: FormBuilder,
-    private propertyService: PropertyService
-  ) {}
+  constructor(private fb: FormBuilder) {}
 
   ngOnInit(): void {
     this.initializeForm();
@@ -60,7 +45,7 @@ export class SearchFormComponent implements OnInit {
 
   private initializeForm(): void {
     this.searchForm = this.fb.group({
-      location: [''],
+      location: ['', [Validators.required]],
       propertyType: [''],
       listingType: [''],
       bedrooms: [null],
@@ -77,82 +62,24 @@ export class SearchFormComponent implements OnInit {
   }
 
   /**
-   * Esegue la ricerca in base ai filtri impostati nel form.
-   * Resetta la pagina corrente a 1 ad ogni nuova ricerca.
-   * Emite eventi per l'inizio della ricerca, i risultati ottenuti o eventuali errori.
+   * Gestisce il submit del form di ricerca.
+   * Valida il form e, se valido, emette l'evento searchStarted con i filtri costruiti.
    */
-  async onSearch(): Promise<void> {
-    if (this.isSearching) {
-      return; // Previene ricerche multiple simultanee
-    }
-
-    this.isSearching = true;
-    this.currentPage = 1; // Reset alla prima pagina ad ogni nuova ricerca
-    this.searchStarted.emit();
-
-    try {
-      await this.executeSearch(this.currentPage);
-    } catch (error) {
-      this.searchError.emit(error);
-    } finally {
-      this.isSearching = false;
-    }
-  }
-
-  async loadNextPage(): Promise<void> {
-    if (this.isSearching) {
+  onSearch(): void {
+    // Valida il form
+    if (!this.searchForm.valid) {
+      // Marca tutti i campi come touched per mostrare gli errori
+      this.searchForm.markAllAsTouched();
       return;
     }
 
-    this.isSearching = true;
-    this.currentPage++;
-
-    try {
-      await this.executeSearch(this.currentPage);
-    } catch (error) {
-      this.searchError.emit(error);
-      this.currentPage--; // Rollback in caso di errore
-    } finally {
-      this.isSearching = false;
-    }
-  }
-
-  async loadPage(page: number): Promise<void> {
-    if (this.isSearching || page < 1) {
-      return;
-    }
-
-    this.isSearching = true;
-    this.currentPage = page;
-
-    try {
-      await this.executeSearch(page);
-    } catch (error) {
-      this.searchError.emit(error);
-    } finally {
-      this.isSearching = false;
-    }
-  }
-
-  private async executeSearch(page: number): Promise<void> {
     const filter = this.buildSearchFilter();
-    const pagedRequest = this.buildPagedRequest(page);
-
-    try {
-      // Usa firstValueFrom per convertire Observable in Promise
-      const result = await firstValueFrom(
-        this.propertyService.searchProperties(filter, pagedRequest)
-      );
-
-      this.searchResults.emit(result);
-    } catch (error) {
-      throw error; // Rilancia l'errore per gestirlo nel chiamante
-    }
+    this.searchStarted.emit(filter);
   }
 
-  private buildSearchFilter(): SearchPropertyFilter {
+  private buildSearchFilter(): SearchPropertiesFilter {
     const formValue = this.searchForm.value;
-    const filter: SearchPropertyFilter = {};
+    const filter: SearchPropertiesFilter = {};
 
     // Popola solo i campi con valori significativi
     if (formValue.location?.trim()) {
@@ -208,15 +135,6 @@ export class SearchFormComponent implements OnInit {
     return filter;
   }
 
-  private buildPagedRequest(page: number): PagedRequest {
-    return {
-      page: page,
-      limit: this.defaultPageSize,
-      sortBy: this.searchForm.get('sortBy')?.value || 'createdAt',
-      sortOrder: this.searchForm.get('sortOrder')?.value || 'DESC'
-    };
-  }
-
   resetFilters(): void {
     this.searchForm.reset({
       location: '',
@@ -233,7 +151,6 @@ export class SearchFormComponent implements OnInit {
       sortBy: 'createdAt',
       sortOrder: 'DESC'
     });
-    this.currentPage = 1;
   }
 
   priceDisplay(): string {
@@ -254,12 +171,8 @@ export class SearchFormComponent implements OnInit {
     return `${formatPrice(min)} - ${formatPrice(max)}`;
   }
 
-  // Metodo pubblico per permettere al component parent di caricare altre pagine
-  getCurrentPage(): number {
-    return this.currentPage;
-  }
-
-  getIsSearching(): boolean {
-    return this.isSearching;
+  // Helper per il template
+  get locationControl() {
+    return this.searchForm.get('location');
   }
 }

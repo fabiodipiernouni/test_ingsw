@@ -1,4 +1,4 @@
-export interface SearchPropertyFilter {
+export interface SearchPropertiesFilter {
   location?: string;           // Città o CAP
   propertyType?: string;        // APARTMENT, HOUSE, VILLA, OFFICE, COMMERCIAL, GARAGE, LAND
   listingType?: string;         // SALE, RENT

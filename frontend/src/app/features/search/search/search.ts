@@ -1,17 +1,22 @@
 import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged, firstValueFrom } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { SearchForm } from '../search-form/search-form';
-import { PropertyList } from '../../properties/property-list/property-list';
+
 import { PropertyService } from '@core/services/property/property.service';
-import { Property } from '@features/properties/models/property';
+
 import {MatTooltip} from '@angular/material/tooltip';
+import {PropertyList} from '@features/properties/property-list/property-list';
+import {SearchForm} from '@features/search/search-form/search-form';
+import {PropertyCardDto} from '@core/services/property/dto/PropertyCardDto';
+import {PagedResult} from '@service-shared/dto/pagedResult';
+import {SearchPropertiesFilter} from '@core/services/property/dto/SearchPropertiesFilter';
+import {PagedRequest} from '@service-shared/dto/pagedRequest';
 
 @Component({
   selector: 'app-search',
@@ -30,23 +35,24 @@ import {MatTooltip} from '@angular/material/tooltip';
   styleUrl: './search.scss'
 })
 export class Search implements OnInit, OnDestroy {
-  private propertyService = inject(PropertyService);
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
-  private snackBar = inject(MatSnackBar);
-  private destroy$ = new Subject<void>();
+  private readonly propertyService = inject(PropertyService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly destroy$ = new Subject<void>();
 
-  searchResult = signal<SearchResult | null>(null);
-  properties = signal<Property[]>([]);
-  currentFilters = signal<SearchFilters>({});
+  searchResult = signal<PagedResult<PropertyCardDto> | null>(null);
+  properties = signal<PropertyCardDto[]>([]);
+  currentFilters = signal<SearchPropertiesFilter>({});
   isLoading = signal<boolean>(false);
   hasSearched = signal<boolean>(false);
   currentPage = signal<number>(1);
-  totalPages = signal<number>(0);
+  emptyResultMessage = signal<string | null>(null);
 
   // Map state
   showMap = signal<boolean>(false);
-  mapCenter = signal<{ lat: number; lng: number }>({ lat: 40.8359, lng: 14.2394 }); // Naples center
+
+  private readonly DEFAULT_PAGE_SIZE = 20;
 
   ngOnInit(): void {
     // Check for filters in query params
@@ -58,7 +64,6 @@ export class Search implements OnInit, OnDestroy {
       if (params['filters']) {
         try {
           const filters = JSON.parse(params['filters']);
-          // this.currentFilters.set(filters); //TODO
           this.executeSearch(filters);
         } catch (error) {
           console.error('Error parsing filters from URL:', error);
@@ -72,12 +77,11 @@ export class Search implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  onFiltersChanged(filters: Partial<SearchFilters>): void {
-    // Update filters reactively but don't search immediately
-    this.currentFilters.update(current => ({ ...current, ...filters }));
-  }
-
-  onSearchExecuted(filters: SearchFilters): void {
+  /**
+   * Gestisce l'evento searchStarted emesso da search-form.
+   * Riceve i filtri e avvia la ricerca.
+   */
+  onSearchStarted(filters: SearchPropertiesFilter): void {
     this.currentFilters.set(filters);
     this.currentPage.set(1);
     this.executeSearch(filters);
@@ -97,7 +101,7 @@ export class Search implements OnInit, OnDestroy {
     }
   }
 
-  onPropertySelected(property: Property): void {
+  onPropertySelected(property: PropertyCardDto): void {
     this.router.navigate(['/properties', property.id]);
   }
 
@@ -130,6 +134,7 @@ export class Search implements OnInit, OnDestroy {
     this.properties.set([]);
     this.hasSearched.set(false);
     this.currentPage.set(1);
+    this.emptyResultMessage.set(null);
 
     // Clear URL params
     this.router.navigate([], {
@@ -139,60 +144,87 @@ export class Search implements OnInit, OnDestroy {
     });
   }
 
-  private executeSearch(filters: SearchFilters): void {
+  /**
+   * Esegue la ricerca utilizzando PropertyService.
+   * Gestisce i risultati, incluso il caso di nessun risultato trovato.
+   */
+  private async executeSearch(filters: SearchPropertiesFilter): Promise<void> {
     this.isLoading.set(true);
     this.hasSearched.set(true);
+    this.emptyResultMessage.set(null);
 
-    //TODO
-    /*
-    this.propertyService.searchProperties(filters, 1, 20).subscribe({
-      next: (result) => {
-        this.searchResult.set(result);
-        this.properties.set(result.properties);
-        this.totalPages.set(result.totalPages);
-        this.isLoading.set(false);
+    try {
+      const pagedRequest: PagedRequest = {
+        page: 1,
+        limit: this.DEFAULT_PAGE_SIZE,
+        sortBy: 'createdAt',
+        sortOrder: 'DESC'
+      };
 
-        // Update map center if location is specified
-        if (filters.location) {
-          // TODO: Geocode location and update map center
-        }
-      },
-      error: (error) => {
-        this.isLoading.set(false);
-        this.snackBar.open('Errore durante la ricerca', 'Chiudi', {
-          duration: 3000,
-          panelClass: ['error-snackbar']
-        });
-        console.error('Search error:', error);
+      const result = await firstValueFrom(
+        this.propertyService.searchProperties(filters, pagedRequest)
+      );
+
+      this.searchResult.set(result);
+      this.properties.set(result.data);
+
+      // Gestione caso nessun risultato
+      if (result.totalCount === 0) {
+        this.emptyResultMessage.set(
+          'Peccato! Al momento non ci sono immobili che corrispondono ai tuoi criteri di ricerca. ' +
+          'Prova a modificare i filtri o riprova più tardi, aggiungiamo nuovi immobili ogni giorno!'
+        );
       }
-    });
-    */
+
+      // Update map center if location is specified
+      if (filters.location) {
+        // TODO: Geocode location and update map center
+      }
+    } catch (error) {
+      this.snackBar.open('Errore durante la ricerca. Riprova più tardi.', 'Chiudi', {
+        duration: 3000,
+        panelClass: ['error-snackbar']
+      });
+      console.error('Search error:', error);
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 
-  private loadPage(page: number): void {
+  /**
+   * Carica una pagina specifica di risultati (per paginazione).
+   * Aggiunge i nuovi risultati a quelli esistenti.
+   */
+  private async loadPage(page: number): Promise<void> {
     this.isLoading.set(true);
 
-    /*
-    //TODO
-    this.propertyService.searchProperties(this.currentFilters(), page, 20).subscribe({
-      next: (result) => {
-        // Append new properties to existing ones
-        this.properties.update(current => [...current, ...result.properties]);
-        this.searchResult.set(result);
-        this.currentPage.set(page);
-        this.isLoading.set(false);
-      },
-      error: (error) => {
-        this.isLoading.set(false);
-        this.snackBar.open('Errore durante il caricamento', 'Chiudi', {
-          duration: 3000
-        });
-      }
-    });
-    */
+    try {
+      const pagedRequest: PagedRequest = {
+        page: page,
+        limit: this.DEFAULT_PAGE_SIZE,
+        sortBy: 'createdAt',
+        sortOrder: 'DESC'
+      };
+
+      const result = await firstValueFrom(
+        this.propertyService.searchProperties(this.currentFilters(), pagedRequest)
+      );
+
+      // Append new properties to existing ones
+      this.properties.update(current => [...current, ...result.data]);
+      this.searchResult.set(result);
+      this.currentPage.set(page);
+    } catch (error) {
+      this.snackBar.open('Errore durante il caricamento. Riprova.', 'Chiudi', {
+        duration: 3000
+      });
+      console.error('Load page error:', error);
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 
-  private generateSearchName(filters: SearchFilters): string {
+  private generateSearchName(filters: SearchPropertiesFilter): string {
     const parts: string[] = [];
 
     if (filters.location) parts.push(filters.location);

@@ -12,7 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { PropertyService } from '@core/services/property/property.service';
-import { Property } from '@features/properties/models/property';
+import {PropertyModel} from '@features/properties/models/PropertyModel';
 
 @Component({
   selector: 'app-property-upload',
@@ -106,15 +106,13 @@ export class PropertyUpload {
     if (this.basicInfoForm.valid && this.detailsForm.valid && this.addressForm.valid) {
       this.isLoading.set(true);
 
-      const propertyData: Partial<Property> = {
+      const propertyData: Partial<PropertyModel> = {
         ...this.basicInfoForm.value,
         ...this.detailsForm.value,
         address: this.addressForm.value,
         images: [] // TODO: Handle image upload
       };
 
-      // TODO
-      /*
       this.propertyService.createProperty(propertyData).subscribe({
         next: (property) => {
           this.snackBar.open('Immobile caricato con successo!', 'Chiudi', {
@@ -123,7 +121,7 @@ export class PropertyUpload {
           });
           this.router.navigate(['/properties', property.id]);
         },
-        error: (error) => {
+        error: () => {
           this.snackBar.open('Errore durante il caricamento', 'Chiudi', {
             duration: 3000,
             panelClass: ['error-snackbar']
@@ -131,7 +129,6 @@ export class PropertyUpload {
           this.isLoading.set(false);
         }
       });
-      */
     }
   }
 

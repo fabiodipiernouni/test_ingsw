@@ -8,9 +8,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { AuthService } from '../../../core/services/auth/auth.service';
+import { AuthService } from '@core/services/auth/auth.service';
 import { CreateAgentRequest } from '@core-services/auth/dto/CreateAgentRequest';
-import { AuthLayoutComponent, AuthLayoutConfig } from '../../../shared/components/auth-layout/auth-layout';
+import { AuthLayoutComponent, AuthLayoutConfig } from '@shared/components/auth-layout/auth-layout';
 
 @Component({
   selector: 'app-create-agent',

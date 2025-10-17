@@ -1,5 +1,6 @@
-import { PropertyImageModel } from '../models/PropertyImageModel';
+
 import { EnergyClass, ListingType, PropertyStatus, PropertyType } from '@core-services/property/models/types';
+import {PropertyImageModel} from '@core-services/property/models/PropertyImageModel';
 
 
 export interface PropertyCardDto {
