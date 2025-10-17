@@ -63,7 +63,7 @@ export class Helper {
           `%${geoFilters.location.toUpperCase()}%`
         ),
         Sequelize.where(
-          Sequelize.fn('UPPER', Sequelize.col('zipCode')),
+          Sequelize.fn('UPPER', Sequelize.col('Property.zip_code')),
           'LIKE',
           `%${geoFilters.location.toUpperCase()}%`
         )
