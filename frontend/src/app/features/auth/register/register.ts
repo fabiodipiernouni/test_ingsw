@@ -9,9 +9,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { AuthService } from '../../../core/services/auth/auth.service';
-import { OAuthProviders } from '../oauth-providers/oauth-providers';
-import { AuthLayoutComponent, AuthLayoutConfig } from '../../../shared/components/auth-layout/auth-layout';
+import { AuthService } from '@core/services/auth/auth.service';
+import { OAuthProviders } from '@features-auth/oauth-providers/oauth-providers';
+import { AuthLayoutComponent, AuthLayoutConfig } from '@shared/components/auth-layout/auth-layout';
 
 @Component({
   selector: 'app-register',

@@ -7,7 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { AuthService } from '../../../../core/services/auth/auth.service';
+import { AuthService } from '@core/services/auth/auth.service';
 import { finalize } from 'rxjs/operators';
 
 

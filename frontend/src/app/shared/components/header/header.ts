@@ -10,7 +10,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '@core/services/auth/auth.service';
 import {MatDivider} from '@angular/material/divider';
 import {MatChip} from '@angular/material/chips';
-import { UserAvatar } from '../user-avatar/user-avatar';
+import { UserAvatar } from '@shared/components/user-avatar/user-avatar';
 
 @Component({
   selector: 'app-header',

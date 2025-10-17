@@ -6,6 +6,7 @@ export interface PropertyUpdateRequest {
   description?: string;
   price?: number;
   status?: PropertyStatus;
+  rooms?: number;
   bedrooms?: number;
   bathrooms?: number;
   area?: number;
@@ -17,5 +18,4 @@ export interface PropertyUpdateRequest {
   hasParking?: boolean;
   features?: string[];
   address?: Address;
-  isActive?: boolean;
 }

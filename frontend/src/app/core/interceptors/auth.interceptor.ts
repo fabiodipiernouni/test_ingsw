@@ -1,8 +1,8 @@
 import { HttpInterceptorFn, HttpRequest, HttpHandlerFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Observable, throwError, switchMap, catchError } from 'rxjs';
-import { AuthService } from '../services/auth/auth.service';
-import { environment } from '../../../environments/environment';
+import { AuthService } from '@core-services//auth/auth.service';
+import { environment } from '@src/environments/environment';
 
 export const authInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
@@ -25,9 +25,9 @@ export const authInterceptor: HttpInterceptorFn = (
       // Handle 401 Unauthorized errors
       if (error.status === 401 && !isAuthEndpoint(req.url)) {
         console.warn('Received 401 Unauthorized response');
-        
+
         const refreshToken = authService.getRefreshToken();
-        
+
         if (refreshToken && !req.url.includes('/refresh-token')) {
           // Attempt token refresh
           return authService.refreshToken().pipe(

@@ -9,8 +9,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { finalize } from 'rxjs/operators';
-import { AuthService } from '../../../../core/services/auth/auth.service';
+import { AuthService } from '@core/services/auth/auth.service';
 
 interface NotificationCategory {
   id: string;

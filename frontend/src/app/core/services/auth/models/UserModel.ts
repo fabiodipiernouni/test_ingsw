@@ -1,6 +1,6 @@
-import { Agency } from '../../shared/models/Agency';
-import { UserRole } from './UserRole';
-import { OAuthProvider } from './OAuthProvider';
+import { Agency } from '@service-shared/models/Agency';
+import { OAuthProvider } from '@core-services/auth/models/OAuthProvider';
+import { UserRole } from '@core-services/auth/models/UserRole';
 
 export interface UserModel {
   id: string;

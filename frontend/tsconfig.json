@@ -5,12 +5,14 @@
   "compilerOptions": {
     "baseUrl": "./",
     "paths": {
+      "@src/*": ["src/*"],
       "@app/*": ["src/app/*"],
       "@core/*": ["src/app/core/*"],
       "@shared/*": ["src/app/shared/*"],
       "@features/*": ["src/app/features/*"],
       "@core-services/*": ["src/app/core/services/*"],
       "@service-shared/*": ["src/app/core/services/shared/*"],
+      "@features-auth/*": ["src/app/features/auth/*"]
     },
     "strict": true,
     "noImplicitOverride": true,

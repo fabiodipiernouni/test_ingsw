@@ -1,5 +1,5 @@
 <mat-card class="search-form-card">
-  <form [formGroup]="searchForm" (submit)="onSearch()">
+  <form [formGroup]="searchForm" (ngSubmit)="onSearch()">
     <!-- Main Search Bar -->
     <div class="search-bar">
       <mat-form-field appearance="outline" class="location-field">
@@ -9,16 +9,46 @@
                placeholder="es: Vomero, Napoli"
                autocomplete="off">
         <mat-icon matSuffix>location_on</mat-icon>
+        <mat-error *ngIf="locationControl?.hasError('required')">
+          La località è obbligatoria
+        </mat-error>
       </mat-form-field>
 
       <button mat-raised-button
               color="primary"
-              type="button"
-              class="search-button"
-              (click)="onSearch()">
+              type="submit"
+              class="search-button">
         <mat-icon>search</mat-icon>
         <span class="button-text">Cerca</span>
       </button>
+    </div>
+
+    <!-- Sort Options Bar -->
+    <div class="sort-bar">
+      <mat-form-field appearance="outline" class="sort-field">
+        <mat-label>Ordina per</mat-label>
+        <mat-select formControlName="sortBy">
+          <mat-option value="createdAt">Data pubblicazione</mat-option>
+          <mat-option value="price">Prezzo</mat-option>
+          <mat-option value="area">Superficie</mat-option>
+          <mat-option value="rooms">Numero locali</mat-option>
+          <mat-option value="bedrooms">Camere da letto</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="sort-order-field">
+        <mat-label>Direzione</mat-label>
+        <mat-select formControlName="sortOrder">
+          <mat-option value="ASC">
+            <mat-icon>arrow_upward</mat-icon>
+            Crescente
+          </mat-option>
+          <mat-option value="DESC">
+            <mat-icon>arrow_downward</mat-icon>
+            Decrescente
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
     </div>
 
     <!-- Advanced Filters -->
@@ -59,6 +89,16 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline">
+            <mat-label>Camere</mat-label>
+            <mat-select formControlName="rooms">
+              <mat-option [value]="null">Qualsiasi</mat-option>
+              <mat-option [value]="2">2+</mat-option>
+              <mat-option [value]="3">3+</mat-option>
+              <mat-option [value]="4">4+</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
             <mat-label>Camere da Letto</mat-label>
             <mat-select formControlName="bedrooms">
               <mat-option [value]="null">Qualsiasi</mat-option>
@@ -82,17 +122,17 @@
 
         <!-- Price Range -->
         <div class="price-range-section">
-          <label class="range-label">
+          <div class="range-label">
             <mat-icon>euro</mat-icon>
             Fascia di Prezzo: {{ priceDisplay() }}
-          </label>
-          <mat-slider min="0" max="1000000" step="10000" class="price-slider">
+          </div>
+          <mat-slider min="0" max="10000000" step="10000" class="price-slider">
             <input matSliderStartThumb formControlName="priceMin">
             <input matSliderEndThumb formControlName="priceMax">
           </mat-slider>
           <div class="price-range-labels">
             <span>€0</span>
-            <span>€1.000.000+</span>
+            <span>€10.000.000+</span>
           </div>
         </div>
 
@@ -133,8 +173,7 @@
           </button>
           <button mat-raised-button
                   color="primary"
-                  type="button"
-                  (click)="onSearch()"
+                  type="submit"
                   class="apply-button">
             <mat-icon>filter_list</mat-icon>
             Applica Filtri

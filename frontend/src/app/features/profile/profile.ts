@@ -9,12 +9,12 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, RouterModule } from '@angular/router';
 
-import { AuthService } from '../../core/services/auth/auth.service';
-import { UserModel } from '../../core/services/auth/models/UserModel';
+import { AuthService } from '@core/services/auth/auth.service';
+import { UserModel } from '@core/services/auth/models/UserModel';
 import { ChangePassword } from './components/change-password/change-password';
 import { VerifyEmail } from './components/verify-email/verify-email';
 import { NotificationPreferences } from './components/notification-preferences/notification-preferences';
-import { UserAvatar } from '../../shared/components/user-avatar/user-avatar';
+import { UserAvatar } from '@shared/components/user-avatar/user-avatar';
 
 @Component({
   selector: 'app-profile',
