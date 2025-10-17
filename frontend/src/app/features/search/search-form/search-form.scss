@@ -15,6 +15,17 @@
 
 .location-field {
   flex: 1;
+
+  // Rendi più evidente l'errore di validazione
+  &.mat-form-field-invalid .mat-mdc-text-field-wrapper {
+    animation: shake 0.3s ease-in-out;
+  }
+
+  mat-error {
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: 0.25rem;
+  }
 }
 
 .search-button {
@@ -195,4 +206,10 @@
   .filters-content {
     padding: 0 1rem 1rem 1rem;
   }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
 }

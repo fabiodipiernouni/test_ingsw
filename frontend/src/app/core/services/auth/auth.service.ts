@@ -2,26 +2,27 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, BehaviorSubject, throwError, catchError, tap, map } from 'rxjs';
-import { environment } from '../../../../environments/environment';
-import { UserModel } from './models/UserModel';
+import { environment } from '@src/environments/environment';
 
-import { AuthResponse } from './dto/AuthResponse';
-import { ChangePasswordRequest } from './dto/ChangePasswordRequest';
-import { ConfirmEmailRequest } from './dto/ConfirmEmailRequest';
-import { ConfirmForgotPasswordRequest } from './dto/ConfirmForgotPasswordRequest';
-import { CreateAdminRequest } from './dto/CreateAdminRequest';
-import { CreateAgentRequest } from './dto/CreateAgentRequest';
-import { ForgotPasswordRequest } from './dto/ForgotPasswordRequest';
-import { LoginRequest } from './dto/LoginRequest';
-import { RefreshTokenRequest } from './dto/RefreshTokenRequest';
-import { RegisterRequest } from './dto/RegisterRequest';
-import { ResendVerificationCodeRequest } from './dto/ResendVerificationCodeRequest';
-import { UserResponse } from './dto/UserResponse';
-import { OAuthProvider } from './models/OAuthProvider';
 
-import { ApiResponse } from '../shared/dto/ApiResponse';
-import { RefreshTokenResponse } from './dto/RefreshTokenResponse';
+import { AuthResponse } from '@core-services/auth/dto/AuthResponse';
+import { ChangePasswordRequest } from '@core-services/auth/dto/ChangePasswordRequest';
+import { ConfirmEmailRequest } from '@core-services/auth/dto/ConfirmEmailRequest';
+import { ConfirmForgotPasswordRequest } from '@core-services/auth/dto/ConfirmForgotPasswordRequest';
+import { CreateAdminRequest } from '@core-services/auth/dto/CreateAdminRequest';
+import { CreateAgentRequest } from '@core-services/auth/dto/CreateAgentRequest';
+import { ForgotPasswordRequest } from '@core-services/auth/dto/ForgotPasswordRequest';
+import { LoginRequest } from '@core-services/auth/dto/LoginRequest';
+import { RefreshTokenRequest } from '@core-services/auth/dto/RefreshTokenRequest';
+import { RegisterRequest } from '@core-services/auth/dto/RegisterRequest';
+import { ResendVerificationCodeRequest } from '@core-services/auth/dto/ResendVerificationCodeRequest';
+import { UserResponse } from '@core-services/auth/dto/UserResponse';
+import { OAuthProvider } from '@core-services/auth/models/OAuthProvider';
+
+import { ApiResponse } from '@service-shared/dto/ApiResponse';
+import { RefreshTokenResponse } from '@core-services/auth/dto/RefreshTokenResponse';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { UserModel } from '@core-services/auth/models/UserModel';
 
 @Injectable({
   providedIn: 'root'
@@ -75,7 +76,7 @@ export class AuthService {
    * Login utente
    */
   login(request: LoginRequest): Observable<ApiResponse<AuthResponse>> {
-    
+
     return this.http.post<ApiResponse<AuthResponse>>(`${this.API_URL}/login`, request)
       .pipe(
         tap(response => {
@@ -107,7 +108,7 @@ export class AuthService {
     }
 
     const request: RefreshTokenRequest = { refreshToken };
-    
+
     return this.http.post<ApiResponse<RefreshTokenResponse>>(`${this.API_URL}/refresh-token`, request)
       .pipe(
         tap(response => {
@@ -187,7 +188,7 @@ export class AuthService {
     if (state) {
       params.append('state', state);
     }
-    
+
     window.location.href = `${this.API_URL}/oauth/authorize?${params.toString()}`;
   }
 
@@ -289,7 +290,7 @@ export class AuthService {
     this.storeUser(user);
     this.setAuthenticationState(user);
   }
-  
+
   /**
    * Converte UserResponse a User
    */
@@ -391,7 +392,7 @@ export class AuthService {
    */
   private handleError(error: any): Observable<never> {
     console.error('Auth service error:', error);
-    
+
     return throwError(() => error);
   }
 }

@@ -1,5 +1,5 @@
-import { AgencyResponse } from './AgencyResponse';
-import { UserRole } from '../models/UserRole';
+import {UserRole} from '@core-services/auth/models/UserRole';
+import {AgencyResponse} from '@core-services/auth/dto/AgencyResponse';
 
 export interface UserResponse {
   id: string;

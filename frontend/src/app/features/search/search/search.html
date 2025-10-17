@@ -12,14 +12,12 @@
     </div>
 
     <!-- Search Form -->
-    <!-- TODO [initialFilters]="currentFilters()"-->
     <app-search-form
-      (filtersChanged)="onFiltersChanged($event)"
-      (searchExecuted)="onSearchExecuted($event)">
-  </app-search-form>
-</div>
+      (searchStarted)="onSearchStarted($event)">
+    </app-search-form>
+  </div>
 
-<!-- Search Results -->
+  <!-- Search Results -->
   @if (hasSearched()) {
     <div class="search-results-container">
       <!-- Results Header -->
@@ -89,66 +87,38 @@
         </div>
       }
 
-      <!-- Results Content -->
-      @if (searchResult()?.totalCount === 0 && !isLoading()) {
-        <!-- Empty State -->
-        <div class="empty-state">
-          <mat-icon>search_off</mat-icon>
-          <h3>Nessun immobile trovato</h3>
-          <p>
-            Non abbiamo trovato immobili che corrispondono ai tuoi criteri di ricerca.
-            <br>
-            Prova a modificare i filtri per ampliare la ricerca.
-          </p>
-
-          <div class="suggestions">
-            <h4>Suggerimenti:</h4>
-            <ul>
-              <li>Verifica l'ortografia della località</li>
-              <li>Prova con una zona più ampia</li>
-              <li>Aumenta la fascia di prezzo</li>
-              <li>Rimuovi alcuni filtri specifici</li>
-            </ul>
-          </div>
-
-          <button mat-raised-button
-                  color="primary"
-                  (click)="clearSearch()">
-            <mat-icon>refresh</mat-icon>
-            Nuova Ricerca
-          </button>
-        </div>
-      } @else if (properties().length > 0) {
-        <!-- Property List -->
+      <!-- Property List - sempre visualizzata dopo una ricerca -->
+      @if (!isLoading() || currentPage() > 1) {
         <app-property-list
-          [properties]="properties"
+          [properties]="properties()"
+          [emptyMessage]="emptyResultMessage()"
           (propertyClick)="onPropertySelected($event)">
         </app-property-list>
+      }
 
-        <!-- Load More Button -->
-        @if (searchResult()?.hasNextPage) {
-          <div class="load-more-section">
-            <button mat-raised-button
-                    color="primary"
-                    (click)="onLoadMore()"
-                    [disabled]="isLoading()"
-                    class="load-more-button">
-              @if (isLoading()) {
-                <mat-spinner diameter="20"></mat-spinner>
-                Caricamento...
-              } @else {
-                <ng-container>
-                  <mat-icon>clear</mat-icon>
-                  Pulisci Ricerca
-                </ng-container>
-              }
-            </button>
+      <!-- Load More Button -->
+      @if (searchResult()?.hasNextPage && !isLoading()) {
+        <div class="load-more-section">
+          <button mat-raised-button
+                  color="primary"
+                  (click)="onLoadMore()"
+                  class="load-more-button">
+            <mat-icon>expand_more</mat-icon>
+            Carica Altri Immobili
+          </button>
 
-            <p class="load-more-info">
-              Mostrando {{ properties().length }} di {{ searchResult()?.totalCount }} immobili
-            </p>
-          </div>
-        }
+          <p class="load-more-info">
+            Mostrando {{ properties().length }} di {{ searchResult()?.totalCount }} immobili
+          </p>
+        </div>
+      }
+
+      <!-- Loading indicator for subsequent pages -->
+      @if (isLoading() && currentPage() > 1) {
+        <div class="loading-more">
+          <mat-spinner diameter="40"></mat-spinner>
+          <span>Caricamento...</span>
+        </div>
       }
     </div>
   } @else {

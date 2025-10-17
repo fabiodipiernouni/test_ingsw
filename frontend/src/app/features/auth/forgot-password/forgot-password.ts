@@ -7,8 +7,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { AuthService } from '../../../core/services/auth/auth.service';
-import { AuthLayoutComponent, AuthLayoutConfig } from '../../../shared/components/auth-layout/auth-layout';
+import { AuthService } from '@core-services/auth/auth.service';
+import { AuthLayoutComponent, AuthLayoutConfig } from '@shared/components/auth-layout/auth-layout';
 
 @Component({
   selector: 'app-reset-password',
@@ -72,7 +72,7 @@ export class ForgotPassword implements OnInit {
     if (emailFromUrl) {
       this.emailForm.patchValue({ email: emailFromUrl });
     }
-    
+
     // Monitor password changes for requirements display
     this.resetPasswordForm.get('password')?.valueChanges.subscribe(value => {
       if (value) {
@@ -241,7 +241,7 @@ export class ForgotPassword implements OnInit {
         return 'Email non valida';
       }
     }
-    
+
     // Check reset password form (step 2)
     const control = this.resetPasswordForm.get(field);
     if (control?.hasError('required')) {

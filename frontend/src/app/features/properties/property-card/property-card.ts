@@ -1,11 +1,12 @@
-import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatRippleModule } from '@angular/material/core';
-import { Property } from '../models/property';
+import { PropertyCardDto } from '@core/services/property/dto/PropertyCardDto';
+
 
 @Component({
   selector: 'app-property-card',
@@ -22,11 +23,8 @@ import { Property } from '../models/property';
   styleUrl: './property-card.scss'
 })
 export class PropertyCard {
-  @Input() property = signal<Property>({} as Property);
-  @Output() propertyClick = new EventEmitter<Property>();
-  //@Output() favoriteToggle = new EventEmitter<Property>();
-
-  //isFavorite = signal(false);
+  property = input.required<PropertyCardDto>();
+  propertyClick = output<PropertyCardDto>();
   imageLoaded = signal(false);
 
   onCardClick(): void {

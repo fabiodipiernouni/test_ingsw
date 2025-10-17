@@ -9,7 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '@core-services/auth/auth.service';
 import { CreateAdminRequest } from '@core-services/auth/dto/CreateAdminRequest';
-import { AuthLayoutComponent, AuthLayoutConfig } from '../../../shared/components/auth-layout/auth-layout';
+import { AuthLayoutComponent, AuthLayoutConfig } from '@shared/components/auth-layout/auth-layout';
 
 @Component({
   selector: 'app-create-admin',
