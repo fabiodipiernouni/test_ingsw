@@ -1,7 +1,8 @@
-import { PropertyDto } from '@property/dto/PropertyDto';
+import { PropertyModel } from '@property/models/PropertyModel';
+
 
 export interface CreatePropertyResponse {
   success: boolean;
-  data: PropertyDto;
+  data: PropertyModel;
   message?: string;
 }
