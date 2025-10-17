@@ -57,6 +57,11 @@ export class Login implements OnInit {
   ngOnInit(): void {
     // Get return url from route parameters or default to dashboard
     this.returnUrl.set(this.route.snapshot.queryParams['returnUrl'] || '/dashboard');
+
+  const emailFromUrl = this.route.snapshot.queryParams['email'];
+    if (emailFromUrl) {
+      this.loginForm.get('email')?.setValue(emailFromUrl);
+    }
   }
 
   onSubmit(): void {
@@ -77,14 +82,23 @@ export class Login implements OnInit {
         },
         error: (error) => {
           this.isLoading.set(false);
-          this.snackBar.open(
-            error.error?.message || 'Errore durante l\'accesso',
-            'Chiudi',
-            {
-              duration: 5000,
+          console.error('Login error:', error);
+          if (error.error?.error === 'USER_NOT_CONFIRMED') {
+            this.snackBar.open('Il tuo account non è stato ancora verificato. Controlla la tua email per il link di verifica.', 'Chiudi', {
+              duration: 7000,
               panelClass: ['error-snackbar']
-            }
-          );
+            });
+            this.router.navigate(['/verify-email'], { queryParams: { email: credentials.email, codeSent: false } });
+          } else {
+            this.snackBar.open(
+              error.error?.message || 'Errore durante l\'accesso',
+              'Chiudi',
+              {
+                duration: 5000,
+                panelClass: ['error-snackbar']
+              }
+            );
+          }
         }
       });
     }

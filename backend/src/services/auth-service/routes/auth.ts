@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/AuthController';
 import { validate, authValidations } from '@shared/middleware/validation';
-import { authenticateToken } from '@shared/middleware/auth';
+import { authenticateToken, requireEmailVerified } from '@shared/middleware/auth';
 import { requireAgencyAdmin, requireAgencyOwner } from '../../../shared/middleware/authorization';
 
 const router = Router();
@@ -249,7 +249,7 @@ router.post('/confirm-forgot-password', authController.confirmForgotPassword);
  *       500:
  *         description: Errore interno del server
  */
-router.post('/confirm-email', authenticateToken, authController.confirmEmail);
+router.post('/confirm-email', authController.confirmEmail);
 
 /**
  * @swagger
@@ -281,8 +281,7 @@ router.post('/confirm-email', authenticateToken, authController.confirmEmail);
  *       500:
  *         description: Errore interno del server
  */
-// Permetti resend-verification-code anche se l'email non è ancora verificata
-router.post('/resend-verification-code', authenticateToken, authController.resendVerificationCode);
+router.post('/resend-verification-code', authController.resendVerificationCode);
 
 /**
  * @swagger

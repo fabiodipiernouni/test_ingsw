@@ -22,8 +22,8 @@ export const authInterceptor: HttpInterceptorFn = (
 
   return next(req).pipe(
     catchError(error => {
-      // Handle 401 Unauthorized errors
-      if (error.status === 401 && !isAuthEndpoint(req.url)) {
+      // Handle token expiration
+      if (error.error?.error === 'TOKEN_EXPIRED' && !isAuthEndpoint(req.url)) {
         console.warn('Received 401 Unauthorized response');
         
         const refreshToken = authService.getRefreshToken();
@@ -72,7 +72,6 @@ function isAuthEndpoint(url: string): boolean {
     '/login',
     '/register',
     '/refresh-token',
-    '/complete-new-password',
     '/forgot-password',
     '/confirm-forgot-password',
     '/confirm-email',

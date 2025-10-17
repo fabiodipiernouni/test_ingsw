@@ -15,6 +15,7 @@ import { ForgotPasswordRequest } from './dto/ForgotPasswordRequest';
 import { LoginRequest } from './dto/LoginRequest';
 import { RefreshTokenRequest } from './dto/RefreshTokenRequest';
 import { RegisterRequest } from './dto/RegisterRequest';
+import { ResendVerificationCodeRequest } from './dto/ResendVerificationCodeRequest';
 import { UserResponse } from './dto/UserResponse';
 import { OAuthProvider } from './models/OAuthProvider';
 
@@ -60,11 +61,10 @@ export class AuthService {
       .pipe(
         tap(response => {
           if (response.success) {
-            this.snackBar.open('Registration successful', 'Close', { duration: 5000 });
-            this.router.navigate(['/auth/login']);
+            this.router.navigate(['/verify-email'], { queryParams: { email: request.email, codeSent: true } });
           }
           else {
-            throw new Error(response.message || 'Registration failed');
+            throw new Error(response.message || 'Registrazione fallita');
           }
         }),
         catchError(this.handleError.bind(this))
@@ -150,8 +150,8 @@ export class AuthService {
   /**
    * Reinvia codice di verifica email
    */
-  resendVerificationCode(): Observable<ApiResponse<null>> {
-    return this.http.post<ApiResponse<null>>(`${this.API_URL}/resend-verification-code`, {})
+  resendVerificationCode(request: ResendVerificationCodeRequest): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(`${this.API_URL}/resend-verification-code`, request)
       .pipe(catchError(this.handleError.bind(this)));
   }
 
@@ -321,7 +321,7 @@ export class AuthService {
     this.clearTokens();
     this.clearUser();
     this.clearAuthenticationState();
-    this.router.navigate(['/auth/login']);
+    this.router.navigate(['/login']);
   }
 
   /**
@@ -391,11 +391,6 @@ export class AuthService {
    */
   private handleError(error: any): Observable<never> {
     console.error('Auth service error:', error);
-    
-    // Se è un 401, probabilmente il token è scaduto
-    if (error.status === 401) {
-      this.handleLogout();
-    }
     
     return throwError(() => error);
   }

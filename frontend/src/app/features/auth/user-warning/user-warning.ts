@@ -21,7 +21,6 @@ import { AuthService } from '@core-services/auth/auth.service';
   styleUrls: ['./user-warning.scss']
 })
 export class UserWarning implements OnInit, OnDestroy {
-  showVerificationWarning = false;
   showPasswordChangeWarning = false;
   private destroy$ = new Subject<void>();
 
@@ -35,10 +34,8 @@ export class UserWarning implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(user => {
         if (user) {
-          this.showVerificationWarning = !user.isVerified;
           this.showPasswordChangeWarning = user.passwordChangeRequired || false;
         } else {
-          this.showVerificationWarning = false;
           this.showPasswordChangeWarning = false;
         }
       });

@@ -3,6 +3,7 @@ import { User } from '../database/models/User';
 import { Agency } from '@shared/database/models';
 import { AuthenticatedRequest } from '@shared/dto/AuthenticatedRequest';
 import logger from '../utils/logger';
+import { setResponseAsError, setResponseAsForbidden, unauthorizedResponse } from '@shared/utils/helpers';
 
 /**
  * Middleware per verificare che l'utente sia admin dell'agenzia
@@ -16,10 +17,8 @@ export const requireAgencyAdmin = async (
   try {
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required'
-      });
+      unauthorizedResponse(res, 'Authentication required');
+      return;
     }
 
     const user = await User.findByPk(userId, {
@@ -30,25 +29,19 @@ export const requireAgencyAdmin = async (
     });
 
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'User not found'
-      });
+      unauthorizedResponse(res, 'User not found');
+      return;
     }
 
     // Verifica che l'utente sia admin/owner e abbia un'agenzia
     if (!['admin', 'owner'].includes(user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: 'Only agency administrators can create agents'
-      });
+      setResponseAsForbidden(res, 'Only agency admins can perform this action');
+      return;
     }
 
     if (!user.agencyId) {
-      return res.status(403).json({
-        success: false,
-        message: 'User must be associated with an agency'
-      });
+      setResponseAsForbidden(res, 'User must be associated with an agency');
+      return;
     }
 
     // Aggiunge l'agenzia al request per uso nei controller
@@ -56,10 +49,7 @@ export const requireAgencyAdmin = async (
     next();
   } catch (error) {
     logger.error('Error in requireAgencyAdmin middleware:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
+    setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Internal server error');
   }
 };
 
@@ -89,25 +79,19 @@ export const requireAgencyOwner = async (
     });
 
     if (!user?.agency) {
-      return res.status(403).json({
-        success: false,
-        message: 'User not found or not associated with an agency'
-      });
+      setResponseAsForbidden(res, 'User not found or not associated with an agency');
+      return;
     }
 
     // Verifica che l'utente sia il owner dell'agenzia
     if (user.role !== 'owner') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only agency owners can perform this action'
-      });
+      setResponseAsForbidden(res, 'Only agency owners can perform this action');
+      return;
     }
 
     if (user.agency.createdBy !== userId) {
-      return res.status(403).json({
-        success: false,
-        message: 'Only the agency owner can create new admins'
-      });
+      setResponseAsForbidden(res, 'Only the agency owner can create new admins');
+      return;
     }
 
     // Aggiunge l'agenzia al request per uso nei controller
@@ -115,10 +99,8 @@ export const requireAgencyOwner = async (
     next();
   } catch (error) {
     logger.error('Error in requireAgencyOwner middleware:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
+    setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Internal server error');
+    return;
   }
 };
 
@@ -133,26 +115,19 @@ export const requireAdminOrOwner = async (
   try {
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required'
-      });
+      unauthorizedResponse(res, 'Authentication required');
+      return;
     }
 
     if (!req.user || !['admin', 'owner'].includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: 'Admin or owner role required'
-      });
+      setResponseAsForbidden(res, 'Admin or owner role required');
+      return;
     }
 
     next();
   } catch (error) {
     logger.error('Error in requireAdminOrOwner middleware:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
+    setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Internal server error');
   }
 };
 
@@ -165,34 +140,26 @@ export const requireRole = (allowedRoles: string[]) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Authentication required'
-        });
+        unauthorizedResponse(res, 'Authentication required');
+        return;
       }
 
       const user = await User.findByPk(userId);
       if (!user) {
-        return res.status(401).json({
-          success: false,
-          message: 'User not found'
-        });
+        unauthorizedResponse(res, 'User not found');
+        return;
       }
 
       if (!allowedRoles.includes(user.role)) {
-        return res.status(403).json({
-          success: false,
-          message: `Access denied. Required roles: ${allowedRoles.join(', ')}`
-        });
+        setResponseAsForbidden(res, 'Access denied');
+        return;
       }
 
       next();
     } catch (error) {
       logger.error('Error in requireRole middleware:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error'
-      });
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Internal server error');
+      return;
     }
   };
 };

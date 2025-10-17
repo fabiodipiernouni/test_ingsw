@@ -158,7 +158,7 @@ export class ForgotPassword implements OnInit {
   }
 
   goToLogin(): void {
-    this.router.navigate(['/login']);
+    this.router.navigate(['/login'], { queryParams: { email: this.emailForm.value.email } });
   }
 
   // Go back to email step
@@ -215,7 +215,19 @@ export class ForgotPassword implements OnInit {
 
     if (!password || !confirmPassword) return null;
 
-    return password.value === confirmPassword.value ? null : { passwordMismatch: true };
+    if (password.value !== confirmPassword.value) {
+      confirmPassword.setErrors({ passwordMismatch: true });
+      return { passwordMismatch: true };
+    } else {
+      // Rimuovi l'errore passwordMismatch se presente, ma mantieni altri errori
+      const errors = confirmPassword.errors;
+      if (errors) {
+        delete errors['passwordMismatch'];
+        confirmPassword.setErrors(Object.keys(errors).length > 0 ? errors : null);
+      }
+    }
+
+    return null;
   }
 
   getErrorMessage(field: string): string {

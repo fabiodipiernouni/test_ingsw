@@ -80,7 +80,7 @@ export class Register {
         next: (response) => {
           this.isLoading.set(false);
           if (response.success) {
-            this.snackBar.open('Registrazione completata!', 'Chiudi', {
+            this.snackBar.open('Per favore controlla la tua email per confermare la registrazione.', 'Chiudi', {
               duration: 5000,
               panelClass: ['success-snackbar']
             });
@@ -98,14 +98,27 @@ export class Register {
         },
         error: (error) => {
           this.isLoading.set(false);
-          this.snackBar.open(
-            error.error?.message || 'Errore durante la registrazione',
-            'Chiudi',
-            {
-              duration: 5000,
-              panelClass: ['error-snackbar']
-            }
-          );
+          if (error.error?.error === 'USER_ALREADY_EXISTS') {
+            this.snackBar.open(
+              'Un account con questa email esiste già. Per favore accedi.',
+              'Chiudi',
+              {
+                duration: 5000,
+                panelClass: ['error-snackbar']
+              }
+            );
+            this.router.navigate(['/login']);
+          }
+          else {
+            this.snackBar.open(
+              error.error?.message || 'Errore durante la registrazione',
+              'Chiudi',
+              {
+                duration: 5000,
+                panelClass: ['error-snackbar']
+              }
+            );
+          }
         }
       });
     }
@@ -144,7 +157,19 @@ export class Register {
 
     if (!password || !confirmPassword) return null;
 
-    return password.value === confirmPassword.value ? null : { passwordMismatch: true };
+    if (password.value !== confirmPassword.value) {
+      confirmPassword.setErrors({ passwordMismatch: true });
+      return { passwordMismatch: true };
+    } else {
+      // Rimuovi l'errore passwordMismatch se presente, ma mantieni altri errori
+      const errors = confirmPassword.errors;
+      if (errors) {
+        delete errors['passwordMismatch'];
+        confirmPassword.setErrors(Object.keys(errors).length > 0 ? errors : null);
+      }
+    }
+
+    return null;
   }
 
   getErrorMessage(field: string): string {
@@ -164,7 +189,7 @@ export class Register {
       }
       return 'Formato non valido';
     }
-    if (field === 'confirmPassword' && this.registrationForm.hasError('passwordMismatch')) {
+    if (field === 'confirmPassword' && this.registrationForm.hasError('passwordMismatch') && control?.touched) {
       return 'Le password non corrispondono';
     }
     if (control?.hasError('passwordStrength')) {

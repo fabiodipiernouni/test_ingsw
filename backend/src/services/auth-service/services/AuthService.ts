@@ -38,7 +38,7 @@ import { ChangePasswordDto } from '../dto/ChangePasswordDto';
 import { RefreshTokenResponse } from '../dto/RefreshTokenResponse';
 import { CreateAgentDto } from '../dto/CreateAgentDto';
 import { CreateAdminDto } from '../dto/CreateAdminDto';
-import { UserModel } from '@services/user-service/models/UserModel';
+import { ResendVerificationCodeDto } from '../dto/ResendVerificationCodeDto';
 
 // Cognito Client
 const cognitoClient = new CognitoIdentityProviderClient({
@@ -66,6 +66,13 @@ class AuthenticationError extends Error {
   }
 }
 
+class UserNotConfirmedException extends AuthenticationError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'UserNotConfirmedException';
+  }
+}
+
 class NotFoundError extends Error {
   constructor(message: string) {
     super(message);
@@ -77,6 +84,13 @@ class ConflictError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'ConflictError';
+  }
+}
+
+class UserAlreadyExistsError extends ConflictError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'UserAlreadyExistsError';
   }
 }
 
@@ -105,7 +119,7 @@ export class AuthService {
       // Verifica se l'utente esiste già nel DB locale
       const existingUser = await User.findOne({ where: { email: registerData.email } });
       if (existingUser) {
-        throw new ConflictError('User with this email already exists');
+        throw new UserAlreadyExistsError('User with this email already exists');
       }
 
       // 1. REGISTRA UTENTE IN COGNITO
@@ -300,7 +314,7 @@ export class AuthService {
       }
 
       if (error.name === 'UserNotConfirmedException') {
-        throw new AuthenticationError('Email not verified. Please check your email.');
+        throw new UserNotConfirmedException('Email not verified. Please check your email.');
       }
 
       throw error;
@@ -751,28 +765,28 @@ export class AuthService {
   /**
    * Conferma email con codice di verifica
    */
-  async confirmEmail(userModel: UserModel, data: ConfirmEmailDto): Promise<void> {
+  async confirmEmail(data: ConfirmEmailDto): Promise<void> {
     try {
 
-      logger.info('Confirming email', { userEmail: userModel.email });
+      logger.info('Confirming email', { userEmail: data.email });
 
       // Conferma registrazione in Cognito
       const confirmCommand = new ConfirmSignUpCommand({
         ClientId: config.cognito.clientId,
-        Username: userModel.email,
+        Username: data.email,
         ConfirmationCode: data.code
       });
 
       await cognitoClient.send(confirmCommand);
 
       // Aggiorna stato verifica nel database locale
-      const user = await User.findOne({ where: { email: userModel.email } });
+      const user = await User.findOne({ where: { email: data.email } });
       if (user) {
         await user.update({ isVerified: true });
-        logger.info('User email verified in database', { userId: userModel.id });
+        logger.info('User email verified in database', { userId: user.id });
       }
 
-      logger.info('Email confirmed successfully', { userEmail: userModel.email });
+      logger.info('Email confirmed successfully', { userEmail: data.email });
 
     } catch (error: any) {
       logger.error('Error confirming email:', error);
@@ -801,9 +815,9 @@ export class AuthService {
   /**
    * Reinvia codice di verifica email
    */
-  async resendVerificationCode(user: UserModel): Promise<void> {
+  async resendVerificationCode(data: ResendVerificationCodeDto): Promise<void> {
     try {
-      const email = user.email;
+      const email = data.email;
       logger.info('Resending verification code', { email });
 
       // Reinvia codice in Cognito

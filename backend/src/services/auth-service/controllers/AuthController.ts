@@ -15,6 +15,7 @@ import { ConfirmEmailDto } from '../dto/ConfirmEmailDto';
 import { ForgotPasswordDto } from '../dto/ForgotPasswordDto';
 import { ChangePasswordDto } from '../dto/ChangePasswordDto';
 import { RefreshTokenDto } from '../dto/RefreshTokenDto';
+import { ResendVerificationCodeDto } from '../dto/ResendVerificationCodeDto';
 
 export class AuthController {
   /**
@@ -53,6 +54,11 @@ export class AuthController {
 
       if (error.name === 'ConflictError') {
         setResponseAsError(res, 'CONFLICT', error.message, 409);
+        return;
+      }
+
+      if (error.name === 'UserAlreadyExistsError') {
+        setResponseAsError(res, 'USER_ALREADY_EXISTS', error.message, 409);
         return;
       }
 
@@ -197,10 +203,6 @@ export class AuthController {
    */
   async confirmEmail(req: AuthenticatedRequest, res: Response) {
     try {
-      if (!req.user) {
-        setResponseAsError(res, 'UNAUTHORIZED', 'Authentication required', 401);
-        return;
-      }
 
       const confirmEmailDto: ConfirmEmailDto = plainToInstance(ConfirmEmailDto, req.body);
 
@@ -211,9 +213,9 @@ export class AuthController {
         return;
       }
 
-      logger.info('Email confirmation request', { email: req.user.email });
+      logger.info('Email confirmation request', { email: confirmEmailDto.email });
 
-      await authService.confirmEmail( req.user, confirmEmailDto);
+      await authService.confirmEmail(confirmEmailDto);
 
       setResponseAsSuccess(res, null, 'Email verified successfully', 200);
 
@@ -262,14 +264,18 @@ export class AuthController {
    */
   async resendVerificationCode(req: AuthenticatedRequest, res: Response) {
     try {
-      if (!req.user) {
-        setResponseAsError(res, 'UNAUTHORIZED', 'Authentication required', 401);
+      const resendDto: ResendVerificationCodeDto = plainToInstance(ResendVerificationCodeDto, req.body);
+
+      const errors = await validate(resendDto);
+      if (errors.length > 0) {
+        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        setResponseAsValidationError(res, str_errors);
         return;
       }
 
-      logger.info('Resend verification code request', { email: req.user.email });
+      logger.info('Resend verification code request', { email: resendDto.email });
 
-      await authService.resendVerificationCode(req.user);
+      await authService.resendVerificationCode(resendDto);
 
       setResponseAsSuccess(res, null, 'Verification code sent', 200);
 

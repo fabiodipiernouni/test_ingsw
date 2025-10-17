@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import jwksRsa from 'jwks-rsa';
 import { User, Agency } from '@shared/database/models';
 import { AuthenticatedRequest } from '@shared/dto/AuthenticatedRequest';
-import { unauthorizedResponse, setResponseAsForbidden } from '@shared/utils/helpers';
+import { unauthorizedResponse, setResponseAsForbidden, setResponseAsError } from '@shared/utils/helpers';
 import appConfig from '@shared/config';
 import { UserRole } from '@user/models/UserRole';
 import logger from '@shared/utils/logger';
@@ -58,7 +58,7 @@ export const authenticateToken = async (
       async (err, decoded: any) => {
         if (err) {
           if (err.name === 'TokenExpiredError') {
-            return unauthorizedResponse(res, 'Token expired');
+            return setResponseAsError(res, 'TOKEN_EXPIRED', 'Access token has expired. Please refresh your token.', 401);
           }
           return unauthorizedResponse(res, 'Invalid token');
         }

@@ -110,12 +110,24 @@ export class ChangePassword implements OnInit {
   }
 
   private passwordMatchValidator(group: AbstractControl): { [key: string]: any } | null {
-    const newPassword = group.get('newPassword');
+    const password = group.get('newPassword');
     const confirmPassword = group.get('confirmPassword');
 
-    if (!newPassword || !confirmPassword) return null;
+    if (!password || !confirmPassword) return null;
 
-    return newPassword.value === confirmPassword.value ? null : { passwordMismatch: true };
+    if (password.value !== confirmPassword.value) {
+      confirmPassword.setErrors({ passwordMismatch: true });
+      return { passwordMismatch: true };
+    } else {
+      // Rimuovi l'errore passwordMismatch se presente, ma mantieni altri errori
+      const errors = confirmPassword.errors;
+      if (errors) {
+        delete errors['passwordMismatch'];
+        confirmPassword.setErrors(Object.keys(errors).length > 0 ? errors : null);
+      }
+    }
+
+    return null;
   }
 
   onSubmit(): void {
@@ -182,7 +194,7 @@ export class ChangePassword implements OnInit {
       const minLength = control.getError('minlength').requiredLength;
       return `Minimo ${minLength} caratteri`;
     }
-    if (fieldName === 'confirmPassword' && this.changePasswordForm.hasError('passwordMismatch')) {
+    if (fieldName === 'confirmPassword' && (control?.hasError('passwordMismatch') || this.changePasswordForm.hasError('passwordMismatch'))) {
       return 'Le password non corrispondono';
     }
     if (control?.hasError('passwordStrength')) {
