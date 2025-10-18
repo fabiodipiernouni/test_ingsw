@@ -17,6 +17,7 @@ import {PropertyCardDto} from '@core/services/property/dto/PropertyCardDto';
 import {PagedResult} from '@service-shared/dto/pagedResult';
 import {SearchPropertiesFilter} from '@core/services/property/dto/SearchPropertiesFilter';
 import {PagedRequest} from '@service-shared/dto/pagedRequest';
+import {GetPropertiesCardsRequest} from '@core/services/property/dto/GetPropertiesCardsRequest';
 
 @Component({
   selector: 'app-search',
@@ -81,10 +82,11 @@ export class Search implements OnInit, OnDestroy {
    * Gestisce l'evento searchStarted emesso da search-form.
    * Riceve i filtri e avvia la ricerca.
    */
-  onSearchStarted(filters: SearchPropertiesFilter): void {
-    this.currentFilters.set(filters);
-    this.currentPage.set(1);
-    this.executeSearch(filters);
+  onSearchStarted(searchFormData: GetPropertiesCardsRequest): void {
+    const { filters, pagedRequest } = searchFormData;
+    this.currentFilters.set(filters!);
+    this.currentPage.set(pagedRequest?.page || 1);
+    this.executeSearch(filters!);
 
     // Update URL with search parameters
     this.router.navigate([], {
