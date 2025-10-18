@@ -1,12 +1,15 @@
 <mat-card class="property-card"
           matRipple
           [matRippleDisabled]="false"
-          (click)="onCardClick()">
+          (click)="onCardClick()"
+          (keydown.enter)="onCardClick()"
+          (keydown.space)="onCardClick()"
+          tabindex="0"
+          role="button">
 
   <!-- Property Image -->
   <div class="property-image-container">
-    <!-- TODO -->
-    <!-- <div class="property-image"
+    <div class="property-image"
          [style.background-image]="'url(' + getImageUrl() + ')'"
          [class.loaded]="imageLoaded()">
       <img [src]="getImageUrl()"
@@ -20,58 +23,36 @@
           <mat-icon>home_work</mat-icon>
         </div>
       }
-    </div> -->
+    </div>
 
     <!-- Property Badge -->
-    <!-- TODO -->
-    <!-- <div class="property-badge"
+    <div class="property-badge"
          [class.sale]="property().listingType === 'sale'"
          [class.rent]="property().listingType === 'rent'">
       {{ getListingTypeLabel() }}
-    </div> -->
-
-    <!-- Favorite Button
-    <button mat-icon-button
-            class="favorite-button"
-            [class.active]="isFavorite()"
-            (click)="onFavoriteClick($event)"
-            [attr.aria-label]="isFavorite() ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti'">
-      <mat-icon>{{ isFavorite() ? 'favorite' : 'favorite_border' }}</mat-icon>
-    </button>-->
-
-    <!-- Image Count -->
-    <!-- TODO -->
-    <!-- @if (property().images.length > 1) {
-      <div class="image-count">
-        <mat-icon>photo_library</mat-icon>
-        {{ property().images.length }}
-      </div>
-    } -->
+    </div>
   </div>
 
   <!-- Property Content -->
   <mat-card-content class="property-content">
     <!-- Price -->
-    <!-- TODO -->
-    <!-- <div class="property-price">
+    <div class="property-price">
       {{ property().price | currency:'EUR':'symbol':'1.0-0' }}
       @if (property().listingType === 'rent') {
         <span class="price-period">/mese</span>
       }
-    </div> -->
+    </div>
 
     <!-- Title -->
-    <!-- TODO -->
-    <!-- <h3 class="property-title">{{ property().title }}</h3> -->
+    <h3 class="property-title">{{ property().title }}</h3>
 
     <!-- Property Type -->
-    <!-- TODO -->
-    <!-- <div class="property-type">{{ getPropertyTypeLabel() }}</div> -->
+    <div class="property-type">{{ getPropertyTypeLabel() }}</div>
 
     <!-- Location -->
     <div class="property-location">
       <mat-icon>location_on</mat-icon>
-      <!-- <span>{{ property().address.city }}, {{ property().address.province }}</span> --> <!-- TODO -->
+      <span>{{ property().city }}, {{ property().province }}</span>
     </div>
 
     <!-- Features -->
@@ -101,25 +82,25 @@
     <div class="property-amenities">
       @if (property().hasElevator) {
         <mat-chip class="amenity-chip">
-          <mat-icon matChipLeading>elevator</mat-icon>
+          <mat-icon>elevator</mat-icon>
           Ascensore
         </mat-chip>
       }
       @if (property().hasBalcony) {
         <mat-chip class="amenity-chip">
-          <mat-icon matChipLeading>balcony</mat-icon>
+          <mat-icon>balcony</mat-icon>
           Balcone
         </mat-chip>
       }
       @if (property().hasGarden) {
         <mat-chip class="amenity-chip">
-          <mat-icon matChipLeading>yard</mat-icon>
+          <mat-icon>yard</mat-icon>
           Giardino
         </mat-chip>
       }
       @if (property().hasParking) {
         <mat-chip class="amenity-chip">
-          <mat-icon matChipLeading>local_parking</mat-icon>
+          <mat-icon>local_parking</mat-icon>
           Parcheggio
         </mat-chip>
       }

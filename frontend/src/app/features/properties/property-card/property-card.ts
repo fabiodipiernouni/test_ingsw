@@ -7,7 +7,6 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatRippleModule } from '@angular/material/core';
 import { PropertyCardDto } from '@core/services/property/dto/PropertyCardDto';
 
-
 @Component({
   selector: 'app-property-card',
   standalone: true,
@@ -31,7 +30,7 @@ export class PropertyCard {
     this.propertyClick.emit(this.property());
   }
 
-  //TODO
+  // Favorite feature - to be implemented
   /*onFavoriteClick(event: Event): void {
     event.stopPropagation();
     this.isFavorite.update(current => !current);
@@ -42,13 +41,14 @@ export class PropertyCard {
     this.imageLoaded.set(true);
   }
 
-  /*
-  // TODO
   getImageUrl(): string {
-    const images = this.property().primaryImage;
-    return images?.url ?? '/assets/images/no-image.jpg';
+    const primaryImage = this.property().primaryImage;
+    // Preferenza: medium > large > original > placeholder
+    return primaryImage?.urls?.medium ||
+           primaryImage?.urls?.large ||
+           primaryImage?.urls?.original ||
+           '/assets/images/no-image.jpg';
   }
-  */
 
   getListingTypeLabel(): string {
     return this.property().listingType === 'sale' ? 'Vendita' : 'Affitto';

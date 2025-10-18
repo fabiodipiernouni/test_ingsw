@@ -15,7 +15,7 @@
     "dev:search": "cross-env SERVICE=search NODE_OPTIONS=\"--inspect-brk\" nodemon --exec ts-node src/services/search-service/index.ts",
     "dev:user": "cross-env SERVICE=user NODE_OPTIONS=\"--inspect-brk\" nodemon --exec ts-node src/services/user-service/index.ts",
     "dev:notification": "cross-env SERVICE=notification NODE_OPTIONS=\"--inspect-brk\" nodemon --exec ts-node src/services/notification-service/index.ts",
-    "dev:all": "concurrently \"npm run dev:auth\" \"npm run dev:property\" \"npm run dev:search\" \"npm run dev:user\" \"npm run dev:notification\"",
+    "dev:all": "concurrently \"npm run dev:auth\" \"npm run dev:property\" ",
     "create:agency": "ts-node scripts/create-agency.ts",
     "scrape:immobiliare": "ts-node scripts/scraper-immobiliare.ts",
     "seed:properties": "ts-node scripts/seed-properties.ts",
