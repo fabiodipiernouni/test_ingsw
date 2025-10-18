@@ -27,7 +27,8 @@ const options: swaggerJsdoc.Options = {
         }
       },
       schemas: {
-        // Request DTOs
+        // ==================== REQUEST DTOs ====================
+
         CreatePropertyRequest: {
           type: 'object',
           required: ['title', 'description', 'price', 'propertyType', 'listingType', 'bedrooms', 'bathrooms', 'area', 'address', 'location'],
@@ -260,6 +261,7 @@ const options: swaggerJsdoc.Options = {
             limit: {
               type: 'integer',
               minimum: 1,
+              maximum: 200,
               default: 20,
               example: 20
             },
@@ -289,7 +291,116 @@ const options: swaggerJsdoc.Options = {
           }
         },
 
-        // Response DTOs
+        // ==================== RESPONSE DTOs ====================
+
+        PropertyCardDto: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid',
+              example: '550e8400-e29b-41d4-a716-446655440000'
+            },
+            title: {
+              type: 'string',
+              example: 'Appartamento luminoso in centro'
+            },
+            description: {
+              type: 'string',
+              example: 'Splendido appartamento...'
+            },
+            price: {
+              type: 'number',
+              example: 250000
+            },
+            propertyType: {
+              type: 'string',
+              enum: ['apartment', 'villa', 'house', 'loft', 'office', 'commercial', 'land'],
+              example: 'apartment'
+            },
+            listingType: {
+              type: 'string',
+              enum: ['sale', 'rent'],
+              example: 'sale'
+            },
+            status: {
+              type: 'string',
+              enum: ['active', 'pending', 'sold', 'rented', 'withdrawn'],
+              example: 'active'
+            },
+            rooms: {
+              type: 'integer',
+              example: 4
+            },
+            bedrooms: {
+              type: 'integer',
+              example: 3
+            },
+            bathrooms: {
+              type: 'integer',
+              example: 2
+            },
+            area: {
+              type: 'number',
+              example: 100
+            },
+            floor: {
+              type: 'string',
+              example: '2'
+            },
+            city: {
+              type: 'string',
+              example: 'Napoli'
+            },
+            province: {
+              type: 'string',
+              example: 'NA'
+            },
+            primaryImage: {
+              $ref: '#/components/schemas/PropertyImageModel'
+            },
+            energyClass: {
+              type: 'string',
+              enum: ['A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G'],
+              example: 'B'
+            },
+            hasElevator: {
+              type: 'boolean',
+              example: true
+            },
+            hasBalcony: {
+              type: 'boolean',
+              example: true
+            },
+            hasGarden: {
+              type: 'boolean',
+              example: false
+            },
+            hasParking: {
+              type: 'boolean',
+              example: true
+            },
+            agentId: {
+              type: 'string',
+              format: 'uuid'
+            },
+            views: {
+              type: 'integer',
+              example: 45
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              example: '2025-10-01T10:00:00Z'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+              example: '2025-10-17T15:30:00Z'
+            }
+          }
+        },
+
         PropertyModel: {
           type: 'object',
           properties: {
@@ -358,50 +469,6 @@ const options: swaggerJsdoc.Options = {
           }
         },
 
-        PropertyCardDto: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', format: 'uuid' },
-            title: { type: 'string' },
-            description: { type: 'string' },
-            price: { type: 'number' },
-            propertyType: {
-              type: 'string',
-              enum: ['apartment', 'villa', 'house', 'loft', 'office', 'commercial', 'land']
-            },
-            listingType: {
-              type: 'string',
-              enum: ['sale', 'rent']
-            },
-            status: {
-              type: 'string',
-              enum: ['active', 'pending', 'sold', 'rented', 'withdrawn']
-            },
-            rooms: { type: 'integer' },
-            bedrooms: { type: 'integer' },
-            bathrooms: { type: 'integer' },
-            area: { type: 'number' },
-            floor: { type: 'string' },
-            city: { type: 'string' },
-            province: { type: 'string' },
-            primaryImage: {
-              $ref: '#/components/schemas/PropertyImageModel'
-            },
-            energyClass: {
-              type: 'string',
-              enum: ['A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G']
-            },
-            hasElevator: { type: 'boolean' },
-            hasBalcony: { type: 'boolean' },
-            hasGarden: { type: 'boolean' },
-            hasParking: { type: 'boolean' },
-            agentId: { type: 'string' },
-            views: { type: 'integer' },
-            createdAt: { type: 'string', format: 'date-time' },
-            updatedAt: { type: 'string', format: 'date-time' }
-          }
-        },
-
         PropertyImageModel: {
           type: 'object',
           properties: {
@@ -438,6 +505,8 @@ const options: swaggerJsdoc.Options = {
             phone: { type: 'string' }
           }
         },
+
+        // ==================== COMMON SCHEMAS ====================
 
         Address: {
           type: 'object',
@@ -492,7 +561,8 @@ const options: swaggerJsdoc.Options = {
           }
         },
 
-        // Success Responses
+        // ==================== API RESPONSES ====================
+
         ApiSuccessResponse: {
           type: 'object',
           properties: {
@@ -578,7 +648,52 @@ const options: swaggerJsdoc.Options = {
           }
         },
 
-        // Error Responses
+        CreatePropertyResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true
+            },
+            data: {
+              $ref: '#/components/schemas/PropertyModel'
+            },
+            message: {
+              type: 'string',
+              example: 'Property created successfully'
+            },
+            timestamp: {
+              type: 'string',
+              format: 'date-time'
+            }
+          }
+        },
+
+        RecordViewResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true
+            },
+            data: {
+              type: 'object',
+              properties: {
+                message: {
+                  type: 'string',
+                  example: 'View recorded'
+                }
+              }
+            },
+            timestamp: {
+              type: 'string',
+              format: 'date-time'
+            }
+          }
+        },
+
+        // ==================== ERROR RESPONSES ====================
+
         ErrorResponse: {
           type: 'object',
           properties: {
@@ -623,7 +738,8 @@ const options: swaggerJsdoc.Options = {
               type: 'array',
               items: {
                 type: 'string'
-              }
+              },
+              example: ['title must be at least 10 characters', 'price must be a positive number']
             },
             timestamp: {
               type: 'string',
