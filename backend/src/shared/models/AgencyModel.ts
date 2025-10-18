@@ -1,15 +1,18 @@
-import { Address } from '@shared/models/address';
-import { Contacts } from '@shared/models/contacts';
+import { Address } from '@shared/models/Address';
+import { Contacts } from '@shared/models/Contacts';
 
-export interface Agency {
+export interface AgencyModel {
+  // Identificativo univoco
   id: string;
+
+  // Informazioni base
   name: string;
   description?: string;
 
-  address: Address;
+  address?: Address;
 
   // Contatti
-  contacts: Contacts;
+  contacts?: Contacts;
 
   // Logo e licenza
   logo?: string;

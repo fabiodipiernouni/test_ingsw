@@ -71,6 +71,11 @@ export class VerifyEmail implements OnInit {
     if (!codeSent) {
       this.resendCode();
     }
+
+    const returnUrlFromUrl = this.route.snapshot.queryParams['returnUrl'];
+    if (returnUrlFromUrl) {
+      this.returnUrl.set(returnUrlFromUrl);
+    }
     
   }
 

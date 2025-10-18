@@ -1,4 +1,4 @@
-import { Address } from '@service-shared/models/address';
+import { Address } from '@service-shared/models/Address';
 import { PropertyStatus, EnergyClass } from '@core-services/property/models/types';
 
 export interface PropertyUpdateRequest {

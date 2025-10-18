@@ -32,7 +32,7 @@ export class ChangePassword implements OnInit {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private snackBar = inject(MatSnackBar);
-
+  
   isLoading = signal<boolean>(false);
   hideCurrentPassword = signal<boolean>(true);
   hideNewPassword = signal<boolean>(true);
@@ -88,6 +88,11 @@ export class ChangePassword implements OnInit {
     const value = control.value;
     if (!value) return null;
 
+    // Verifica che non ci siano spazi
+    if (/\s/.test(value)) {
+      return { passwordContainsSpaces: true };
+    }
+
     const hasNumber = /[0-9]/.test(value);
     const hasUpper = /[A-Z]/.test(value);
     const hasLower = /[a-z]/.test(value);
@@ -128,6 +133,11 @@ export class ChangePassword implements OnInit {
     }
 
     return null;
+  }
+
+  hasLinkedProviders(): boolean {
+    const currentUser = this.authService.currentUser();
+    return !!(currentUser?.linkedProviders && currentUser.linkedProviders?.length > 0);
   }
 
   onSubmit(): void {
@@ -196,6 +206,9 @@ export class ChangePassword implements OnInit {
     }
     if (fieldName === 'confirmPassword' && (control?.hasError('passwordMismatch') || this.changePasswordForm.hasError('passwordMismatch'))) {
       return 'Le password non corrispondono';
+    }
+    if (control?.hasError('passwordContainsSpaces')) {
+      return 'La password non può contenere spazi';
     }
     if (control?.hasError('passwordStrength')) {
       return 'La password non soddisfa i requisiti di sicurezza';

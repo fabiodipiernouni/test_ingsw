@@ -14,9 +14,9 @@ $radius: 8px;
   color: if($active, $color-primary, $color-secondary);
   border-radius: $radius;
   transition: all 0.3s ease;
-  flex: 1;
   text-align: center;
   background: if($active, rgba(63, 81, 181, 0.1), none);
+  padding: 0 1rem;
   &:hover {
     background: rgba(63, 81, 181, 0.08);
     color: $color-primary;
@@ -78,12 +78,14 @@ $radius: 8px;
 .desktop-nav {
   display: flex;
   flex: 1;
-  justify-content: space-evenly;
-  gap: $gap-sm;
+  justify-content: flex-start;
+  gap: 1rem;
   margin: 0 2rem;
 
   .mat-mdc-button {
     @include nav-btn(false);
+    flex: 0 0 auto;
+    white-space: nowrap;
 
     &.active {
       @include nav-btn(true);
@@ -98,16 +100,25 @@ $radius: 8px;
 .user-actions {
   display: flex;
   align-items: center;
-  gap: $gap-sm;
+  gap: 1rem;
 }
 
 .notification-button {
   color: $color-secondary;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
     background: rgba(63, 81, 181, 0.08);
     color: $color-primary;
+  }
+
+  mat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 

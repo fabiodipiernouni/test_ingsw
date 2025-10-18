@@ -130,6 +130,11 @@ export class Register {
     const value = control.value;
     if (!value) return null;
 
+    // Verifica che non ci siano spazi
+    if (/\s/.test(value)) {
+      return { passwordContainsSpaces: true };
+    }
+
     const hasNumber = /[0-9]/.test(value);
     const hasUpper = /[A-Z]/.test(value);
     const hasLower = /[a-z]/.test(value);
@@ -191,6 +196,9 @@ export class Register {
     }
     if (field === 'confirmPassword' && this.registrationForm.hasError('passwordMismatch') && control?.touched) {
       return 'Le password non corrispondono';
+    }
+    if (control?.hasError('passwordContainsSpaces')) {
+      return 'La password non può contenere spazi';
     }
     if (control?.hasError('passwordStrength')) {
       return 'La password non soddisfa i requisiti di sicurezza';

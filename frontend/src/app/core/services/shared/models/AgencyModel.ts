@@ -1,7 +1,7 @@
-import { Address } from '@shared/models/address';
-import { Contacts } from '@shared/models/contacts';
+import {Address} from '@service-shared/models/Address';
+import {Contacts} from '@service-shared/models/Contacts';
 
-export interface Agency {
+export interface AgencyModel {
   // Identificativo univoco
   id: string;
 
@@ -9,10 +9,10 @@ export interface Agency {
   name: string;
   description?: string;
 
-  address: Address;
+  address?: Address;
 
   // Contatti
-  Contact: Contacts;
+  contacts?: Contacts;
 
   // Logo e licenza
   logo?: string;
@@ -20,9 +20,6 @@ export interface Agency {
 
   // Stato
   isActive: boolean;
-
-  // Creatore
-  createdBy: string;
 
   // Timestamp automatici
   createdAt: Date;

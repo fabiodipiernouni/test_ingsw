@@ -77,6 +77,9 @@ export class Login implements OnInit {
         next: (response) => {
           this.isLoading.set(false);
           if(response.success) {
+            if(this.authService.isFirstLogin()) {
+              this.returnUrl.set('/onboarding');
+            }
             this.router.navigateByUrl(this.returnUrl());
           }
         },
@@ -84,7 +87,7 @@ export class Login implements OnInit {
           this.isLoading.set(false);
           console.error('Login error:', error);
           if (error.error?.error === 'USER_NOT_CONFIRMED') {
-            this.snackBar.open('Il tuo account non è stato ancora verificato. Controlla la tua email per il link di verifica.', 'Chiudi', {
+            this.snackBar.open('Il tuo account non è stato ancora verificato. Controlla la tua email per il codice di verifica.', 'Chiudi', {
               duration: 7000,
               panelClass: ['error-snackbar']
             });

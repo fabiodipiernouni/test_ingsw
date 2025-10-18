@@ -23,6 +23,8 @@ import { ApiResponse } from '@service-shared/dto/ApiResponse';
 import { RefreshTokenResponse } from '@core-services/auth/dto/RefreshTokenResponse';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { UserModel } from '@core-services/auth/models/UserModel';
+import { AgencyResponse } from '@core-services/auth/dto/AgencyResponse';
+import {AgencyModel} from '@service-shared/models/AgencyModel';
 
 @Injectable({
   providedIn: 'root'
@@ -161,7 +163,20 @@ export class AuthService {
    */
   changePassword(request: ChangePasswordRequest): Observable<ApiResponse<null>> {
     return this.http.post<ApiResponse<null>>(`${this.API_URL}/change-password`, request)
-      .pipe(catchError(this.handleError.bind(this)));
+      .pipe(
+        tap(response => {
+          if (response.success) {
+            // Aggiorna il flag passwordChangeRequired nel local storage
+            const currentUser = this.getCurrentUser();
+            if (currentUser) {
+              currentUser.passwordChangeRequired = false;
+              this.storeUser(currentUser);
+              this.setAuthenticationState(currentUser);
+            }
+          }
+        }),
+        catchError(this.handleError.bind(this))
+      );
   }
 
   /**
@@ -261,6 +276,14 @@ export class AuthService {
     return user?.role === 'owner';
   }
 
+  /**
+   * Verifica se è il primo login dell'utente (richiesta cambio password)
+   */
+  isFirstLogin(): boolean {
+    const user = this.getCurrentUser();
+    return user?.lastLoginAt === undefined || user?.lastLoginAt === null;
+  }
+
   // ===== PRIVATE METHODS =====
 
   /**
@@ -292,27 +315,49 @@ export class AuthService {
   }
 
   /**
-   * Converte UserResponse a User
+   * Converte AgencyResponse a AgencyModel
+  */
+  private convertAgencyResponseToAgencyModel(agencyResponse: AgencyResponse): AgencyModel {
+    return {
+      id: agencyResponse.id,
+      name: agencyResponse.name,
+      description: agencyResponse.description,
+      address: agencyResponse.address,
+      contacts: agencyResponse.contacts,
+      logo: agencyResponse.logo,
+      licenseNumber: agencyResponse.licenseNumber,
+      isActive: agencyResponse.isActive,
+      createdAt: new Date(agencyResponse.createdAt),
+      updatedAt: new Date(agencyResponse.updatedAt),
+    }
+  }
+
+
+  /**
+   * Converte UserResponse a UserModel
    */
   private convertUserResponseToUserModel(userResponse: UserResponse): UserModel {
-
-    return {
+    const userModel: UserModel = {
       id: userResponse.id,
       email: userResponse.email,
       firstName: userResponse.firstName,
       lastName: userResponse.lastName,
       role: userResponse.role,
-      avatar: undefined, // TODO
+      avatar: userResponse.avatar, 
       phone: userResponse.phone,
       isVerified: userResponse.isVerified,
       passwordChangeRequired: userResponse.passwordChangeRequired,
       isActive: userResponse.isActive,
-      linkedProviders: [], // TODO
-      lastLoginAt: undefined, // TODO
-      agency: undefined, // TODO
+      lastLoginAt: userResponse.lastLoginAt ? new Date(userResponse.lastLoginAt) : undefined,
+      linkedProviders: userResponse.linkedProviders,
+      agency: userResponse.agency ? this.convertAgencyResponseToAgencyModel(userResponse.agency) : undefined,
       createdAt: new Date(userResponse.createdAt),
       updatedAt: new Date(userResponse.updatedAt),
+      licenseNumber: userResponse.licenseNumber,
+      biography: userResponse.biography,
+      specializations: userResponse.specializations,
     };
+    return userModel;
   }
 
   /**

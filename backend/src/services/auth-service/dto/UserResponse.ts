@@ -1,3 +1,4 @@
+import { OAuthProvider } from '../models/OAuthProvider';
 import { AgencyResponse } from './AgencyResponse';
 import { UserRole } from '@services/user-service/models/UserRole';
 
@@ -12,6 +13,8 @@ export interface UserResponse {
   isActive: boolean;
   isVerified: boolean;
   passwordChangeRequired: boolean;
+  linkedProviders?: Array<OAuthProvider>;
+  lastLoginAt?: Date;
   createdAt: Date;
   updatedAt?: Date;
   agency?: AgencyResponse;

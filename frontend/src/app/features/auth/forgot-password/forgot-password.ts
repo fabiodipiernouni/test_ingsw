@@ -84,7 +84,7 @@ export class ForgotPassword implements OnInit {
     });
   }
 
-  // Step 1: Send verification code (also used for resending)
+  // Step 1: Send verification code
   sendCode(): void {
     if (this.emailForm.valid) {
       this.isLoading.set(true);
@@ -113,14 +113,22 @@ export class ForgotPassword implements OnInit {
         },
         error: (error: any) => {
           this.isLoading.set(false);
-          this.snackBar.open(
-            error.error?.message || 'Errore durante l\'invio del codice',
-            'Chiudi',
-            {
-              duration: 5000,
+          if (error.error?.error === 'USER_NOT_CONFIRMED') {
+            this.snackBar.open('Il tuo account non è stato ancora verificato. Controlla la tua email per il codice di verifica.', 'Chiudi', {
+              duration: 7000,
               panelClass: ['error-snackbar']
-            }
-          );
+            });
+            this.router.navigate(['/verify-email'], { queryParams: { email: this.emailForm.value.email, codeSent: false, returnUrl: '/forgot-password' } });
+          } else {
+            this.snackBar.open(
+              error.error?.message || 'Errore durante l\'invio del codice',
+              'Chiudi',
+              {
+                duration: 5000,
+                panelClass: ['error-snackbar']
+              }
+            );
+          }
         }
       });
     }
@@ -187,6 +195,11 @@ export class ForgotPassword implements OnInit {
   private passwordValidator(control: AbstractControl): { [key: string]: any } | null {
     const value = control.value;
     if (!value) return null;
+
+    // Verifica che non ci siano spazi
+    if (/\s/.test(value)) {
+      return { passwordContainsSpaces: true };
+    }
 
     const hasNumber = /[0-9]/.test(value);
     const hasUpper = /[A-Z]/.test(value);
@@ -256,6 +269,9 @@ export class ForgotPassword implements OnInit {
     }
     if (field === 'confirmPassword' && this.resetPasswordForm.hasError('passwordMismatch')) {
       return 'Le password non corrispondono';
+    }
+    if (control?.hasError('passwordContainsSpaces')) {
+      return 'La password non può contenere spazi';
     }
     if (control?.hasError('passwordStrength')) {
       return 'La password non soddisfa i requisiti di sicurezza';

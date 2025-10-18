@@ -1,4 +1,4 @@
-import { Agency } from 'src/services/agency-service/models/Agency';
+import { AgencyModel } from '@shared/models/AgencyModel';
 import { UserRole } from '@user/models/UserRole';
 import { OAuthProvider } from '@services/auth-service/models/OAuthProvider';
 
@@ -18,7 +18,7 @@ export interface UserModel {
   cognitoUsername?: string;
   lastLoginAt?: Date;
   agencyId?: string;
-  Agency?: Agency;
+  Agency?: AgencyModel;
   createdAt: Date;
   updatedAt: Date;
   licenseNumber?: string;

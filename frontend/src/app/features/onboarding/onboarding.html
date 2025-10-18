@@ -12,7 +12,8 @@
     <div class="features-grid">
 
     <!-- Gestione Admin (solo per owner) -->
-    <mat-card class="feature-card" *ngIf="canCreateAdmins()">
+    @if (canCreateAdmins()) {
+    <mat-card class="feature-card">
         <mat-card-header>
         <mat-icon mat-card-avatar style="color: #ff9800">admin_panel_settings</mat-icon>
         <mat-card-title>Gestione Amministratori</mat-card-title>
@@ -32,9 +33,11 @@
         </button>
         </mat-card-actions>
     </mat-card>
+    }
 
     <!-- Gestione Agenti (per owner e admin) -->
-    <mat-card class="feature-card" *ngIf="canCreateAgents()">
+    @if (canCreateAgents()) {
+    <mat-card class="feature-card">
         <mat-card-header>
         <mat-icon mat-card-avatar style="color: #4caf50">person_add</mat-icon>
         <mat-card-title>Gestione Agenti</mat-card-title>
@@ -54,6 +57,7 @@
         </button>
         </mat-card-actions>
     </mat-card>
+    }
 
     <!-- Ricerca Immobili -->
     <mat-card class="feature-card">
@@ -100,7 +104,8 @@
     </mat-card>
 
     <!-- Funzionalità Agente (solo per agenti) -->
-    <mat-card class="feature-card" *ngIf="isAgent()">
+    @if (isAgent()) {
+    <mat-card class="feature-card">
         <mat-card-header>
         <mat-icon mat-card-avatar style="color: #4caf50">home_work</mat-icon>
         <mat-card-title>Gestione Immobili</mat-card-title>
@@ -120,6 +125,7 @@
         </button>
         </mat-card-actions>
     </mat-card>
+    }
 
     <!-- Consigli per iniziare -->
     <mat-card class="feature-card tips-card">

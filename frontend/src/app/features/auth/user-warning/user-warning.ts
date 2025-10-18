@@ -34,6 +34,7 @@ export class UserWarning implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(user => {
         if (user) {
+          console.log(user);
           this.showPasswordChangeWarning = user.passwordChangeRequired || false;
         } else {
           this.showPasswordChangeWarning = false;

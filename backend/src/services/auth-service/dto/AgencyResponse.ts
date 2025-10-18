@@ -1,10 +1,16 @@
-import { Address } from '@shared/models/address';
-import { Contacts } from '@shared/models/contacts';
+import { Address } from '@shared/models/Address';
+import { Contacts } from '@shared/models/Contacts';
 
 
 export interface AgencyResponse {
   id: string;
   name: string;
+  description?: string;
   address?: Address;
-  contacts: Contacts;
+  contacts?: Contacts;
+  logo?: string;
+  licenseNumber?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }

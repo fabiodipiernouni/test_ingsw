@@ -335,6 +335,16 @@ export class AuthController {
         return;
       }
 
+      if (error.name === 'LimitExceededException') {
+        setResponseAsError(res, 'TOO_MANY_REQUESTS', 'Too many requests. Please try again later.', 429);
+        return;
+      }
+
+      if (error.name === 'UserNotConfirmedException') {        
+        setResponseAsError(res, 'USER_NOT_CONFIRMED', 'User email not verified. Please verify your email first.', 403);
+        return;
+      }
+
       setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to initiate password reset', 500);
     }
   }

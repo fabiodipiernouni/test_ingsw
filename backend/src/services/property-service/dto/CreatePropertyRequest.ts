@@ -1,4 +1,4 @@
-import { Address } from '@shared/models/address';
+import { Address } from '@shared/models/Address';
 import { EnergyClass, ListingType, PropertyType } from '@property/models/types';
 import { GeoJSONPoint } from '@shared/types/geojson.types';
 

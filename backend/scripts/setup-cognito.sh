@@ -29,7 +29,7 @@ aws cognito-idp describe-user-pool-domain --domain dietiestates25 --region eu-ce
 
 
 # Set up Google as Identity Provider
-aws cognito-idp create-identity-provider --user-pool-id YOUR_USER_POOL_ID --provider-name "Google" --provider-type "Google" --region eu-central-1 --provider-details "{\"client_id\": \"YOUR_GOOGLE_CLIENT_ID\",\"client_secret\": \"YOUR_GOOGLE_CLIENT_SECRET\",\"authorize_scopes\": \"openid email profile\"}" --attribute-mapping '{"email": "email", "given_name": "given_name", "family_name": "family_name", "picture": "picture", "username": "sub"}'
+aws cognito-idp create-identity-provider --user-pool-id YOUR_USER_POOL_ID --provider-name "Google" --provider-type "Google" --region eu-central-1 --provider-details "{\"client_id\": \"YOUR_GOOGLE_CLIENT_ID\",\"client_secret\": \"YOUR_GOOGLE_CLIENT_SECRET\",\"authorize_scopes\": \"openid email profile\"}" --attribute-mapping '{"email": "email", "email_verified": "email_verified", "given_name": "given_name", "family_name": "family_name", "picture": "picture", "username": "sub"}'
 
 
 # Update App Client to enable OAuth with Google

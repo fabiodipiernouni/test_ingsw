@@ -11,7 +11,8 @@
     <div class="dashboard-grid">
 
     <!-- Card per Creazione Admin (solo per owner) -->
-    <mat-card class="action-card" *ngIf="canCreateAdmins()">
+    @if (canCreateAdmins()) {
+    <mat-card class="action-card">
         <mat-card-header>
         <mat-icon mat-card-avatar style="color: #ff9800">admin_panel_settings</mat-icon>
         <mat-card-title>Crea Amministratore</mat-card-title>
@@ -23,9 +24,11 @@
         </button>
         </mat-card-actions>
     </mat-card>
+    }
 
     <!-- Card per Creazione Agenti (per owner e admin) -->
-    <mat-card class="action-card" *ngIf="canCreateAgents()">
+    @if (canCreateAgents()) {
+    <mat-card class="action-card">
         <mat-card-header>
         <mat-icon mat-card-avatar style="color: #4caf50">person_add</mat-icon>
         <mat-card-title>Crea Agente</mat-card-title>
@@ -37,6 +40,7 @@
         </button>
         </mat-card-actions>
     </mat-card>
+    }
 
     <!-- Card per Ricerca -->
     <mat-card class="action-card">
@@ -67,7 +71,8 @@
     </mat-card>
 
     <!-- Card per Agenti (solo per agenti) -->
-    <mat-card class="action-card" *ngIf="isAgent()">
+    @if (isAgent()) {
+    <mat-card class="action-card">
         <mat-card-header>
         <mat-icon mat-card-avatar>home</mat-icon>
         <mat-card-title>I Miei Immobili</mat-card-title>
@@ -79,6 +84,7 @@
         </button>
         </mat-card-actions>
     </mat-card>
+    }
 
     <!-- Statistiche Utente -->
     <mat-card class="stats-card">
@@ -96,10 +102,12 @@
             <span class="stat-number">0</span>
             <span class="stat-label">Proprietà Preferite</span>
             </div>
-            <div class="stat-item" *ngIf="isAgent()">
+            @if (isAgent()) {
+            <div class="stat-item">
             <span class="stat-number">0</span>
             <span class="stat-label">Immobili Pubblicati</span>
             </div>
+            }
         </div>
         </mat-card-content>
     </mat-card>
@@ -114,35 +122,60 @@
     <mat-card-content>
         <div class="account-info">
         <p><strong>Nome:</strong> {{ currentUser?.firstName }} {{ currentUser?.lastName }}</p>
-        <p><strong>Email:</strong> {{ currentUser?.email }}</p>
-        <!-- TODO <p *ngIf="currentUser?.phone"><strong>Telefono:</strong> {{ currentUser?.phone }}</p>
+        <p><strong>Email:</strong> <a href="mailto:{{ currentUser?.email }}">{{ currentUser?.email }}</a></p>
+        @if (currentUser?.phone; as phone) {
+        <p><strong>Telefono:</strong> <a href="tel:{{ phone }}">{{ phone }}</a></p>
+        }
         <p><strong>Tipo Account:</strong>
             <mat-chip [color]="currentUser?.role === 'agent' ? 'accent' : 'primary'">
             {{ getUserRoleLabel() }}
             </mat-chip>
         </p>
-        <div *ngIf="currentUser?.agency" class="agency-info">
-          <p><strong>Agenzia:</strong> {{ currentUser?.agency?.name }}</p>
-          <p *ngIf="currentUser?.agency?.description"><strong>Descrizione:</strong> {{ currentUser?.agency?.description }}</p>
-          <p *ngIf="currentUser?.agency?.address"><strong>Indirizzo:</strong>
-            {{ currentUser?.agency?.address }}
-            <span *ngIf="currentUser?.agency?.address?.zipCode"> ({{ currentUser?.agency?.address?.zipCode }})</span>
-            <span *ngIf="currentUser?.agency?.address?.city">, {{ currentUser?.agency?.address?.city }}</span>
+        @if (currentUser?.agency; as agency) {
+        <div class="agency-info">
+          <p><strong>Agenzia:</strong> {{ agency?.name }}</p>
+          @if (agency?.description; as description) {
+          <p><strong>Descrizione:</strong> {{ description }}</p>
+          }
+          @if (agency?.address; as address) {
+          <p><strong>Indirizzo:</strong>
+            @if(address?.street) {
+                {{ address.street }}
+            }
+            @if (address?.zipCode; as zipCode) {
+            <span> ({{ zipCode }})</span>
+            }
+            @if (address?.city; as city) {
+            <span>, {{ city }}</span>
+            }
           </p>
-          <p *ngIf="currentUser?.agency?.phone"><strong>Telefono Agenzia:</strong> {{ currentUser?.agency?.phone }}</p>
-          <p *ngIf="currentUser?.agency?.email"><strong>Email Agenzia:</strong> {{ currentUser?.agency?.email }}</p>
-          <p *ngIf="currentUser?.agency?.website"><strong>Sito Web:</strong>
-            <a [href]="currentUser?.agency?.website" target="_blank" rel="noopener">{{ currentUser?.agency?.website }}</a>
+          }
+          @if (agency?.contacts?.phone; as phone) {
+          <p><strong>Telefono Agenzia:</strong> <a href="tel:{{ phone }}">{{ phone }}</a></p>
+          }
+          @if (agency?.contacts?.email; as email) {
+          <p><strong>Email Agenzia:</strong> <a href="mailto:{{ email }}">{{ email }}</a></p>
+          }
+          @if (agency?.contacts?.website; as website) {
+          <p><strong>Sito Web: </strong>
+            <a [href]="website" target="_blank" rel="noopener">{{ website }}</a>
           </p>
+          }
+          @if (agency?.licenseNumber; as licenseNumber) {
+            <p><strong>Numero Licenza:</strong> {{ licenseNumber }}</p>
+          }
         </div>
-        <p *ngIf="currentUser?.licenseNumber"><strong>Licenza:</strong> {{ currentUser?.licenseNumber }}</p>
-        <p><strong>Account Verificato:</strong>
-            <mat-chip [color]="currentUser?.isVerified ? 'primary' : 'warn'">
-            {{ currentUser?.isVerified ? 'Verificato' : 'Non Verificato' }}
-            </mat-chip>
-        </p>
-        <p *ngIf="currentUser?.lastLoginAt"><strong>Ultimo Accesso:</strong> {{ formatDate(currentUser?.lastLoginAt) }}</p>
-        <p><strong>Membro dal:</strong> {{ formatDate(currentUser?.createdAt) }}</p> -->
+        }
+        @if (currentUser?.licenseNumber) {
+        <p><strong>Licenza:</strong> {{ currentUser?.licenseNumber }}</p>
+        }
+        @if (currentUser?.lastLoginAt) {
+        <p><strong>Ultimo Accesso:</strong> {{ formatDate(currentUser?.lastLoginAt) }}</p>
+        }
+        @else {
+            <p><strong>Ultimo Accesso:</strong> Primo Accesso</p>
+        }
+        <p><strong>Membro dal:</strong> {{ formatDate(currentUser?.createdAt) }}</p>
         </div>
     </mat-card-content>
     <mat-card-actions>

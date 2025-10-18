@@ -5,6 +5,7 @@ import {
   RespondToAuthChallengeCommand,
   AdminAddUserToGroupCommand,
   AdminCreateUserCommand,
+  AdminSetUserPasswordCommand,
   ChangePasswordCommand,
   ForgotPasswordCommand,
   ConfirmForgotPasswordCommand,
@@ -30,15 +31,18 @@ import {
   OAuthUrlParams
 } from '@auth/services/serviceTypes';
 
-import { RefreshTokenDto } from '../dto/RefreshTokenDto';
-import { ConfirmForgotPasswordDto } from '../dto/ConfirmForgotPasswordDto';
-import { ConfirmEmailDto } from '../dto/ConfirmEmailDto';
-import { ForgotPasswordDto } from '../dto/ForgotPasswordDto';
-import { ChangePasswordDto } from '../dto/ChangePasswordDto';
-import { RefreshTokenResponse } from '../dto/RefreshTokenResponse';
-import { CreateAgentDto } from '../dto/CreateAgentDto';
-import { CreateAdminDto } from '../dto/CreateAdminDto';
-import { ResendVerificationCodeDto } from '../dto/ResendVerificationCodeDto';
+import { RefreshTokenDto } from '@auth/dto/RefreshTokenDto';
+import { ConfirmForgotPasswordDto } from '@auth/dto/ConfirmForgotPasswordDto';
+import { ConfirmEmailDto } from '@auth/dto/ConfirmEmailDto';
+import { ForgotPasswordDto } from '@auth/dto/ForgotPasswordDto';
+import { ChangePasswordDto } from '@auth/dto/ChangePasswordDto';
+import { RefreshTokenResponse } from '@auth/dto/RefreshTokenResponse';
+import { CreateAgentDto } from '@auth/dto/CreateAgentDto';
+import { CreateAdminDto } from '@auth/dto/CreateAdminDto';
+import { ResendVerificationCodeDto } from '@auth/dto/ResendVerificationCodeDto';
+import { Address } from '@shared/models/Address';
+import { Contacts } from '@shared/models/Contacts';
+import { OAuthProvider } from '@auth/models/OAuthProvider';
 
 // Cognito Client
 const cognitoClient = new CognitoIdentityProviderClient({
@@ -101,6 +105,13 @@ class ForbiddenError extends Error {
   }
 }
 
+class LimitExceededException extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'LimitExceededException';
+  }
+}
+
 export class AuthService {
   /**
    * Registrazione nuovo utente con Cognito
@@ -160,6 +171,7 @@ export class AuthService {
         lastName: registerData.lastName,
         phone: registerData.phone,
         role: 'client',
+        linkedProviders: [], // Registrazione email/password - non ha provider OAuth
         acceptedTermsAt: registerData.acceptTerms ? new Date() : undefined,
         acceptedPrivacyAt: registerData.acceptPrivacy ? new Date() : undefined,
         isActive: true,
@@ -270,8 +282,7 @@ export class AuthService {
         include: [
           {
             model: Agency,
-            as: 'agency',
-            attributes: ['id', 'name', 'street', 'city', 'province', 'zipCode', 'country', 'phone', 'email', 'website']
+            as: 'agency'
           }
         ]
       });
@@ -291,9 +302,6 @@ export class AuthService {
         await user.update({ passwordChangeRequired: true });
       }
 
-      // 7. AGGIORNA lastLoginAt
-      await user.update({ lastLoginAt: new Date() });
-
       logger.info('User logged in successfully', { email: credentials.email, cognitoSub });
 
       const response: AuthResponse = {
@@ -303,6 +311,9 @@ export class AuthService {
         refreshToken: RefreshToken,
         tokenType: 'Bearer'
       };
+
+      // 7. AGGIORNA lastLoginAt
+      await user.update({ lastLoginAt: new Date() });
 
       return response;
     } catch (error: any) {
@@ -369,26 +380,32 @@ export class AuthService {
    */
   async changePassword(accessToken: string, data: ChangePasswordDto): Promise<void> {
     try {
-      const { currentPassword, newPassword } = data;
+      const { currentPassword, newPassword } = data;      
+      
+      // Decodifica il token per ottenere cognitoSub e resettare il flag passwordChangeRequired
+      const idTokenDecoded = this.decodeToken(accessToken);
+      const cognitoSub = idTokenDecoded.sub;
+      if (!cognitoSub) {
+        throw new ValidationError('Unable to determine Cognito user');
+      }
+      
+      const user = await User.findOne({ where: { cognitoSub } });
+      if (!user) {
+        throw new NotFoundError('User not found in local database');
+      }
 
       const changePasswordCommand = new ChangePasswordCommand({
         AccessToken: accessToken,
         PreviousPassword: currentPassword,
         ProposedPassword: newPassword
       });
-
+      
       await cognitoClient.send(changePasswordCommand);
-
-      // Decodifica il token per ottenere cognitoSub e resettare il flag passwordChangeRequired
-      const idTokenDecoded = this.decodeToken(accessToken);
-      const cognitoSub = idTokenDecoded.sub;
-
-      if (cognitoSub) {
-        const user = await User.findOne({ where: { cognitoSub } });
-        if (user && user.passwordChangeRequired) {
-          await user.update({ passwordChangeRequired: false });
-          logger.info('Password change requirement cleared', { userId: user.id });
-        }
+  
+      
+      if (user.passwordChangeRequired) {
+        await user.update({ passwordChangeRequired: false });
+        logger.info('Password change requirement cleared', { userId: user.id });
       }
 
       logger.info('Password changed successfully');
@@ -427,12 +444,20 @@ export class AuthService {
 
       logger.info('Password reset code sent', { email });
     } catch (error: any) {
-      logger.error('Error in forgotPassword service:', error);
+      logger.error('Error in forgotPassword service:', error, error.name);
 
       if (error.name === 'UserNotFoundException') {
         // Per sicurezza, non rivelare che l'utente non esiste
         logger.warn('Password reset requested for non-existent user');
         return; // Silenzioso
+      }
+
+      if (error.name === 'LimitExceededException') {
+        throw new LimitExceededException('Too many requests. Please try again later.');
+      }
+
+      if (error.name === 'InvalidParameterException' && error.toString().includes('no registered/verified email')) {
+        throw new UserNotConfirmedException('Email not verified. Please check your email.');
       }
 
       throw error;
@@ -514,19 +539,24 @@ export class AuthService {
 
       // 2. DECODIFICA ID TOKEN PER OTTENERE INFO UTENTE
       const idTokenDecoded = this.decodeToken(id_token);
+      let provider: OAuthProvider | undefined = undefined;
+      if (idTokenDecoded.identities && Array.isArray(idTokenDecoded.identities) && idTokenDecoded.identities.length > 0) {
+        provider = idTokenDecoded.identities[0].providerName?.toLowerCase();
+      }
+      if (!provider) {
+        throw new AuthenticationError('Unable to determine OAuth provider from token');
+      }
+
       const cognitoSub = idTokenDecoded.sub;
       const email = idTokenDecoded.email;
 
       // 3. CERCA O CREA UTENTE (con account linking)
-      const user = await this.findOrCreateOAuthUser(cognitoSub, email, idTokenDecoded);
+      const user = await this.findOrCreateOAuthUser(cognitoSub, email, idTokenDecoded, provider);
 
       // 4. VERIFICA CHE L'ACCOUNT SIA ATTIVO
       if (!user.isActive) {
         throw new AuthenticationError('Account is disabled');
       }
-
-      // 5. AGGIORNA ULTIMO LOGIN
-      await user.update({ lastLoginAt: new Date() });
 
       logger.info('OAuth login successful', { email, cognitoSub });
 
@@ -537,6 +567,10 @@ export class AuthService {
         refreshToken: refresh_token,
         tokenType: token_type || 'Bearer'
       };
+
+      // 5. AGGIORNA ULTIMO LOGIN
+      await user.update({ lastLoginAt: new Date() });
+
       return authResponse;
 
     } catch (error: any) {
@@ -594,7 +628,8 @@ export class AuthService {
   private async findOrCreateOAuthUser(
     cognitoSub: string,
     email: string,
-    idTokenDecoded: any
+    idTokenDecoded: any,
+    provider: OAuthProvider
   ): Promise<User> {
     // 1. Cerca utente per cognitoSub (utente OAuth già esistente)
     const user = await User.findOne({
@@ -604,10 +639,10 @@ export class AuthService {
 
     if (user) {
       // Utente OAuth già registrato - assicurati che linkedProviders sia aggiornato
-      if (!user.linkedProviders || !user.linkedProviders.includes('google')) {
+      if (!user.linkedProviders || !user.linkedProviders.includes(provider)) {
         const currentProviders = user.linkedProviders || [];
         await user.update({
-          linkedProviders: [...currentProviders, 'google'],
+          linkedProviders: [...currentProviders, provider],
           isVerified: true
         });
         logger.info('Updated linkedProviders for existing OAuth user', {
@@ -626,47 +661,40 @@ export class AuthService {
 
     if (existingUser) {
       // ACCOUNT LINKING: utente registrato con email/password, aggiungi OAuth
-      return await this.linkOAuthToExistingUser(existingUser, cognitoSub, idTokenDecoded);
+      return await this.linkOAuthToExistingUser(existingUser, cognitoSub, idTokenDecoded, provider);
     }
 
-    // 3. Nessun utente trovato: crea nuovo utente OAuth con findOrCreate
-    const [newUser, created] = await User.findOrCreate({
-      where: {
-        cognitoSub: cognitoSub 
-      },
-      defaults: {
-        email: email,
-        cognitoSub: cognitoSub,
-        cognitoUsername: email,
-        firstName: idTokenDecoded.given_name || '',
-        lastName: idTokenDecoded.family_name || '',
-        phone: idTokenDecoded.phone_number || undefined,
-        avatar: idTokenDecoded.picture || undefined,
-        role: 'client',
-        isActive: true,
-        isVerified: true, // OAuth providers verificano sempre l'email
-        linkedProviders: ['google'],
-        acceptedTermsAt: new Date(),
-        acceptedPrivacyAt: new Date()
-      }
+    // 3. Nessun utente trovato: crea nuovo utente OAuth
+    logger.info('Creating new user from OAuth login', {
+      email,
+      cognitoSub,
+      hasAvatar: !!idTokenDecoded.picture
     });
 
-    if (created) {
-      logger.info('Creating new user from OAuth login', {
-        email,
-        cognitoSub,
-        hasAvatar: !!idTokenDecoded.picture
-      });
+    const newUser = await User.create({
+      email: email,
+      cognitoSub: cognitoSub,
+      cognitoUsername: email,
+      firstName: idTokenDecoded.given_name || '',
+      lastName: idTokenDecoded.family_name || '',
+      phone: idTokenDecoded.phone_number || undefined,
+      avatar: idTokenDecoded.picture || undefined,
+      role: 'client',
+      isActive: true,
+      isVerified: true, // OAuth providers verificano sempre l'email
+      linkedProviders: [provider],
+      acceptedTermsAt: new Date(),
+      acceptedPrivacyAt: new Date()
+    });
 
-      // Crea preferenze per nuovo utente
-      await Promise.all([
-        UserPreferences.create({ userId: newUser.id }),
-        NotificationPreferences.create({ userId: newUser.id })
-      ]);
+    // Crea preferenze per nuovo utente
+    await Promise.all([
+      UserPreferences.create({ userId: newUser.id }),
+      NotificationPreferences.create({ userId: newUser.id })
+    ]);
 
-      // Aggiungi a gruppo Cognito
-      await this.addUserToGroup(cognitoSub, config.cognito.groups.clients);
-    }
+    // Aggiungi a gruppo Cognito
+    await this.addUserToGroup(cognitoSub, config.cognito.groups.clients);
 
     // Ricarica con include per avere la struttura completa
     const userWithRelations = await User.findByPk(newUser.id, {
@@ -678,38 +706,39 @@ export class AuthService {
 
   /**
    * Collega OAuth a un account esistente (account linking)
+   * 
+   * NOTA: Con la Lambda Pre-Signup, Cognito gestisce già il linking delle identità.
+   * Questo metodo aggiorna solo il DB locale con i linkedProviders e avatar.
    */
   private async linkOAuthToExistingUser(
     existingUser: User,
     cognitoSub: string,
-    idTokenDecoded: any
+    idTokenDecoded: any,
+    provider: OAuthProvider
   ): Promise<User> {
     logger.info('Linking OAuth account to existing email/password account', {
       email: existingUser.email, 
       existingCognitoSub: existingUser.cognitoSub,
-      newCognitoSub: cognitoSub,
+      oauthCognitoSub: cognitoSub,
       hasAvatar: !!idTokenDecoded.picture,
       existingProviders: existingUser.linkedProviders
     });
 
     // Aggiungi 'google' a linkedProviders se non è già presente
     const currentProviders = existingUser.linkedProviders || [];
-    const updatedProviders = currentProviders.includes('google')
+    const updatedProviders = currentProviders.includes(provider)
       ? currentProviders 
-      : [...currentProviders, 'google'];
+      : [...currentProviders, provider];
 
+    // NON sovrascrivo cognitoSub - la Lambda Pre-Signup ha già collegato le identità in Cognito
+    // Il cognitoSub del token sarà già quello corretto (originale)
     await existingUser.update({
-      cognitoSub: cognitoSub,
-      cognitoUsername: existingUser.email,
       isVerified: true, // OAuth providers verificano l'email
       linkedProviders: updatedProviders,
       firstName: existingUser.firstName || idTokenDecoded.given_name || '',
       lastName: existingUser.lastName || idTokenDecoded.family_name || '',
       avatar: existingUser.avatar || idTokenDecoded.picture || undefined
     });
-
-    // Aggiungi a gruppo Cognito
-    await this.addUserToGroup(cognitoSub, config.cognito.groups.clients);
 
     return existingUser;
   }
@@ -740,7 +769,7 @@ export class AuthService {
   /**
    * Mappa il nome del provider al formato richiesto da Cognito
    */
-  private mapProviderName(provider: string): string {
+  private mapProviderName(provider: OAuthProvider): string {
     const providerMap: { [key: string]: string } = {
       'google': 'Google'
     };
@@ -842,7 +871,7 @@ export class AuthService {
       }
 
       if (error.name === 'LimitExceededException') {
-        throw new ValidationError('Too many requests. Please try again later.');
+        throw new LimitExceededException('Too many requests. Please try again later.');
       }
 
       throw error;
@@ -1078,6 +1107,8 @@ export class AuthService {
       isActive: user.isActive,
       isVerified: user.isVerified,
       passwordChangeRequired: user.passwordChangeRequired,
+      linkedProviders: user.linkedProviders,
+      lastLoginAt: user.lastLoginAt,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       agency: user.agency ? this.formatAgencyResponse(user.agency) : undefined,
@@ -1091,22 +1122,40 @@ export class AuthService {
    * Formatta la risposta agenzia
    */
   private formatAgencyResponse(agency: Agency): AgencyResponse {
-    return {
+    let address: Address | undefined;
+    if (agency.street && agency.city && agency.province && agency.zipCode && agency.country) {
+      address = {
+        street: agency.street,
+        city: agency.city,
+        province: agency.province,
+        zipCode: agency.zipCode,
+        country: agency.country
+      };
+    }
+
+    let contacts: Contacts | undefined;
+    if (agency.phone || agency.email || agency.website) {
+      contacts = {
+        phone: agency?.phone,
+        email: agency?.email,
+        website: agency?.website
+      };
+    }
+
+    let agencyResponse: AgencyResponse = {
       id: agency.id,
       name: agency.name,
-      address: {
-        street: agency.street ?? '',
-        city: agency.city ?? '',
-        province: agency.province ?? '',
-        zipCode: agency.zipCode ?? '',
-        country: agency.country ?? ''
-      },
-      contacts: {
-        phone: agency.phone ?? '',
-        email: agency.email ?? '',
-        website: agency.website ?? ''
-      }
+      description: agency.description || undefined,
+      address: address,
+      contacts: contacts,
+      logo: agency.logo || undefined,
+      licenseNumber: agency.licenseNumber || undefined,
+      isActive: agency.isActive,
+      createdAt: agency.createdAt,
+      updatedAt: agency.updatedAt
     };
+
+    return agencyResponse;
   }
 }
 

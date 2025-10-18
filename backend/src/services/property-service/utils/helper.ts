@@ -5,7 +5,7 @@ import { Op, Sequelize } from 'sequelize';
 import { SearchPropertiesFilters } from '@property/dto/SearchPropertiesFilters';
 import { GeoSearchPropertiesFilters } from '@property/dto/GeoSearchPropertiesFilters';
 import { GeoJSONPoint } from '@shared/types/geojson.types';
-import { Location } from '@shared/models/location';
+import { Location } from '@shared/models/Location';
 import logger from '@shared/utils/logger';
 
 function extractCoordinates(center: GeoJSONPoint): Location {

@@ -4,6 +4,12 @@ import {Contacts} from '@service-shared/models/Contacts';
 export interface AgencyResponse {
   id: string;
   name: string;
+  description?: string;
   address?: Address;
-  contacts: Contacts;
+  contacts?: Contacts;
+  logo?: string;
+  licenseNumber?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }

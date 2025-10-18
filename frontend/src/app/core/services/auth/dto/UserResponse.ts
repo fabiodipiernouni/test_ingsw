@@ -1,5 +1,6 @@
 import {UserRole} from '@core-services/auth/models/UserRole';
 import {AgencyResponse} from '@core-services/auth/dto/AgencyResponse';
+import {OAuthProvider} from '@core-services/auth/models/OAuthProvider';
 
 export interface UserResponse {
   id: string;
@@ -12,6 +13,8 @@ export interface UserResponse {
   isActive: boolean;
   isVerified: boolean;
   passwordChangeRequired: boolean;
+  linkedProviders?: Array<OAuthProvider>;
+  lastLoginAt?: string;
   createdAt: string;
   updatedAt: string;
   agency?: AgencyResponse;

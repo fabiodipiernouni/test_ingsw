@@ -1,4 +1,4 @@
-import { Agency } from '@service-shared/models/Agency';
+import { AgencyModel } from '@service-shared/models/AgencyModel';
 import { OAuthProvider } from '@core-services/auth/models/OAuthProvider';
 import { UserRole } from '@core-services/auth/models/UserRole';
 
@@ -13,9 +13,9 @@ export interface UserModel {
   isVerified: boolean;
   passwordChangeRequired: boolean;
   isActive: boolean;
-  linkedProviders: Array<OAuthProvider>;
   lastLoginAt?: Date;
-  agency?: Agency;
+  linkedProviders?: Array<OAuthProvider>;
+  agency?: AgencyModel;
   createdAt: Date;
   updatedAt: Date;
   licenseNumber?: string;
