@@ -5,5 +5,11 @@ export const environment = {
   apiUrlSearch: 'http://localhost:3003/api',
   apiUrlUser: 'http://localhost:3004/api',
   apiUrlNotifications: 'http://localhost:3005/api',
-  googleMapsApiKey: 'YOUR_API_KEY_HERE'
+  googleMapsApiKey: 'YOUR_API_KEY_HERE',
+  geoSearchValues: {
+    defaultRadiusKm: 100,
+    maxRadiusKm: 500,
+    minRadiusKm: 1
+  },
+  defaultPageSize: 20
 };

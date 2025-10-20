@@ -1,18 +1,18 @@
-import { GeoJSONPoint, isValidGeoJSONPoint } from '@shared/types/geojson.types';
-import { IsNotEmpty, IsNumber, IsPositive, Max, ValidateIf, ValidateNested } from 'class-validator';
+import { GeoJSONPoint } from '@shared/types/geojson.types';
+import { IsNotEmpty, IsNumber, IsPositive, Max, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class RadiusSearch {
 
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Center is required' })
   @ValidateNested()
-  @Type(() => Object)
-  @ValidateIf((o) => isValidGeoJSONPoint(o.center), { message: 'Center must be a valid GeoJSON Point' })
-  center: GeoJSONPoint;     // punto centrale della ricerca in formato GeoJSON
+  @Type(() => GeoJSONPoint)
+  center!: GeoJSONPoint;     // punto centrale della ricerca in formato GeoJSON
 
-  @IsNumber()
-  @IsPositive()
-  @Max(500)
-  radius: number;           // raggio in kilometers (max 500km)
+  @IsNotEmpty({ message: 'Radius is required' })
+  @IsNumber({}, { message: 'Radius must be a number' })
+  @IsPositive({ message: 'Radius must be positive' })
+  @Max(500, { message: 'Radius cannot exceed 500 km' })
+  radius!: number;           // raggio in kilometers (max 500km)
 
 }

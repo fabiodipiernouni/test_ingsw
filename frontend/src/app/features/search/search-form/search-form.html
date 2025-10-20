@@ -7,7 +7,7 @@
         <input matInput
                #locationInput
                formControlName="location"
-               placeholder="es: Vomero, Napoli"
+               placeholder="Inserisci città, provincia o CAP (es: Napoli, Vomero, 80100)"
                autocomplete="off">
         <mat-icon matSuffix>location_on</mat-icon>
         <mat-error *ngIf="locationControl?.hasError('required')">

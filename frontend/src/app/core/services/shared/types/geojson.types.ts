@@ -1,25 +1,24 @@
 /**
  * GeoJSON Types - Shared across all services
- * Standard RFC 7946 - https://tools.ietf.org/html/rfc7946
  */
-
-/**
- * GeoJSON Point
- * Rappresenta un punto geografico in formato GeoJSON standard
- * Formato: { type: 'Point', coordinates: [longitude, latitude] }
- * 
- * ⚠️ IMPORTANTE: L'ordine delle coordinate è [longitude, latitude], non [lat, lng]!
- */
-export interface GeoJSONPoint {
-  type: 'Point';
-  coordinates: [number, number]; // [longitude, latitude]
-}
 
 /**
  * Type alias per array di coordinate GeoJSON
  * [longitude, latitude]
  */
 export type GeoCoordinates = [number, number];
+
+/**
+ * GeoJSON Point
+ * Rappresenta un punto geografico in formato GeoJSON standard
+ * Formato: { type: 'Point', coordinates: [longitude, latitude] }
+ *
+ * ⚠️ IMPORTANTE: L'ordine delle coordinate è [longitude, latitude], non [lat, lng]!
+ */
+export interface GeoJSONPoint {
+  type: 'Point';
+  coordinates: GeoCoordinates; // [longitude, latitude]
+}
 
 /**
  * Helper per validare un GeoJSON Point

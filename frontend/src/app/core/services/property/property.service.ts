@@ -11,6 +11,7 @@ import {PropertyCardDto} from '@core/services/property/dto/PropertyCardDto';
 import {PropertyModel} from '@features/properties/models/PropertyModel';
 import {Helper} from '@core/services/property/Utils/helper';
 import {environment} from '@src/environments/environment';
+import {GetPropertiesCardsRequest} from '@core/services/property/dto/GetPropertiesCardsRequest';
 
 @Injectable({
   providedIn: 'root'
@@ -32,36 +33,23 @@ export class PropertyService {
 
   }
 
-  searchProperties(filters: SearchPropertiesFilter, pagedRequest: PagedRequest): Observable<PagedResult<PropertyCardDto>> {
+  searchProperties(req: GetPropertiesCardsRequest): Observable<PagedResult<PropertyCardDto>> {
     this.isLoading.set(true);
 
-    // Costruisco il body della request secondo GetPropertiesCardsRequest
-    const requestBody = {
-      filters: filters,
-      pagedRequest: pagedRequest
-    };
-
     // POST /properties/cards
-    return this.http.post<ApiResponse<PagedResult<PropertyCardDto>>>(`${this.API_URL}/cards`, requestBody).pipe(
+    return this.http.post<ApiResponse<PagedResult<PropertyCardDto>>>(`${this.API_URL}/cards`, req).pipe(
       map(response => {
         // La response contiene già un PagedResult con la struttura corretta
         if (response.success && response.data) {
           return response.data;
         }
-        // Fallback se la risposta non è come previsto
-        return {
-          data: [],
-          totalCount: 0,
-          currentPage: pagedRequest.page || 1,
-          totalPages: 0,
-          hasNextPage: false,
-          hasPreviousPage: false
-        };
+
+        throw new Error(response.message);
       }),
-      tap(result => {
-        this.properties.set(result.data);
-        this.totalCount.set(result.totalCount);
-        this.propertiesSubject.next(result.data);
+      tap(response => {
+        this.properties.set(response.data);
+        this.totalCount.set(response.totalCount);
+        this.propertiesSubject.next(response.data);
         this.isLoading.set(false);
       }),
       catchError((error) => {

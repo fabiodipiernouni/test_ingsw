@@ -3,7 +3,8 @@
  * Standard RFC 7946 - https://tools.ietf.org/html/rfc7946
  */
 
-import { ArrayMaxSize, ArrayMinSize, IsArray, ValidateIf } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsNumber } from 'class-validator';
+import { Type } from 'class-transformer';
 
 /**
  * GeoJSON Point
@@ -13,13 +14,15 @@ import { ArrayMaxSize, ArrayMinSize, IsArray, ValidateIf } from 'class-validator
  * ⚠️ IMPORTANTE: L'ordine delle coordinate è [longitude, latitude], non [lat, lng]!
  */
 export class GeoJSONPoint {
+  @IsIn(['Point'], { message: 'Type must be "Point"' })
   type: string = 'Point';
 
-  @IsArray()
-  @ArrayMinSize(2)
-  @ArrayMaxSize(2)
-  @ValidateIf((o) => { return o.coordinates[0] >= -180 && o.coordinates[0] <= 180 && o.coordinates[1] >= -90 && o.coordinates[1] <= 90; }, { message: 'Coordinates must be valid longitude and latitude values' })
-  coordinates: Array<number>; // [longitude, latitude]
+  @IsArray({ message: 'Coordinates must be an array' })
+  @ArrayMinSize(2, { message: 'Coordinates must have exactly 2 elements' })
+  @ArrayMaxSize(2, { message: 'Coordinates must have exactly 2 elements' })
+  @Type(() => Number)
+  @IsNumber({}, { each: true, message: 'Each coordinate must be a valid number' })
+  coordinates!: number[]; // [longitude, latitude]
 }
 
 /**
@@ -56,5 +59,3 @@ export function createGeoJSONPoint(longitude: number, latitude: number): GeoJSON
     coordinates: [longitude, latitude]
   };
 }
-
-

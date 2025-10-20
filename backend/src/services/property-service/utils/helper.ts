@@ -45,7 +45,7 @@ export class Helper {
       updatedAt: user.updatedAt,
       licenseNumber: user.licenseNumber,
       biography: user.biography,
-      specializations: user.specializations,
+      specializations: user.specializations
     };
   }
 
@@ -111,31 +111,7 @@ export class Helper {
   }
 
   static applyGeoSearchFilters(whereClause: any, geoFilters: GeoSearchPropertiesFilters) {
-    // ===== RICERCA GEOGRAFICA PER RAGGIO (usando Oracle Spatial su GEOM_POINT) =====
-    if (geoFilters.radiusSearch) {
-      const { center, radius } = geoFilters.radiusSearch;
-      const radiusMeters = radius * 1000; // converti km in metri
-      const { longitude, latitude } = extractCoordinates(center);
-
-      whereClause[Op.and] = whereClause[Op.and] || [];
-      whereClause[Op.and].push(
-        Sequelize.literal(`
-        SDO_WITHIN_DISTANCE(
-          "properties"."geom_point",
-          SDO_GEOMETRY(
-            2001,
-            4326,
-            SDO_POINT_TYPE(${longitude}, ${latitude}, NULL),
-            NULL,
-            NULL
-          ),
-          'distance=${radiusMeters} unit=M'
-        ) = 'TRUE'
-      `)
-      );
-    }
-    // ===== RICERCA GEOGRAFICA PER POLIGONO (usando Oracle Spatial su GEOM_POINT) =====
-    else if (geoFilters.polygon && geoFilters.polygon.length >= 3) {
+    if (geoFilters.polygon && geoFilters.polygon.length >= 3) {
       let polygonCoords = geoFilters.polygon
         .map(point => {
           const { longitude, latitude } = extractCoordinates(point);
@@ -166,7 +142,7 @@ export class Helper {
             SDO_ELEM_INFO_ARRAY(1, 1003, 1),
             SDO_ORDINATE_ARRAY(${polygonCoords})
           ),
-          "properties"."geom_point"
+          geom_point
         ) = 'TRUE'
       `)
       );
@@ -175,6 +151,27 @@ export class Helper {
         points: geoFilters.polygon.length,
         closed: polygonCoords
       });
+    } else if (geoFilters.radiusSearch) {
+      const { center, radius } = geoFilters.radiusSearch;
+      const radiusMeters = radius * 1000; // converti km in metri
+      const { longitude, latitude } = extractCoordinates(center);
+
+      whereClause[Op.and] = whereClause[Op.and] || [];
+      whereClause[Op.and].push(
+        Sequelize.literal(`
+        SDO_WITHIN_DISTANCE(
+          geom_point,
+          SDO_GEOMETRY(
+            2001,
+            4326,
+            SDO_POINT_TYPE(${longitude}, ${latitude}, NULL),
+            NULL,
+            NULL
+          ),
+          'distance=${radiusMeters} unit=M'
+        ) = 'TRUE'
+      `)
+      );
     }
   }
 

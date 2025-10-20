@@ -324,10 +324,105 @@ export class PropertyService {
     }
   }
 
+  async getPropertiesCards(options: {
+    page: number;
+    limit: number;
+    filters?: SearchPropertiesFilters;
+    geoFilters?: GeoSearchPropertiesFilters;
+    status?: PropertyStatus;
+    agencyId?: string;       // Per admin: filtra tutte le proprietà di una certa agenzia
+    sortBy: string;
+    sortOrder: 'ASC' | 'DESC';
+  }): Promise<PagedResult<PropertyCardDto>> {
+    return this.getPropertiesCardsV2(options);
+  }
+
+
+  async getPropertiesCardsV2(options: {
+    page: number;
+    limit: number;
+    filters?: SearchPropertiesFilters;
+    geoFilters?: GeoSearchPropertiesFilters;
+    status?: PropertyStatus;
+    agencyId?: string;       // Per admin: filtra tutte le proprietà di una certa agenzia
+    sortBy: string;
+    sortOrder: 'ASC' | 'DESC';
+  }): Promise<PagedResult<PropertyCardDto>> {
+    try {
+      const offset = (options.page - 1) * options.limit;
+
+      logger.info('Getting properties with filters', { filters: options.filters, page: options.page, limit: options.limit });
+
+      // Costruisce la query con i filtri
+      const whereClause: any = {};
+      const includeClause: any[] = [
+        {
+          association: 'agent',
+          attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'agencyId']
+        },
+        {
+          association: 'images',
+          attributes: ['id', 's3KeyOriginal', 's3KeySmall', 's3KeyMedium', 's3KeyLarge',
+            'bucketName', 'fileName', 'contentType', 'fileSize', 'width', 'height',
+            'caption', 'alt', 'isPrimary', 'order', 'uploadDate'],
+          where: { isPrimary: true },
+          required: false
+        }
+      ];
+
+      whereClause.status = options.status ?? 'active';
+
+      if(options.geoFilters) {
+        Helper.applyGeoSearchFilters(whereClause, options.geoFilters);
+      }
+
+      if(options.filters) Helper.applySearchFilters(whereClause, options.filters);
+
+      if (options.agencyId) {
+        includeClause[0].where = { agencyId: options.agencyId };
+        includeClause[0].required = true; // INNER JOIN per garantire che l'agente appartenga all'agenzia
+      }
+
+      const { sortBy, sortOrder } = options;
+
+      // Esegue la query con conteggio
+      const { rows: properties, count: totalCount } = await Property.findAndCountAll({
+        where: whereClause,
+        include: includeClause,
+        order: [[sortBy, sortOrder]],
+        limit: options.limit,
+        offset,
+        distinct: true
+      });
+
+      const totalPages = Math.ceil(totalCount / options.limit);
+
+      // Formatta le proprietà per la risposta (gestisce Promise.all per gli URL S3)
+      const formattedProperties = await Promise.all(
+        properties.map(property => this.formatPropertyCardResponse(property))
+      );
+
+      const result: PagedResult<PropertyCardDto> = {
+        data: formattedProperties,
+        totalCount,
+        currentPage: options.page,
+        totalPages,
+        hasNextPage: options.page < totalPages,
+        hasPreviousPage: options.page > 1
+      };
+
+      return result;
+    } catch (error) {
+      logger.error('Error getting properties:', error);
+      throw error;
+    }
+  }
+
+
     /**
    * Ottiene lista proprietà con filtri e paginazione
    */
-  async getPropertiesCards(options: {
+  async getPropertiesCardsV1(options: {
     page: number;
     limit: number;
     filters?: SearchPropertiesFilters;

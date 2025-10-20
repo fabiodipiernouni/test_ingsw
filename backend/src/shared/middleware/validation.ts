@@ -7,6 +7,7 @@ import { plainToClass, plainToInstance } from 'class-transformer';
 import { validate as classValidate } from 'class-validator';
 import { GetPropertiesCardsRequest } from '../../services/property-service/dto/GetPropertiesCardsRequest';
 import { ApiResponse } from '@shared/dto/ApiResponse';
+import logger from '@shared/utils/logger';
 
 
 
@@ -42,29 +43,73 @@ export const validatePropertySearchFilters = async (
   res: Response,
   next: NextFunction
 ) => {
-  const filters = plainToInstance(GetPropertiesCardsRequest, req.body);
-  const errors = await classValidate(filters);
+  try {
+    const filters = plainToInstance(GetPropertiesCardsRequest, req.body, {
+      enableImplicitConversion: true,
+      excludeExtraneousValues: false
+    });
 
-  if (errors.length > 0) {
-    const formattedErrors = errors.map(err => ({
-      field: err.property,
-      errors: Object.values(err.constraints || {})
-    }));
+    const errors = await classValidate(filters);
 
+    if (errors.length > 0) {
+      // Log dettagliato per debug
+      logger.debug('Validation errors details:', {
+        errors: errors.map(err => ({
+          property: err.property,
+          value: err.value,
+          constraints: err.constraints,
+          children: err.children
+        })),
+        originalBody: req.body,
+        transformedObject: filters
+      });
+
+      const formattedErrors = errors.map(err => {
+        const collectErrors = (error: any): string[] => {
+          const msgs: string[] = [];
+          if (error.constraints) {
+            msgs.push(...Object.values(error.constraints) as string[]);
+          }
+          if (error.children && error.children.length > 0) {
+            error.children.forEach((child: any) => {
+              const childMsgs = collectErrors(child);
+              msgs.push(...childMsgs.map(msg => `${error.property}.${child.property}: ${msg}`));
+            });
+          }
+          return msgs;
+        };
+
+        return {
+          field: err.property,
+          errors: collectErrors(err)
+        };
+      });
+
+      const response: ApiResponse<never> = {
+        success: false,
+        message: 'Validazione filtri fallita',
+        error: 'VALIDATION_ERROR',
+        timestamp: new Date(),
+        details: formattedErrors.flatMap(e => e.errors),
+        path: res.req?.originalUrl || ''
+      };
+
+      return res.status(400).json(response);
+    }
+
+    req.body = filters; // Sostituisci con l'oggetto validato
+    next();
+  } catch (error) {
+    logger.error('Error in validatePropertySearchFilters:', error);
     const response: ApiResponse<never> = {
       success: false,
-      message: 'Validazione filtri fallita',
+      message: 'Errore durante la validazione',
       error: 'VALIDATION_ERROR',
       timestamp: new Date(),
-      details: formattedErrors.flatMap(e => e.errors),
       path: res.req?.originalUrl || ''
     };
-
-    return res.status(400).json(response);
+    return res.status(500).json(response);
   }
-
-  req.body = filters; // Sostituisci con l'oggetto validato
-  next();
 };
 
 /**

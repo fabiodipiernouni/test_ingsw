@@ -23,7 +23,7 @@
       <!-- Results Header -->
       <div class="results-header">
         <div class="results-info">
-          @if (isLoading() && currentPage() === 1) {
+          @if (isLoading() && (searchResult()?.currentPage || 1) === 1) {
             <div class="loading-text">
               <mat-spinner diameter="20"></mat-spinner>
               <span>Ricerca in corso...</span>
@@ -67,7 +67,7 @@
       </div>
 
       <!-- Map View (when enabled) -->
-      @if (showMap() && properties().length > 0) {
+      @if (showMap() && (searchResult()?.data?.length || 0) > 0) {
         <div class="map-container">
           <div class="map-placeholder">
             <mat-icon>map</mat-icon>
@@ -88,9 +88,9 @@
       }
 
       <!-- Property List - sempre visualizzata dopo una ricerca -->
-      @if (!isLoading() || currentPage() > 1) {
+      @if (!isLoading() || (searchResult()?.currentPage || 1) > 1) {
         <app-property-list
-          [properties]="properties()"
+          [properties]="searchResult()?.data || []"
           [emptyMessage]="emptyResultMessage()"
           (propertyClick)="onPropertySelected($event)">
         </app-property-list>
@@ -108,13 +108,13 @@
           </button>
 
           <p class="load-more-info">
-            Mostrando {{ properties().length }} di {{ searchResult()?.totalCount }} immobili
+            Mostrando {{ searchResult()?.data?.length || 0 }} di {{ searchResult()?.totalCount }} immobili
           </p>
         </div>
       }
 
       <!-- Loading indicator for subsequent pages -->
-      @if (isLoading() && currentPage() > 1) {
+      @if (isLoading() && (searchResult()?.currentPage || 1) > 1) {
         <div class="loading-more">
           <mat-spinner diameter="40"></mat-spinner>
           <span>Caricamento...</span>

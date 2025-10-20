@@ -22,13 +22,17 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { SearchPropertiesFilter } from '@core/services/property/dto/SearchPropertiesFilter';
 import { PagedRequest } from '@service-shared/dto/pagedRequest';
 import {GetPropertiesCardsRequest} from '@core/services/property/dto/GetPropertiesCardsRequest';
+import {GeoSearchPropertiesFilters} from '@core/services/property/dto/GeoSearchPropertiesFilters';
+import {environment} from '@src/environments/environment';
 
-// Tipizzazione Google Maps (versione semplificata che funziona sempre)
+// Tipizzazione Google Maps per Autocomplete classico
 interface GoogleMapsWindow extends Window {
   google: {
     maps: {
-      importLibrary: (library: string) => Promise<any>;
-      places: any;
+      places: {
+        Autocomplete: any;
+        AutocompleteService: any;
+      };
       event: any;
     };
   };
@@ -73,8 +77,8 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
   filtersExpanded = false;
 
   // Stato autocomplete
-  private autocomplete: any = null;
   private selectedPlace: PlaceDetails | null = null;
+  private autocomplete: any = null;
 
   @Output() searchStarted = new EventEmitter<GetPropertiesCardsRequest>();
 
@@ -90,8 +94,8 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     // Cleanup listeners
-    if (this.autocomplete && window.google?.maps?.event) {
-      window.google.maps.event.clearInstanceListeners(this.autocomplete);
+    if (this.autocomplete) {
+      window.google?.maps?.event?.clearInstanceListeners(this.autocomplete);
     }
   }
 
@@ -115,67 +119,95 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /**
-   * Inizializza Google Places Autocomplete sull'input di location
+   * Inizializza Google Places Autocomplete (versione classica)
+   *
+   * NOTA: Utilizziamo l'Autocomplete classico invece di PlaceAutocompleteElement perché:
+   * 1. PlaceAutocompleteElement usa Shadow DOM chiuso (non accessibile)
+   * 2. Non è compatibile con mat-form-field di Angular Material
+   * 3. L'Autocomplete classico è ancora supportato e funzionale
+   * 4. Google garantisce 12+ mesi di preavviso prima di deprecarlo
    */
   private async initializeAutocomplete(): Promise<void> {
     try {
       // Verifica che Google Maps sia caricato
       if (!window.google?.maps) {
-        console.warn('⚠️ Google Maps non ancora caricato, riprovo...');
+        console.warn('Google Maps non ancora caricato, riprovo...');
         setTimeout(() => this.initializeAutocomplete(), 500);
         return;
       }
 
-      // Carica la libreria Places
-      const placesLib = await window.google.maps.importLibrary("places") as any;
-      const { Autocomplete } = placesLib;
+      // IMPORTANTE: Carica esplicitamente la libreria Places
+      if (!window.google.maps.places) {
+        console.log('Caricamento libreria Places...');
+        await (window.google.maps as any).importLibrary('places');
+        console.log('Libreria Places caricata con successo');
+      }
 
-      // Configura autocomplete - SOLO località generiche
-      this.autocomplete = new Autocomplete(this.locationInput.nativeElement, {
-        types: ['(regions)'], // Accetta città, province, CAP
-        componentRestrictions: { country: 'it' }, // Solo Italia
-        fields: ['address_components', 'geometry', 'formatted_address'] // Campi necessari
+      const inputElement = this.locationInput.nativeElement;
+
+      // Sopprimi temporaneamente i warning di deprecazione per l'Autocomplete
+      const originalWarn = console.warn;
+      console.warn = (...args: any[]) => {
+        const message = args[0]?.toString() || '';
+        // Filtra solo il warning specifico di PlaceAutocompleteElement
+        if (!message.includes('PlaceAutocompleteElement') &&
+            !message.includes('March 1st, 2025')) {
+          originalWarn.apply(console, args);
+        }
+      };
+
+      // Crea l'autocomplete classico
+      this.autocomplete = new window.google.maps.places.Autocomplete(inputElement, {
+        componentRestrictions: { country: 'it' },
+        types: ['(regions)'], // Solo città, province, CAP
+        fields: ['address_components', 'geometry', 'formatted_address', 'name']
       });
 
-      // Listener per selezione da autocomplete
+      // Ripristina console.warn
+      console.warn = originalWarn;
+
+      // Listener per la selezione di un luogo
       this.autocomplete.addListener('place_changed', () => {
-        this.onPlaceSelected();
+        const place = this.autocomplete.getPlace();
+
+        if (!place.geometry) {
+          console.log('Nessun dettaglio geografico - ricerca testuale');
+          this.selectedPlace = null;
+          return;
+        }
+
+        // Estrai dettagli
+        this.selectedPlace = this.extractPlaceDetailsClassic(place);
+
+        // Aggiorna il form
+        this.searchForm.patchValue({
+          location: place.formatted_address || place.name
+        }, { emitEvent: false });
+
+        console.log('Luogo selezionato:', this.selectedPlace);
       });
 
-      console.log('Google Places Autocomplete inizializzato');
+      // Listener per input manuale (quando l'utente digita ma non seleziona)
+      inputElement.addEventListener('input', () => {
+        const value = inputElement.value;
+        this.searchForm.patchValue({ location: value }, { emitEvent: false });
+
+        // Se l'utente modifica manualmente, reset della selezione place
+        this.selectedPlace = null;
+      });
+
+      console.log('Google Places Autocomplete inizializzato con successo');
     } catch (error) {
       console.error('Errore inizializzazione autocomplete:', error);
-      // L'app funziona comunque con ricerca testuale normale
     }
   }
 
   /**
-   * Gestisce la selezione di un luogo dall'autocomplete
+   * Estrae dati strutturati da un Place di Google (Autocomplete classico)
    */
-  private onPlaceSelected(): void {
-    if (!this.autocomplete) return;
-
-    const place = this.autocomplete.getPlace();
-
-    // Se l'utente preme Enter senza selezionare, place.geometry sarà undefined
-    if (!place.geometry) {
-      console.log('Nessun luogo selezionato, ricerca testuale normale');
-      this.selectedPlace = null;
-      return;
-    }
-
-    // Estrai dettagli strutturati
-    this.selectedPlace = this.extractPlaceDetails(place);
-
-    console.log('Luogo selezionato:', this.selectedPlace);
-  }
-
-  /**
-   * Estrae dati strutturati da un Place di Google
-   */
-  private extractPlaceDetails(place: any): PlaceDetails {
+  private extractPlaceDetailsClassic(place: any): PlaceDetails {
     const details: PlaceDetails = {
-      formattedAddress: place.formatted_address
+      formattedAddress: place.formatted_address || place.name
     };
 
     // Estrai coordinate
@@ -191,13 +223,10 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
       const types = component.types;
 
       if (types.includes('locality')) {
-        // Città
         details.city = component.long_name;
       } else if (types.includes('administrative_area_level_2')) {
-        // Provincia (es: "NA" o "Napoli")
         details.province = component.short_name;
       } else if (types.includes('postal_code')) {
-        // CAP
         details.zipCode = component.long_name;
       }
     });
@@ -215,10 +244,30 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    const filters = this.buildSearchFilter();
-    const pagedRequest = this.buildPagedRequest();
+    const searchStartedPayload: GetPropertiesCardsRequest = {
+      filters: this.buildSearchFilter(),
+      geoFilters: this.buildGeoSearchFilter(),
+      pagedRequest: this.buildPagedRequest()
+    }
 
-    this.searchStarted.emit({ filters, pagedRequest });
+    this.searchStarted.emit(searchStartedPayload);
+  }
+
+  private buildGeoSearchFilter(): GeoSearchPropertiesFilters {
+    const filter: GeoSearchPropertiesFilters = {};
+
+    if (this.selectedPlace?.coordinates) {
+      // Ricerca per raggio
+      filter.radiusSearch = {
+        center: {
+          type: 'Point',
+          coordinates: [this.selectedPlace.coordinates.lng, this.selectedPlace.coordinates.lat]
+        },
+        radius: environment.geoSearchValues.defaultRadiusKm
+      };
+    }
+
+    return filter;
   }
 
   /**
@@ -229,21 +278,6 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
   private buildSearchFilter(): SearchPropertiesFilter {
     const formValue = this.searchForm.value;
     const filter: SearchPropertiesFilter = {};
-
-    // 🎯 GESTIONE LOCATION - Strategia ibrida
-    if (this.selectedPlace?.coordinates) {
-      // ✅ CASO 1: Luogo selezionato da autocomplete → Ricerca geospaziale
-      filter.latitude = this.selectedPlace.coordinates.lat;
-      filter.longitude = this.selectedPlace.coordinates.lng;
-      filter.radiusKm = 50; // Raggio default, puoi renderlo configurabile
-
-      console.log('🌍 Ricerca geospaziale:', filter.latitude, filter.longitude, `raggio ${filter.radiusKm}km`);
-    } else if (formValue.location?.trim()) {
-      // ✅ CASO 2: Testo libero → Ricerca testuale (LIKE)
-      filter.location = formValue.location.trim();
-
-      console.log('📝 Ricerca testuale:', filter.location);
-    }
 
     // Altri filtri (invariati)
     if (formValue.propertyType) {
@@ -311,7 +345,12 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
    * Reset del form e dello stato autocomplete
    */
   resetFilters(): void {
-    this.selectedPlace = null; // Reset stato autocomplete
+    this.selectedPlace = null;
+
+    // Reset input autocomplete
+    if (this.locationInput?.nativeElement) {
+      this.locationInput.nativeElement.value = '';
+    }
 
     this.searchForm.reset({
       location: '',
