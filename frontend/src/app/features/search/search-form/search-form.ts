@@ -6,7 +6,8 @@ import {
   ViewChild,
   ElementRef,
   AfterViewInit,
-  OnDestroy
+  OnDestroy,
+  ChangeDetectorRef
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -75,6 +76,10 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
 
   searchForm!: FormGroup;
   filtersExpanded = false;
+  showMapSearchOption = false;
+  formSubmitted = false;
+  locationHasFocus = false;
+  showLocationError = false;
 
   // Stato autocomplete
   private selectedPlace: PlaceDetails | null = null;
@@ -82,7 +87,10 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
 
   @Output() searchStarted = new EventEmitter<GetPropertiesCardsRequest>();
 
-  constructor(private fb: FormBuilder) {}
+  constructor(
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.initializeForm();
@@ -101,7 +109,7 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
 
   private initializeForm(): void {
     this.searchForm = this.fb.group({
-      location: ['', [Validators.required]],
+      location: [''],
       propertyType: [''],
       listingType: [''],
       rooms: [null],
@@ -196,6 +204,7 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
         this.selectedPlace = null;
       });
 
+
       console.log('Google Places Autocomplete inizializzato con successo');
     } catch (error) {
       console.error('Errore inizializzazione autocomplete:', error);
@@ -238,11 +247,20 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
    * Gestisce il submit del form di ricerca
    */
   onSearch(): void {
-    // Valida il form
-    if (!this.searchForm.valid) {
-      this.searchForm.markAllAsTouched();
+
+    const locationValue = this.searchForm.get('location')?.value?.trim();
+
+    if (!locationValue) {
+      this.searchForm.get('location')?.markAsTouched();
+      this.showLocationError = true;
+      this.cdr.detectChanges();
       return;
     }
+
+    this.showLocationError = false;
+
+    // Reset dell'errore se la validazione passa
+    this.formSubmitted = false;
 
     const searchStartedPayload: GetPropertiesCardsRequest = {
       filters: this.buildSearchFilter(),
@@ -390,5 +408,46 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
 
   get locationControl() {
     return this.searchForm.get('location');
+  }
+
+  /**
+   * Gestisce il click sull'opzione "Cerca in mappa"
+   */
+  onMapSearchClick(): void {
+    this.showMapSearchOption = false;
+    console.log('Attivazione ricerca in mappa...');
+    // TODO: Implementare la logica per attivare la ricerca tramite mappa
+  }
+
+  /**
+   * Gestisce il focus sull'input location
+   */
+  onLocationInputFocus(): void {
+    this.formSubmitted = false;
+    this.locationControl?.markAsUntouched();
+    this.locationHasFocus = true;
+    this.showLocationError = false;
+    this.showMapSearchOption = true;
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Gestisce la perdita di focus dell'input location
+   */
+  onLocationInputBlur(): void {
+    this.locationHasFocus = false;
+    // Timeout per permettere il click sull'opzione "Cerca in mappa" prima che venga nascosta
+    setTimeout(() => {
+      this.showMapSearchOption = false;
+      this.cdr.detectChanges();
+    }, 200);
+  }
+
+  /**
+   * Gestisce il cambiamento dell'input location
+   */
+  onLocationInputChange(): void {
+    this.formSubmitted = false;
+    this.cdr.detectChanges();
   }
 }
