@@ -4,6 +4,7 @@ import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { filter } from 'rxjs/operators';
 import { Header } from '@shared/components/header/header';
+import { Footer } from '@shared/components/footer/footer';
 import { AuthService } from '@core/services/auth/auth.service';
 
 @Component({
@@ -12,7 +13,8 @@ import { AuthService } from '@core/services/auth/auth.service';
   imports: [
     CommonModule,
     RouterOutlet,
-    Header
+    Header,
+    Footer
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss'

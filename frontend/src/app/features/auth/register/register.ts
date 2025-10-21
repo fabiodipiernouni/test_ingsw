@@ -12,6 +12,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '@core/services/auth/auth.service';
 import { OAuthProviders } from '@features-auth/oauth-providers/oauth-providers';
 import { AuthLayoutComponent, AuthLayoutConfig } from '@shared/components/auth-layout/auth-layout';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-register',
@@ -26,7 +27,8 @@ import { AuthLayoutComponent, AuthLayoutConfig } from '@shared/components/auth-l
     MatSelectModule,
     MatCheckboxModule,
     OAuthProviders,
-    AuthLayoutComponent
+    AuthLayoutComponent,
+    RouterLink
   ],
   templateUrl: './register.html',
   styleUrl: './register.scss'
@@ -123,6 +125,8 @@ export class Register {
       });
     }
   }
+
+
 
 
 

@@ -118,11 +118,11 @@
     <div class="terms-section">
       <div class="terms-checkbox">
         <mat-checkbox formControlName="acceptTerms">
-          Accetto i <a href="#" class="terms-link">Termini di Servizio</a>
+          Accetto i <a class="terms-link" [routerLink]="['/terms']">Termini di Servizio</a>
         </mat-checkbox>
         
         <mat-checkbox formControlName="acceptPrivacy">
-          Accetto la <a href="#" class="terms-link">Privacy Policy</a>
+          Accetto la <a class="terms-link" [routerLink]="['/privacy']">Privacy Policy</a>
         </mat-checkbox>
       </div>
 

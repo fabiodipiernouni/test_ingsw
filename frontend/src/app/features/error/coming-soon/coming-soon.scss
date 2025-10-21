@@ -1,9 +1,10 @@
 .error-container {
-    min-height: calc(100vh - 140px);
+    height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
+    padding: 0;
+    margin: 0;
     background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
 }
 
@@ -19,35 +20,26 @@
 }
 
 .error-icon {
-    font-size: 4rem;
-    width: 4rem;
-    height: 4rem;
-    color: #e53e3e;
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+    color: #cbd5e0;
     margin-bottom: 1.5rem;
 }
 
 h1 {
-    color: #1a202c;
-    margin-bottom: 1rem;
+    font-size: 2.5rem;
     font-weight: 600;
+    margin-bottom: 1rem;
+    color: #3f51b5;
 }
 
 p {
-    color: #718096;
+    font-size: 1.2rem;
+    color: #555;
     margin-bottom: 2rem;
-    font-size: 1.1rem;
-    line-height: 1.6;
 }
 
 .error-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-@media (max-width: 480px) {
-    .error-actions {
-    flex-direction: column;
-    }
+    margin-top: 1.5rem;
 }

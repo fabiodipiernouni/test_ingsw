@@ -106,13 +106,48 @@ export const routes: Routes = [
   // Error routes
   {
     path: 'unauthorized',
-    loadComponent: () => import('./shared/components/unauthorized/unauthorized').then(m => m.Unauthorized),
+    loadComponent: () => import('@features/error/unauthorized/unauthorized').then(m => m.Unauthorized),
     title: 'Accesso Negato - DietiEstates25'
   },
   {
+    path: 'coming-soon',
+    loadComponent: () => import('@features/error/coming-soon/coming-soon').then(m => m.ComingSoon),
+    title: 'Funzionalità in arrivo - DietiEstates25'
+  },
+  {
     path: '404',
-    loadComponent: () => import('./shared/components/not-found/not-found').then(m => m.NotFound),
+    loadComponent: () => import('@features/error/not-found/not-found').then(m => m.NotFound),
     title: 'Pagina Non Trovata - DietiEstates25'
+  },
+
+  // Legal routes
+  {
+    path: 'privacy',
+    loadComponent: () => import('./features/legal/privacy/privacy-page').then(m => m.PrivacyPageComponent),
+    title: 'Privacy Policy - DietiEstates25'
+  },
+  {
+    path: 'terms',
+    loadComponent: () => import('./features/legal/terms/terms-page').then(m => m.TermsPageComponent),
+    title: 'Termini e Condizioni - DietiEstates25'
+  },
+
+  // Coming soon feature routes
+  {
+    path: 'help',
+    redirectTo: '/coming-soon'
+  },
+  {
+    path: 'contact',
+    redirectTo: '/coming-soon'
+  },
+  {
+    path: 'faq',
+    redirectTo: '/coming-soon'
+  },
+  {
+    path: 'cookies',
+    redirectTo: '/coming-soon'
   },
 
   // Wildcard route - must be last
