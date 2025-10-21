@@ -27,7 +27,7 @@
         }
         <!-- Dropdown menu con opzione "Cerca in mappa" -->
         <div class="location-dropdown" *ngIf="showMapSearchOption">
-          <div class="dropdown-item map-search-item" (click)="onMapSearchClick()">
+          <button type="button" class="dropdown-item map-search-item" (click)="onMapSearchClick()">
             <svg class="item-icon-image" width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
               <rect width="32" height="32" fill="#E3F2FD" rx="3"/>
               <rect x="3" y="3" width="7" height="5" fill="#BDBDBD" stroke="#757575" stroke-width="1"/>
@@ -54,7 +54,7 @@
               <span class="item-description">Ricerca utilizzando direttamente la mappa</span>
             </div>
             <mat-icon class="item-arrow">arrow_forward</mat-icon>
-          </div>
+          </button>
         </div>
       </div>
 
