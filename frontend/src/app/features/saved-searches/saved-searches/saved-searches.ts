@@ -8,13 +8,13 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { PropertyService } from '@core/services/property/property.service';
-import {SearchPropertiesFilter} from '@core/services/property/dto/SearchPropertiesFilter';
+import {SearchPropertiesFilters} from '@core/services/property/dto/SearchPropertiesFilters';
 
 
 interface SavedSearch {
   id: string;
   name: string;
-  filters: SearchPropertiesFilter;
+  filters: SearchPropertiesFilters;
   createdAt: Date;
   resultsCount: number;
   isNotificationEnabled: boolean;
@@ -140,7 +140,7 @@ export class SavedSearches implements OnInit {
     });
   }
 
-  getFilterSummary(filters: SearchPropertiesFilter): string[] {
+  getFilterSummary(filters: SearchPropertiesFilters): string[] {
     const summary: string[] = [];
 
     if (filters.location) summary.push(filters.location);

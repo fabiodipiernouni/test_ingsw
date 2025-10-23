@@ -13,7 +13,8 @@
 
     <!-- Search Form -->
     <app-search-form
-      (searchStarted)="onSearchStarted($event)">
+      (searchStarted)="onSearchStarted($event)"
+      (mapSearchClicked)="onMapSearchClicked($event)">
     </app-search-form>
   </div>
 
@@ -49,7 +50,25 @@
               <mat-icon>bookmark_add</mat-icon>
             </button>
 
+            <!-- Mobile: Toggle Lista/Mappa -->
+            <div class="mobile-view-toggle">
+              <button mat-icon-button
+                      [class.active]="viewMode() === 'list'"
+                      (click)="toggleViewMode('list')"
+                      matTooltip="Vista lista">
+                <mat-icon>list</mat-icon>
+              </button>
+              <button mat-icon-button
+                      [class.active]="viewMode() === 'map'"
+                      (click)="toggleViewMode('map')"
+                      matTooltip="Vista mappa">
+                <mat-icon>map</mat-icon>
+              </button>
+            </div>
+
+            <!-- Desktop: Toggle Mappa -->
             <button mat-icon-button
+                    class="desktop-map-toggle"
                     (click)="toggleMapView()"
                     [class.active]="showMap()"
                     matTooltip="{{ showMap() ? 'Nascondi mappa' : 'Mostra mappa' }}">
@@ -66,29 +85,37 @@
         </div>
       </div>
 
-      <!-- Map View (when enabled) -->
-      @if (showMap() && (searchResult()?.data?.length || 0) > 0) {
-        <div class="map-container">
-          <div class="map-placeholder">
-            <mat-icon>map</mat-icon>
-            <h3>Mappa Interattiva</h3>
-            <p>Gli immobili verranno visualizzati su una mappa interattiva</p>
-            <div class="map-legend">
-              <div class="legend-item">
-                <div class="marker sale"></div>
-                <span>Vendita</span>
-              </div>
-              <div class="legend-item">
-                <div class="marker rent"></div>
-                <span>Affitto</span>
-              </div>
-            </div>
+      <!-- Split View: Lista + Mappa (Desktop) / Solo Lista o Mappa (Mobile) -->
+      @if (hasSearched() && (showMap() || viewMode() !== 'list')) {
+        <div class="results-content" [class.split-view]="showMap()">
+          <!-- Property List -->
+          <div class="list-section"
+               [class.hidden-mobile]="viewMode() === 'map'"
+               [class.visible-mobile]="viewMode() === 'list'">
+            @if (!isLoading() || (searchResult()?.currentPage || 1) > 1) {
+              <app-property-list
+                [properties]="searchResult()?.data || []"
+                [emptyMessage]="emptyResultMessage()"
+                (propertyClick)="onPropertySelected($event)">
+              </app-property-list>
+            }
+          </div>
+
+          <!-- Map Section - sempre visibile quando showMap è true -->
+          <div class="map-section"
+               [class.hidden-mobile]="viewMode() === 'list'"
+               [class.visible-mobile]="viewMode() === 'map'">
+            <app-search-map
+              [properties]="searchGeoResult() || []"
+              [center]="mapCenter()"
+              [radius]="mapRadius()"
+              (boundsChanged)="onMapBoundsChanged($event)"
+              (propertySelected)="onGeoPropertySelected($event)">
+            </app-search-map>
           </div>
         </div>
-      }
-
-      <!-- Property List - sempre visualizzata dopo una ricerca -->
-      @if (!isLoading() || (searchResult()?.currentPage || 1) > 1) {
+      } @else if (hasSearched() && !isLoading()) {
+        <!-- Solo lista quando la mappa non è attiva -->
         <app-property-list
           [properties]="searchResult()?.data || []"
           [emptyMessage]="emptyResultMessage()"

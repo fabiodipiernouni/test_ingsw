@@ -4,14 +4,16 @@ import { imageService } from '@shared/services/ImageService';
 import config from '@shared/config';
 import { PropertyCardDto } from '@property/dto/PropertyCardDto';
 import { PagedResult } from '@shared/dto/pagedResult';
-import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequest';
-import { CreatePropertyResponse } from '@property/dto/CreatePropertyResponse';
+import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequestEndpoint/CreatePropertyRequest';
+import { CreatePropertyResponse } from '@property/dto/CreatePropertyRequestEndpoint/CreatePropertyResponse';
 import { PropertyModel } from '@property/models/PropertyModel';
 import { isValidGeoJSONPoint } from '@shared/types/geojson.types';
 import { Helper } from '@services/property-service/utils/helper';
 import { SearchPropertiesFilters } from '@property/dto/SearchPropertiesFilters';
 import { PropertyStatus } from '@property/models/types';
 import { GeoSearchPropertiesFilters } from '@property/dto/GeoSearchPropertiesFilters';
+import { GeoPropertyCardDto } from '@property/dto/GeoPropertyCardDto';
+import { Mappers } from '@property/utils/mappers';
 
 // Custom error classes for better error handling
 class ValidationError extends Error {
@@ -102,66 +104,6 @@ export class PropertyService {
   }
 
   /**
-   * Formatta la risposta della proprietà per l'API
-   */
-  private async formatPropertyCardResponse(property: Property): Promise<PropertyCardDto> {
-    // Generate signed URLs for images
-    const imagesWithUrls = await Promise.all(
-      (property.images || []).map(async (image) => {
-        // If image has S3 keys, generate signed URLs using getImageVariants()
-        if (image.s3KeyOriginal) {
-          const variants = image.getImageVariants();
-          const urls = await imageService.getImageUrls(variants);
-
-          return {
-            id: image.id,
-            fileName: image.fileName,
-            contentType: image.contentType,
-            fileSize: image.fileSize,
-            width: image.width,
-            height: image.height,
-            caption: image.caption,
-            alt: image.alt,
-            isPrimary: image.isPrimary,
-            order: image.order,
-            uploadDate: image.uploadDate,
-            urls
-          };
-        }
-        return undefined; // Should not happen since all images should have S3 keys
-      })
-    );
-
-    return {
-      id: property.id,
-      title: property.title,
-      description: property.description,
-      price: property.price,
-      propertyType: property.propertyType,
-      listingType: property.listingType,
-      status: property.status,
-      rooms: property.rooms,
-      bedrooms: property.bedrooms,
-      bathrooms: property.bathrooms,
-      area: property.area,
-      floor: property.floor,
-      city: property.city,
-      province: property.province,
-      primaryImage: imagesWithUrls.find(img => img?.isPrimary),
-      energyClass: property.energyClass,
-      hasElevator: property.hasElevator,
-      hasBalcony: property.hasBalcony,
-      hasGarden: property.hasGarden,
-      hasParking: property.hasParking,
-      //images: imagesWithUrls as any,
-      agentId: property.agentId,
-      views: property.views,
-      createdAt: property.createdAt.toISOString(),
-      updatedAt: property.updatedAt.toISOString()
-    };
-  }
-
-  /**
    * Ottiene una proprietà per ID con tutte le associazioni
    */
   async getPropertyById(propertyId: string): Promise<PropertyModel> {
@@ -184,76 +126,10 @@ export class PropertyService {
       throw new NotFoundError('Property not found');
     }
 
-    return await this.formatPropertyToModel(property);
+    return await Mappers.formatPropertyToModel(property);
   }
 
-  /**
-   * Formatta la risposta della proprietà per l'API
-   */
-  private async formatPropertyToModel(property: Property): Promise<PropertyModel> {
-    // Generate signed URLs for images
-    const imagesWithUrls = await Promise.all(
-      (property.images || []).map(async (image) => {
-        // If image has S3 keys, generate signed URLs using getImageVariants()
-        if (image.s3KeyOriginal) {
-          const variants = image.getImageVariants();
-          const urls = await imageService.getImageUrls(variants);
 
-          return {
-            id: image.id,
-            fileName: image.fileName,
-            contentType: image.contentType,
-            fileSize: image.fileSize,
-            width: image.width,
-            height: image.height,
-            caption: image.caption,
-            alt: image.alt,
-            isPrimary: image.isPrimary,
-            order: image.order,
-            uploadDate: image.uploadDate,
-            urls
-          };
-        }
-        return undefined; // Should not happen since all images should have S3 keys
-      })
-    );
-
-    return {
-      id: property.id,
-      title: property.title,
-      description: property.description,
-      price: property.price,
-      propertyType: property.propertyType,
-      listingType: property.listingType,
-      status: property.status,
-      rooms: property.rooms,
-      bedrooms: property.bedrooms,
-      bathrooms: property.bathrooms,
-      area: property.area,
-      floor: property.floor,
-      energyClass: property.energyClass,
-      hasElevator: property.hasElevator,
-      hasBalcony: property.hasBalcony,
-      hasGarden: property.hasGarden,
-      hasParking: property.hasParking,
-      features: property.features,
-      address: {
-        street: property.street,
-        city: property.city,
-        province: property.province,
-        zipCode: property.zipCode,
-        country: property.country
-      },
-      location: property.location,  // GeoJSON Point format
-      images: imagesWithUrls as any,
-      agentId: property.agentId,
-      agent: Helper.userToUserModel(property.agent),
-      views: property.views,
-      favorites: property.favorites,
-      createdAt: property.createdAt.toISOString(),
-      updatedAt: property.updatedAt.toISOString()
-    };
-  }
 
   /**
    * Validazione dei dati della proprietà
@@ -337,8 +213,65 @@ export class PropertyService {
     return this.getPropertiesCardsV2(options);
   }
 
+  async getGeoPropertiesCardsV1(options: {
+    filters?: SearchPropertiesFilters;
+    geoFilters?: GeoSearchPropertiesFilters;
+    status?: PropertyStatus;
+    agencyId?: string;       // Per admin: filtra tutte le proprietà di una certa agenzia
+    sortBy: string;
+    sortOrder: 'ASC' | 'DESC';
+  }): Promise<GeoPropertyCardDto[]> {
+    try {
+      const whereClause: any = {};
+      const includeClause: any[] = [
+        {
+          association: 'agent',
+          attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'agencyId']
+        },
+        {
+          association: 'images',
+          attributes: ['id', 's3KeyOriginal', 's3KeySmall', 's3KeyMedium', 's3KeyLarge',
+            'bucketName', 'fileName', 'contentType', 'fileSize', 'width', 'height',
+            'caption', 'alt', 'isPrimary', 'order', 'uploadDate'],
+          where: { isPrimary: true },
+          required: false
+        }
+      ];
 
-  async getPropertiesCardsV2(options: {
+      whereClause.status = options.status ?? 'active';
+
+      if(options.geoFilters) {
+        Helper.applyGeoSearchFilters(whereClause, options.geoFilters);
+      }
+
+      if(options.filters) Helper.applySearchFilters(whereClause, options.filters);
+
+      if (options.agencyId) {
+        includeClause[0].where = { agencyId: options.agencyId };
+        includeClause[0].required = true; // INNER JOIN per garantire che l'agente appartenga all'agenzia
+      }
+
+      const { sortBy, sortOrder } = options;
+
+      // Esegue la query con conteggio
+      const properties = await Property.findAll({
+        where: whereClause,
+        include: includeClause,
+        order: [[sortBy, sortOrder]]
+      });
+
+      // Formatta le proprietà per la risposta (gestisce Promise.all per gli URL S3)
+      return await Promise.all(
+        properties.map(property => Mappers.formatGeoPropertyCardResponse(property))
+      );
+    } catch (error) {
+      logger.error('Error getting properties:', error);
+      throw error;
+    }
+  }
+
+
+    async getPropertiesCardsV2(options: {
     page: number;
     limit: number;
     filters?: SearchPropertiesFilters;
@@ -399,7 +332,7 @@ export class PropertyService {
 
       // Formatta le proprietà per la risposta (gestisce Promise.all per gli URL S3)
       const formattedProperties = await Promise.all(
-        properties.map(property => this.formatPropertyCardResponse(property))
+        properties.map(property => Mappers.formatPropertyCardResponse(property))
       );
 
       const result: PagedResult<PropertyCardDto> = {
@@ -481,7 +414,7 @@ export class PropertyService {
 
       // Formatta le proprietà per la risposta (gestisce Promise.all per gli URL S3)
       const formattedProperties = await Promise.all(
-        properties.map(property => this.formatPropertyCardResponse(property))
+        properties.map(property => Mappers.formatPropertyCardResponse(property))
       );
 
       const result: PagedResult<PropertyCardDto> = {
@@ -567,7 +500,7 @@ export class PropertyService {
 
       // Formatta le proprietà per la risposta (gestisce Promise.all per gli URL S3)
       const formattedProperties = await Promise.all(
-        properties.map(property => this.formatPropertyToModel(property))
+        properties.map(property => Mappers.formatPropertyToModel(property))
       );
 
       return {
@@ -798,6 +731,54 @@ export class PropertyService {
 
     } catch (error) {
       logger.error('Error updating image metadata:', error);
+      throw error;
+    }
+  }
+
+  async getPropertiesCardsByIdList(options: {
+    ids: string[];
+    sortBy: string;
+    sortOrder: 'ASC' | 'DESC';
+  }): Promise<PropertyCardDto[]> {
+    try {
+      logger.info('Getting properties by Id List.');
+
+      // Costruisce la query con i filtri
+      const whereClause: any = {};
+      const includeClause: any[] = [
+        {
+          association: 'agent',
+          attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'agencyId']
+        },
+        {
+          association: 'images',
+          attributes: ['id', 's3KeyOriginal', 's3KeySmall', 's3KeyMedium', 's3KeyLarge',
+            'bucketName', 'fileName', 'contentType', 'fileSize', 'width', 'height',
+            'caption', 'alt', 'isPrimary', 'order', 'uploadDate'],
+          where: { isPrimary: true },
+          required: false
+        }
+      ];
+
+      whereClause.id = options.ids;
+
+      const { sortBy, sortOrder } = options;
+
+      // Esegue la query con conteggio
+      const properties = await Property.findAll({
+        where: whereClause,
+        include: includeClause,
+        order: [[sortBy, sortOrder]]
+      });
+
+      // Formatta le proprietà per la risposta (gestisce Promise.all per gli URL S3)
+      const formattedProperties = await Promise.all(
+        properties.map(property => Mappers.formatPropertyCardResponse(property))
+      );
+
+      return formattedProperties;
+    } catch (error) {
+      logger.error('Error getting properties:', error);
       throw error;
     }
   }

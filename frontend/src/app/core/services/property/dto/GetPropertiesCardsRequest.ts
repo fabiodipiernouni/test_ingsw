@@ -1,11 +1,12 @@
 import { GeoSearchPropertiesFilters } from './GeoSearchPropertiesFilters';
 import { PagedRequest } from '@service-shared/dto/pagedRequest';
-import {SearchPropertiesFilter} from '@core/services/property/dto/SearchPropertiesFilter';
+import {SearchPropertiesFilters} from '@core/services/property/dto/SearchPropertiesFilters';
+import {PropertyStatus} from '@core/services/property/models/types';
 
 export interface GetPropertiesCardsRequest {
-  filters?: SearchPropertiesFilter;
+  filters?: SearchPropertiesFilters;
   geoFilters?: GeoSearchPropertiesFilters;
   pagedRequest?: PagedRequest;
-  status?: string; // ACTIVE, INACTIVE, PENDING, etc.
+  status?: PropertyStatus;
   agencyId?: string;
 }

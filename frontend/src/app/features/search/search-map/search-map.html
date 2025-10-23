@@ -1,0 +1,32 @@
+<div class="search-map-container">
+  <!-- Map Canvas -->
+  <div #mapContainer class="map-canvas"></div>
+
+  <!-- Loading Overlay -->
+  @if (isLoading()) {
+    <div class="map-loading-overlay">
+      <mat-spinner diameter="40"></mat-spinner>
+      <span>Caricamento mappa...</span>
+    </div>
+  }
+
+  <!-- Map Controls (opzionale) -->
+  <div class="map-controls">
+    <button mat-mini-fab
+            color="primary"
+            class="recenter-button"
+            (click)="triggerSearch()"
+            matTooltip="Cerca in questa area">
+      <mat-icon>search</mat-icon>
+    </button>
+  </div>
+
+  <!-- Property Count Badge -->
+  @if (properties.length > 0) {
+    <div class="property-count-badge">
+      <mat-icon>home</mat-icon>
+      {{ properties.length }} immobili
+    </div>
+  }
+</div>
+

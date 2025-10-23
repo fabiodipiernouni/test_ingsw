@@ -10,7 +10,7 @@ import {
   ChangeDetectorRef
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -20,7 +20,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { SearchPropertiesFilter } from '@core/services/property/dto/SearchPropertiesFilter';
+import { SearchPropertiesFilters } from '@core/services/property/dto/SearchPropertiesFilters';
 import { PagedRequest } from '@service-shared/dto/pagedRequest';
 import {GetPropertiesCardsRequest} from '@core/services/property/dto/GetPropertiesCardsRequest';
 import {GeoSearchPropertiesFilters} from '@core/services/property/dto/GeoSearchPropertiesFilters';
@@ -86,6 +86,7 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
   private autocomplete: any = null;
 
   @Output() searchStarted = new EventEmitter<GetPropertiesCardsRequest>();
+  @Output() mapSearchClicked = new EventEmitter<GetPropertiesCardsRequest>();
 
   constructor(
     private fb: FormBuilder,
@@ -137,21 +138,33 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
    */
   private async initializeAutocomplete(): Promise<void> {
     try {
+      console.log('🔍 [Autocomplete] Inizio inizializzazione...');
+
       // Verifica che Google Maps sia caricato
       if (!window.google?.maps) {
-        console.warn('Google Maps non ancora caricato, riprovo...');
+        console.warn('⚠️ [Autocomplete] Google Maps non ancora caricato, riprovo...');
         setTimeout(() => this.initializeAutocomplete(), 500);
         return;
       }
 
+      console.log('✅ [Autocomplete] Google Maps caricato');
+
       // IMPORTANTE: Carica esplicitamente la libreria Places
       if (!window.google.maps.places) {
-        console.log('Caricamento libreria Places...');
-        await (window.google.maps as any).importLibrary('places');
-        console.log('Libreria Places caricata con successo');
+        console.log('📦 [Autocomplete] Caricamento libreria Places...');
+        try {
+          await (window.google.maps as any).importLibrary('places');
+          console.log('✅ [Autocomplete] Libreria Places caricata con successo');
+        } catch (error) {
+          console.error('❌ [Autocomplete] Errore caricamento libreria Places:', error);
+          throw error;
+        }
+      } else {
+        console.log('✅ [Autocomplete] Libreria Places già caricata');
       }
 
       const inputElement = this.locationInput.nativeElement;
+      console.log('✅ [Autocomplete] Input element trovato:', inputElement);
 
       // Sopprimi temporaneamente i warning di deprecazione per l'Autocomplete
       const originalWarn = console.warn;
@@ -164,6 +177,8 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
         }
       };
 
+      console.log('🏗️ [Autocomplete] Creazione istanza Autocomplete...');
+
       // Crea l'autocomplete classico
       this.autocomplete = new window.google.maps.places.Autocomplete(inputElement, {
         componentRestrictions: { country: 'it' },
@@ -171,15 +186,19 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
         fields: ['address_components', 'geometry', 'formatted_address', 'name']
       });
 
+      console.log('✅ [Autocomplete] Istanza creata con successo');
+
       // Ripristina console.warn
       console.warn = originalWarn;
 
       // Listener per la selezione di un luogo
       this.autocomplete.addListener('place_changed', () => {
+        console.log('📍 [Autocomplete] Place changed event triggered');
         const place = this.autocomplete.getPlace();
+        console.log('📍 [Autocomplete] Place object:', place);
 
         if (!place.geometry) {
-          console.log('Nessun dettaglio geografico - ricerca testuale');
+          console.log('⚠️ [Autocomplete] Nessun dettaglio geografico - ricerca testuale');
           this.selectedPlace = null;
           return;
         }
@@ -192,7 +211,7 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
           location: place.formatted_address || place.name
         }, { emitEvent: false });
 
-        console.log('Luogo selezionato:', this.selectedPlace);
+        console.log('✅ [Autocomplete] Luogo selezionato:', this.selectedPlace);
       });
 
       // Listener per input manuale (quando l'utente digita ma non seleziona)
@@ -205,9 +224,15 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
       });
 
 
-      console.log('Google Places Autocomplete inizializzato con successo');
+      console.log('✅✅ [Autocomplete] Google Places Autocomplete inizializzato con successo');
     } catch (error) {
-      console.error('Errore inizializzazione autocomplete:', error);
+      console.error('❌ [Autocomplete] Errore inizializzazione autocomplete:', error);
+
+      // Mostra dettagli dell'errore se disponibili
+      if (error instanceof Error) {
+        console.error('❌ [Autocomplete] Messaggio errore:', error.message);
+        console.error('❌ [Autocomplete] Stack trace:', error.stack);
+      }
     }
   }
 
@@ -244,7 +269,11 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /**
-   * Gestisce il submit del form di ricerca
+   * Gestisce il submit del form di ricerca NORMALE (bottone "Cerca")
+   *
+   * Due scenari:
+   * 1. Autocomplete selezionato → ricerca geografica (Point + raggio)
+   * 2. Testo libero → ricerca testuale (LIKE su city/province/zipCode)
    */
   onSearch(): void {
 
@@ -264,9 +293,15 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
 
     const searchStartedPayload: GetPropertiesCardsRequest = {
       filters: this.buildSearchFilter(),
-      geoFilters: this.buildGeoSearchFilter(),
+      // Aggiungi geoFilters SOLO se c'è un place selezionato dall'autocomplete
+      geoFilters: this.selectedPlace?.coordinates ? this.buildGeoSearchFilter() : undefined,
       pagedRequest: this.buildPagedRequest()
     }
+
+    console.log('🔍 [Search] Ricerca normale avviata:', {
+      hasAutocomplete: !!this.selectedPlace?.coordinates,
+      payload: searchStartedPayload
+    });
 
     this.searchStarted.emit(searchStartedPayload);
   }
@@ -290,12 +325,18 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
 
   /**
    * Costruisce il filtro di ricerca in base a:
-   * 1. Se c'è un luogo selezionato da autocomplete → ricerca geospaziale
-   * 2. Altrimenti → ricerca testuale normale (LIKE)
+   * 1. Se c'è un luogo selezionato da autocomplete → ricerca geospaziale (gestita tramite geoFilters)
+   * 2. Altrimenti → ricerca testuale normale (LIKE su city/province/zipCode)
    */
-  private buildSearchFilter(): SearchPropertiesFilter {
+  private buildSearchFilter(): SearchPropertiesFilters {
     const formValue = this.searchForm.value;
-    const filter: SearchPropertiesFilter = {};
+    const filter: SearchPropertiesFilters = {};
+
+    // Location: aggiungi solo se NON c'è autocomplete selezionato
+    // (se c'è autocomplete, la ricerca geografica viene gestita tramite geoFilters)
+    if (formValue.location && !this.selectedPlace?.coordinates) {
+      filter.location = formValue.location;
+    }
 
     // Altri filtri (invariati)
     if (formValue.propertyType) {
@@ -415,8 +456,18 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
    */
   onMapSearchClick(): void {
     this.showMapSearchOption = false;
-    console.log('Attivazione ricerca in mappa...');
-    // TODO: Implementare la logica per attivare la ricerca tramite mappa
+
+    console.log('🗺️ Click su "Cerca in mappa"');
+
+    // Crea la ricerca con o senza geoFilters (dipende se c'è una location selezionata)
+    const mapSearchPayload: GetPropertiesCardsRequest = {
+      filters: this.buildSearchFilter(),
+      geoFilters: this.selectedPlace?.coordinates ? this.buildGeoSearchFilter() : undefined,
+      pagedRequest: this.buildPagedRequest()
+    };
+
+    console.log('📤 Emissione evento mapSearchClicked con payload:', mapSearchPayload);
+    this.mapSearchClicked.emit(mapSearchPayload);
   }
 
   /**

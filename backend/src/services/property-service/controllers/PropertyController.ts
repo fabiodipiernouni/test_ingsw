@@ -3,8 +3,9 @@ import { propertyService } from '../services/PropertyService';
 import { AuthenticatedRequest } from '@shared/dto/AuthenticatedRequest';
 import { setResponseAsSuccess, setResponseAsError, setResponseAsValidationError, setResponseAsNotFound } from '@shared/utils/helpers';
 import logger from '@shared/utils/logger';
-import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequest';
+import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequestEndpoint/CreatePropertyRequest';
 import { GetPropertiesCardsRequest } from '@property/dto/GetPropertiesCardsRequest';
+import { GetGeoPropertiesCardsRequest } from '@property/dto/GetGeoPropertiesCardsRequest';
 
 export class PropertyController {
   /**
@@ -60,6 +61,24 @@ export class PropertyController {
     }
   }
 
+  async getPropertiesByIdList(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    try {
+      const { ids, sortBy, sortOrder } = req.body as { ids: string[], sortBy: string, sortOrder: 'ASC' | 'DESC' };
+
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        setResponseAsError(res, 'BAD_REQUEST', 'IDs list is required', 400);
+        return;
+      }
+
+      const properties = await propertyService.getPropertiesCardsByIdList({ ids, sortBy, sortOrder });
+
+      setResponseAsSuccess(res, properties);
+    } catch (error: any) {
+      logger.error('Error in getPropertiesByIdList controller:', error);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get properties by ID list', 500);
+    }
+  }
+
   /**
    * Ottiene una proprietà per ID
    * GET /properties/:propertyId
@@ -86,6 +105,26 @@ export class PropertyController {
       }
 
       setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get property', 500);
+    }
+  }
+
+  async getGeoPropertiesCardsPost(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+    const getGeoPropertiesCardsRequest: GetGeoPropertiesCardsRequest = req.body;
+
+    try {
+      const result = await propertyService.getGeoPropertiesCardsV1({
+        filters: getGeoPropertiesCardsRequest.filters,
+        geoFilters: getGeoPropertiesCardsRequest.geoFilters,
+        status: getGeoPropertiesCardsRequest.status,
+        agencyId: getGeoPropertiesCardsRequest.agencyId,
+        sortBy: getGeoPropertiesCardsRequest.sortBy,
+        sortOrder: getGeoPropertiesCardsRequest.sortOrder
+      });
+
+      setResponseAsSuccess(res, result);
+    } catch (error: any) {
+      logger.error('Error in getPropertiesCardsPost PropertyController:', error);
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get properties (geo)', 500);
     }
   }
 

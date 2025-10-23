@@ -1,6 +1,7 @@
 
 import { EnergyClass, ListingType, PropertyStatus, PropertyType } from '@core-services/property/models/types';
 import {PropertyImageModel} from '@core-services/property/models/PropertyImageModel';
+import {GeoJSONPoint} from '@service-shared/types/geojson.types';
 
 
 export interface PropertyCardDto {
@@ -18,6 +19,7 @@ export interface PropertyCardDto {
   floor?: string; // piano dell'immobile, se applicabile
   city: string; // estratto da address.city
   province: string; // estratto da address.province
+  location: GeoJSONPoint; // coordinate geografiche dell'immobile
   primaryImage?: PropertyImageModel; // solo l'immagine principale
   energyClass?: EnergyClass;
   hasElevator: boolean;

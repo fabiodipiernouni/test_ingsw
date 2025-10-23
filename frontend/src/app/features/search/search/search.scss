@@ -137,6 +137,113 @@ $font-icon: 3rem;
       color: $color-primary;
     }
   }
+
+  // Mobile: mostra solo toggle lista/mappa
+  .mobile-view-toggle {
+    display: flex;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    padding: 2px;
+
+    @media (min-width: 769px) {
+      display: none;
+    }
+  }
+
+  // Desktop: mostra bottone mappa
+  .desktop-map-toggle {
+    display: none;
+
+    @media (min-width: 769px) {
+      display: inline-flex;
+    }
+  }
+}
+
+// Split View Layout (Desktop: lista a sinistra, mappa a destra)
+.results-content {
+  display: flex;
+  gap: $gap-lg;
+  margin-bottom: $gap-lg;
+
+  // Mobile: vista singola (solo lista o solo mappa)
+  @media (max-width: 768px) {
+    flex-direction: column;
+
+    .list-section,
+    .map-section {
+      width: 100%;
+      min-height: 500px;
+    }
+
+    .hidden-mobile {
+      display: none !important;
+    }
+
+    .visible-mobile {
+      display: block !important;
+    }
+  }
+
+  // Desktop: split view
+  @media (min-width: 769px) {
+    &.split-view {
+      .list-section {
+        width: 40%;
+        overflow-y: auto;
+        max-height: calc(100vh - 300px);
+        padding-right: 8px;
+
+        // Scrollbar personalizzata
+        &::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        &::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 3px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background: #888;
+          border-radius: 3px;
+
+          &:hover {
+            background: #555;
+          }
+        }
+      }
+
+      .map-section {
+        width: 60%;
+        position: sticky;
+        top: 80px;
+        height: calc(100vh - 300px);
+        min-height: 600px;
+      }
+    }
+
+    // Se mappa non è attiva, lista prende tutto lo spazio
+    &:not(.split-view) {
+      .list-section {
+        width: 100%;
+      }
+    }
+
+    .hidden-mobile,
+    .visible-mobile {
+      display: block !important;
+    }
+  }
+
+  .list-section {
+    flex: 1;
+  }
+
+  .map-section {
+    flex: 1;
+  }
 }
 
 .map-container {

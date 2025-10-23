@@ -68,9 +68,11 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-//router.get('/cards', optionalAuth, propertyController.getPropertiesCards.bind(propertyController));
 router.post('/cards', optionalAuth, validatePropertySearchFilters, propertyController.getPropertiesCardsPost.bind(propertyController));
 
+router.post('/geocards', optionalAuth, validatePropertySearchFilters, propertyController.getGeoPropertiesCardsPost.bind(propertyController));
+
+router.post('/cards/by-ids', optionalAuth, propertyController.getPropertiesByIdList.bind(propertyController));
 /**
  * @swagger
  * /properties:

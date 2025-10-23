@@ -4,14 +4,15 @@ import { Observable, BehaviorSubject, throwError } from 'rxjs';
 import { map, tap, catchError } from 'rxjs/operators';
 
 import { ApiResponse } from '@service-shared/dto/ApiResponse';
-import {PagedRequest} from '@service-shared/dto/pagedRequest';
-import {SearchPropertiesFilter} from '@core/services/property/dto/SearchPropertiesFilter';
 import {PagedResult} from '@service-shared/dto/pagedResult';
 import {PropertyCardDto} from '@core/services/property/dto/PropertyCardDto';
 import {PropertyModel} from '@features/properties/models/PropertyModel';
 import {Helper} from '@core/services/property/Utils/helper';
 import {environment} from '@src/environments/environment';
 import {GetPropertiesCardsRequest} from '@core/services/property/dto/GetPropertiesCardsRequest';
+import {GeoPropertyCardDto} from '@core/services/property/dto/GeoPropertyCardDto';
+import {GetGeoPropertiesCardsRequest} from '@core/services/property/dto/GetGeoPropertiesCardsRequest';
+import {PropertyCard} from '@features/properties/property-card/property-card';
 
 @Injectable({
   providedIn: 'root'
@@ -31,6 +32,48 @@ export class PropertyService {
 
   constructor() {
 
+  }
+
+  getPropertyCardsByIds(ids: string[], sortBy: string = 'createdAt', sortOrder:string = 'DESC'): Observable<PropertyCardDto[]> {
+    this.isLoading.set(true);
+    const body = { ids, sortBy, sortOrder };
+
+    return this.http.post<ApiResponse<PropertyCardDto[]>>(`${this.API_URL}/cards/by-ids`, body).pipe(
+      map(response => {
+        if (response.success && response.data) {
+          return response.data;
+        }
+        throw new Error(response.message);
+      }),
+      tap(() => { this.isLoading.set(false); }),
+      catchError((error) => {
+        console.error('Errore durante il recupero delle proprietà per ID:', error);
+        this.isLoading.set(false);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  geoSearchProperties(req: GetGeoPropertiesCardsRequest): Observable<GeoPropertyCardDto[]> {
+    this.isLoading.set(true);
+
+    // POST /properties/geocards
+    return this.http.post<ApiResponse<GeoPropertyCardDto[]>>(`${this.API_URL}/geocards`, req).pipe(
+      map(response => {
+        if (response.success && response.data) {
+          return response.data;
+        }
+        throw new Error(response.message);
+      }),
+      tap(() => {
+        this.isLoading.set(false);
+      }),
+      catchError((error) => {
+        console.error('Errore durante la ricerca geografica delle proprietà:', error);
+        this.isLoading.set(false);
+        return throwError(() => error);
+      })
+    );
   }
 
   searchProperties(req: GetPropertiesCardsRequest): Observable<PagedResult<PropertyCardDto>> {
