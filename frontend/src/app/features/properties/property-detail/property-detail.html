@@ -219,7 +219,7 @@
             </mat-card-content>
           </mat-card>
 
-          <!-- Map Placeholder -->
+          <!-- Map -->
           <mat-card class="map-card">
             <mat-card-header>
               <mat-card-title>
@@ -228,11 +228,22 @@
               </mat-card-title>
             </mat-card-header>
             <mat-card-content>
-              <div class="map-placeholder">
-                <mat-icon>place</mat-icon>
-                <p>{{ getFullAddress() }}</p>
-                <small>Mappa interattiva disponibile a breve</small>
-              </div>
+              @if (property()?.location) {
+                <app-property-location-map
+                  [latitude]="property()!.location.coordinates[1]"
+                  [longitude]="property()!.location.coordinates[0]">
+                </app-property-location-map>
+                <div class="map-address">
+                  <mat-icon>place</mat-icon>
+                  <p>{{ getFullAddress() }}</p>
+                </div>
+              } @else {
+                <div class="map-placeholder">
+                  <mat-icon>place</mat-icon>
+                  <p>{{ getFullAddress() }}</p>
+                  <small>Coordinate non disponibili</small>
+                </div>
+              }
             </mat-card-content>
           </mat-card>
         </div>

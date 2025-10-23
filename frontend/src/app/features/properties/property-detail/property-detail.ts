@@ -14,6 +14,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { PropertyService } from '@core/services/property/property.service';
 import { PropertyModel } from '@features/properties/models/PropertyModel';
 import { PropertyImageModel } from '@core/services/property/models/PropertyImageModel';
+import { PropertyLocationMap } from './property-location-map/property-location-map';
 
 @Component({
   selector: 'app-property-detail',
@@ -26,7 +27,8 @@ import { PropertyImageModel } from '@core/services/property/models/PropertyImage
     MatChipsModule,
     MatProgressSpinnerModule,
     MatDividerModule,
-    MatTooltipModule
+    MatTooltipModule,
+    PropertyLocationMap
   ],
   templateUrl: './property-detail.html',
   styleUrl: './property-detail.scss'
