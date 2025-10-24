@@ -1,7 +1,6 @@
 import {
   Component,
   Input,
-  OnInit,
   AfterViewInit,
   OnDestroy,
   ViewChild,
@@ -26,7 +25,7 @@ declare const google: any;
   templateUrl: './property-location-map.html',
   styleUrls: ['./property-location-map.scss']
 })
-export class PropertyLocationMap implements OnInit, AfterViewInit, OnChanges, OnDestroy {
+export class PropertyLocationMap implements AfterViewInit, OnChanges, OnDestroy {
   @ViewChild('mapContainer', { static: false }) mapContainer!: ElementRef;
 
   @Input() latitude!: number;
@@ -39,10 +38,6 @@ export class PropertyLocationMap implements OnInit, AfterViewInit, OnChanges, On
   private readonly MIN_ZOOM = 3; // Zoom minimo per evitare zoom out eccessivo
 
   isLoading = true;
-
-  ngOnInit(): void {
-    // Initialization logic
-  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['latitude'] || changes['longitude']) {
