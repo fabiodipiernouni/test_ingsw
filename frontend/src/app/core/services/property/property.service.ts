@@ -12,7 +12,7 @@ import {environment} from '@src/environments/environment';
 import {GetPropertiesCardsRequest} from '@core/services/property/dto/GetPropertiesCardsRequest';
 import {GeoPropertyCardDto} from '@core/services/property/dto/GeoPropertyCardDto';
 import {GetGeoPropertiesCardsRequest} from '@core/services/property/dto/GetGeoPropertiesCardsRequest';
-import {PropertyCard} from '@features/properties/property-card/property-card';
+
 
 @Injectable({
   providedIn: 'root'

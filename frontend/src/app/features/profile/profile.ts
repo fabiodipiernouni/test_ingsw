@@ -84,13 +84,23 @@ export class Profile implements OnInit {
       { duration: 3000, panelClass: ['success-snackbar'] }
     );
   }
-  
+
   onTabChange(index: number): void {
     this.selectedTab.set(index);
   }
 
   goToDashboard(): void {
     this.router.navigate(['/dashboard']);
+  }
+
+  logout(): void {
+    this.authService.logout();
+    this.snackBar.open(
+      'Logout effettuato con successo',
+      'Chiudi',
+      { duration: 3000, panelClass: ['success-snackbar'] }
+    );
+    this.router.navigate(['/auth/login']);
   }
 
   getJoinDateLabel(): string {

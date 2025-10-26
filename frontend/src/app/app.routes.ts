@@ -90,15 +90,15 @@ export const routes: Routes = [
     path: 'properties',
     children: [
       {
-        path: ':id',
-        loadComponent: () => import('./features/properties/property-detail/property-detail').then(m => m.PropertyDetail),
-        title: 'Dettaglio Immobile - DietiEstates25'
-      },
-      {
         path: 'upload',
         loadComponent: () => import('./features/properties/property-upload/property-upload').then(m => m.PropertyUpload),
         canActivate: [authGuard, agentGuard],
         title: 'Carica Immobile - DietiEstates25'
+      },
+      {
+        path: ':id',
+        loadComponent: () => import('./features/properties/property-detail/property-detail').then(m => m.PropertyDetail),
+        title: 'Dettaglio Immobile - DietiEstates25'
       }
     ]
   },

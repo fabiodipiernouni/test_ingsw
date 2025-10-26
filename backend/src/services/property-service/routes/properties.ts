@@ -190,12 +190,9 @@ router.post('/cards/by-ids', optionalAuth, propertyController.getPropertiesByIdL
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post(
-  '/',
-  authenticateToken,
-  validatePropertyCreate,
-  propertyController.createProperty.bind(propertyController)
-);
+router.post('/', authenticateToken, validatePropertyCreate, propertyController.createProperty.bind(propertyController));
+
+
 
 /**
  * @swagger

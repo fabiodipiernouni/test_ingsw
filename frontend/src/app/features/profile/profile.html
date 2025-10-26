@@ -11,14 +11,14 @@
             size="large">
           </app-user-avatar>
         </div>
-        
+
         <div class="user-details">
           <h1 class="user-name">{{ fullName() }}</h1>
           <div class="user-role">
             <mat-icon>{{ isAgent() ? 'work' : isAdmin() || isOwner() ? 'admin_panel_settings' : 'person' }}</mat-icon>
             {{ userRoleLabel() }}
           </div>
-          
+
           @if (currentUser()?.email) {
             <div class="user-email">
               <mat-icon>email</mat-icon>
@@ -89,20 +89,25 @@
           <mat-icon>dashboard</mat-icon>
           Dashboard
         </button>
-        
+
         @if (!currentUser()?.isVerified) {
           <button mat-raised-button color="warn" (click)="onTabChange(1)">
             <mat-icon>email</mat-icon>
             Verifica Email
           </button>
         }
-        
+
         @if (currentUser()?.passwordChangeRequired) {
           <button mat-raised-button color="warn" (click)="onTabChange(0)">
             <mat-icon>security</mat-icon>
             Cambia Password (Richiesto)
           </button>
         }
+
+        <button mat-raised-button color="accent" (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          Logout
+        </button>
       </mat-card-actions>
     </mat-card>
   </div>
@@ -110,12 +115,12 @@
   <div class="profile-tabs">
     <mat-card>
       <mat-tab-group [selectedIndex]="selectedTab()" (selectedIndexChange)="onTabChange($event)">
-        
+
         <!-- Tab Cambia Password -->
         <mat-tab label="Cambia Password">
           <ng-template matTabContent>
             <div class="tab-content">
-              <app-change-password 
+              <app-change-password
                 (passwordChanged)="onPasswordChanged()">
               </app-change-password>
             </div>

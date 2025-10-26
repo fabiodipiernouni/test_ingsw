@@ -1,8 +1,6 @@
 import {PropertyModel} from '@features/properties/models/PropertyModel';
 import {PropertyCardDto} from '@core/services/property/dto/PropertyCardDto';
-import {GeoPropertyCardDto} from '@core/services/property/dto/GeoPropertyCardDto';
 import {Address} from '@service-shared/models/Address';
-import {property} from 'lodash-es';
 
 declare const google: any;
 
@@ -38,26 +36,39 @@ export class Helper {
   }
 
   /**
-   * Fallback: geocodifica l'indirizzo usando city + province e aggiunge il marker
+   * Geocodifica l'indirizzo provando diverse varianti per maggiore flessibilità
    */
   static async geocodeByAddress(address: Address): Promise<{ lat: number; lng: number } | undefined> {
-
-    const addressFormatted = `${address.street}, ${address.zipCode}, ${address.city}, ${address.province}, ${address.country}`;
     const geocoder = new google.maps.Geocoder();
 
-    try {
-      const result = await geocoder.geocode({ addressFormatted });
-      if (result.results && result.results.length > 0) {
-        const location = result.results[0].geometry.location;
-        console.log(`  ✅ Geocoding riuscito per "${addressFormatted}"`);
-        return { lat: location.lat(), lng: location.lng() };
-      } else {
-        console.warn(`  ❌ Geocoding fallito per "${address}": nessun risultato`);
+    // Prova diverse varianti dell'indirizzo per aumentare le probabilità di successo
+    const addressVariants = [
+      // Variante 1: Indirizzo completo
+      `${address.street}, ${address.zipCode}, ${address.city}, ${address.province}, ${address.country}`,
+      // Variante 2: Senza CAP
+      `${address.street}, ${address.city}, ${address.province}, ${address.country}`,
+      // Variante 3: Solo città e provincia
+      `${address.city}, ${address.province}, ${address.country}`,
+      // Variante 4: Solo città
+      `${address.city}, ${address.country}`
+    ];
+
+    for (const addressString of addressVariants) {
+      try {
+        const result = await geocoder.geocode({ address: addressString }); // ✅ Parametro corretto: 'address'
+
+        if (result.results && result.results.length > 0) {
+          const location = result.results[0].geometry.location;
+          console.log(`  ✅ Geocoding riuscito per "${addressString}"`);
+          return { lat: location.lat(), lng: location.lng() };
+        }
+      } catch (error) {
+        console.warn(`  ⚠️ Geocoding fallito per "${addressString}":`, error);
+        // Continua con la prossima variante
       }
-    } catch (error) {
-      console.warn(`  ❌ Geocoding fallito per "${address}":`, error);
     }
 
+    console.warn(`  ❌ Geocoding fallito per tutte le varianti dell'indirizzo`);
     return undefined;
   }
 

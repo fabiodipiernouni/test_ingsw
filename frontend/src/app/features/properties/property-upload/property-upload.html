@@ -171,64 +171,7 @@
           </form>
         </mat-step>
 
-        <!-- Step 3: Address -->
-        <mat-step [stepControl]="addressForm" label="Indirizzo">
-          <form [formGroup]="addressForm">
-            <div class="form-section">
-              <h3>Posizione Immobile</h3>
-
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Via/Indirizzo</mat-label>
-                <input matInput
-                       formControlName="street"
-                       placeholder="Es: Via dei Mille 123">
-                <mat-error>{{ getErrorMessage(addressForm, 'street') }}</mat-error>
-              </mat-form-field>
-
-              <div class="form-row">
-                <mat-form-field appearance="outline">
-                  <mat-label>Città</mat-label>
-                  <input matInput
-                         formControlName="city"
-                         placeholder="Es: Napoli">
-                  <mat-error>{{ getErrorMessage(addressForm, 'city') }}</mat-error>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Provincia</mat-label>
-                  <input matInput
-                         formControlName="province"
-                         placeholder="Es: NA">
-                  <mat-error>{{ getErrorMessage(addressForm, 'province') }}</mat-error>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>CAP</mat-label>
-                  <input matInput
-                         formControlName="zipCode"
-                         placeholder="80100">
-                  <mat-error>{{ getErrorMessage(addressForm, 'zipCode') }}</mat-error>
-                </mat-form-field>
-              </div>
-            </div>
-
-            <div class="step-actions">
-              <button mat-button matStepperPrevious>
-                <mat-icon>arrow_back</mat-icon>
-                Indietro
-              </button>
-              <button mat-raised-button
-                      color="primary"
-                      matStepperNext
-                      [disabled]="!addressForm.valid">
-                Avanti
-                <mat-icon>arrow_forward</mat-icon>
-              </button>
-            </div>
-          </form>
-        </mat-step>
-
-        <!-- Step 4: Images -->
+        <!-- Step 3: Images -->
         <mat-step label="Foto">
           <div class="form-section">
             <h3>Foto dell'Immobile</h3>
@@ -251,16 +194,41 @@
               @if (uploadedImages().length > 0) {
                 <div class="uploaded-images">
                   <h4>Immagini caricate ({{ uploadedImages().length }})</h4>
+                  <p class="primary-hint">
+                    <mat-icon>info</mat-icon>
+                    Clicca su "Imposta come copertina" per scegliere la foto principale
+                  </p>
                   <div class="images-grid">
                     @for (image of uploadedImages(); track $index) {
-                      <div class="image-preview">
-                        <img [src]="image.name" [alt]="image.name">
+                      <div class="image-preview" [class.is-primary]="image.isPrimary">
+                        <img [src]="image.previewUrl" [alt]="image.file.name">
+
+                        <!-- Badge Copertina -->
+                        @if (image.isPrimary) {
+                          <div class="primary-badge">
+                            <mat-icon>star</mat-icon>
+                            COPERTINA
+                          </div>
+                        }
+
+                        <!-- Pulsante Rimuovi -->
                         <button mat-icon-button
                                 class="remove-image"
-                                (click)="removeImage($index)">
+                                (click)="removeImage($index)"
+                                matTooltip="Rimuovi immagine">
                           <mat-icon>close</mat-icon>
                         </button>
-                        <div class="image-name">{{ image.name }}</div>
+
+                        <!-- Pulsante Imposta come Copertina -->
+                        @if (!image.isPrimary) {
+                          <button mat-mini-fab class="set-primary-btn" color="accent" type="button" tabindex="0"
+                                  (click)="setPrimaryImage($index); $event.stopPropagation()" (keyup)="$event.key === 'Enter' && setPrimaryImage($index)"
+                                  matTooltip="Imposta come copertina" [attr.aria-label]="'Imposta foto ' + ($index + 1) + ' come copertina'">
+                            <mat-icon>star_border</mat-icon>
+                          </button>
+                        }
+
+                        <div class="image-name">{{ image.file.name }}</div>
                       </div>
                     }
                   </div>
@@ -275,21 +243,136 @@
               </button>
               <button mat-raised-button
                       color="primary"
-                      (click)="onSubmit()"
-                      [disabled]="isLoading() || !basicInfoForm.valid || !detailsForm.valid || !addressForm.valid">
-                @if (isLoading()) {
-                  <ng-container>
-                    <mat-icon class="spin">refresh</mat-icon>
-                    Caricamento...
-                  </ng-container>
-                } @else {
-                  <ng-container>
-                    <mat-icon>publish</mat-icon>
-                    Pubblica Immobile
-                  </ng-container>
-                }
+                      matStepperNext
+                      [disabled]="!detailsForm.valid">
+                Avanti
+                <mat-icon>arrow_forward</mat-icon>
               </button>
             </div>
+          </div>
+        </mat-step>
+
+        <!-- Step 4: Address & Location -->
+        <mat-step [stepControl]="addressForm" label="Posizione">
+          <div class="form-section">
+            <h3>Posizione dell'Immobile</h3>
+            <p class="section-hint">
+              <mat-icon>info</mat-icon>
+              Compila manualmente l'indirizzo oppure clicca sulla mappa per posizionare il marker
+            </p>
+
+            <div class="address-location-container">
+              <!-- Colonna Sinistra: Form Indirizzo -->
+              <div class="address-form-column">
+                <form [formGroup]="addressForm">
+                  <h4>Indirizzo Manuale</h4>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Via/Indirizzo</mat-label>
+                    <input matInput
+                           formControlName="street"
+                           placeholder="Es: Via dei Mille 123"
+                           (input)="onAddressChange()"
+                           (blur)="onAddressChange()">
+                    <mat-error>{{ getErrorMessage(addressForm, 'street') }}</mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Città</mat-label>
+                    <input matInput
+                           formControlName="city"
+                           placeholder="Es: Napoli"
+                           (input)="onAddressChange()"
+                           (blur)="onAddressChange()">
+                    <mat-error>{{ getErrorMessage(addressForm, 'city') }}</mat-error>
+                  </mat-form-field>
+
+                  <div class="form-row">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Provincia</mat-label>
+                      <input matInput
+                             formControlName="province"
+                             placeholder="Es: NA"
+                             (input)="onAddressChange()"
+                             (blur)="onAddressChange()">
+                      <mat-error>{{ getErrorMessage(addressForm, 'province') }}</mat-error>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>CAP</mat-label>
+                      <input matInput
+                             formControlName="zipCode"
+                             placeholder="80100"
+                             (input)="onAddressChange()"
+                             (blur)="onAddressChange()">
+                      <mat-error>{{ getErrorMessage(addressForm, 'zipCode') }}</mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <button mat-raised-button
+                          color="primary"
+                          type="button"
+                          (click)="geocodeAddress()"
+                          [disabled]="!addressForm.valid || isGeocoding()"
+                          class="geocode-btn">
+                    @if (isGeocoding()) {
+                      <mat-icon class="spin">refresh</mat-icon>
+                      Geocoding in corso...
+                    } @else {
+                      <mat-icon>place</mat-icon>
+                      Posiziona sulla Mappa
+                    }
+                  </button>
+
+                  @if (geocodingError()) {
+                    <div class="error-message">
+                      <mat-icon>error</mat-icon>
+                      {{ geocodingError() }}
+                    </div>
+                  }
+
+                  @if (currentLocation()) {
+                    <div class="location-info">
+                      <mat-icon>check_circle</mat-icon>
+                      Coordinate: {{ currentLocation()!.lat.toFixed(6) }}, {{ currentLocation()!.lng.toFixed(6) }}
+                    </div>
+                  }
+                </form>
+              </div>
+
+              <!-- Colonna Destra: Mappa -->
+              <div class="map-column">
+                <h4>Mappa Interattiva</h4>
+                <div class="map-hint">
+                  <mat-icon>touch_app</mat-icon>
+                  Clicca sulla mappa per posizionare il marker della proprietà
+                </div>
+                <div #mapContainer class="map-container"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-actions">
+            <button mat-button matStepperPrevious>
+              <mat-icon>arrow_back</mat-icon>
+              Indietro
+            </button>
+            <button mat-raised-button
+                    color="primary"
+                    (click)="onSubmit()"
+                    [disabled]="isLoading() || !basicInfoForm.valid || !detailsForm.valid || !addressForm.valid || !currentLocation()">
+              @if (isLoading()) {
+                <ng-container>
+                  <mat-icon class="spin">refresh</mat-icon>
+                  Caricamento...
+                </ng-container>
+              } @else {
+                <ng-container>
+                  <mat-icon>publish</mat-icon>
+                  Pubblica Immobile
+                </ng-container>
+              }
+            </button>
           </div>
         </mat-step>
       </mat-stepper>

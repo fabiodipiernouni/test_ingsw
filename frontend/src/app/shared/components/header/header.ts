@@ -32,9 +32,9 @@ import { UserAvatar } from '@shared/components/user-avatar/user-avatar';
   styleUrl: './header.scss'
 })
 export class Header implements OnInit {
-  private authService = inject(AuthService);
+  private readonly authService = inject(AuthService);
   // private notificationService = inject(NotificationService); //TODO
-  private router = inject(Router);
+  private readonly router = inject(Router);
 
   // Use signals directly from AuthService
   currentUser = this.authService.currentUser;
