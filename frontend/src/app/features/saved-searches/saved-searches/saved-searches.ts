@@ -7,19 +7,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { PropertyService } from '@core/services/property/property.service';
-import {SearchPropertiesFilters} from '@core/services/property/dto/SearchPropertiesFilters';
-
-
-interface SavedSearch {
-  id: string;
-  name: string;
-  filters: SearchPropertiesFilters;
-  createdAt: Date;
-  resultsCount: number;
-  isNotificationEnabled: boolean;
-  hasNewResults: boolean;
-}
+import { MatDialog } from '@angular/material/dialog';
+import { SearchService } from '@core/services/search/search.service';
+import { SavedSearchModel } from '@core/services/search/models/SavedSearchModel';
+import { EditSearchNameDialog } from '@features/saved-searches/edit-search-name-dialog/edit-search-name-dialog';
 
 @Component({
   selector: 'app-saved-searches',
@@ -37,111 +28,114 @@ interface SavedSearch {
   styleUrl: './saved-searches.scss'
 })
 export class SavedSearches implements OnInit {
-  private propertyService = inject(PropertyService);
+  private searchService = inject(SearchService);
   private router = inject(Router);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
-  savedSearches = signal<SavedSearch[]>([]);
-  isLoading = signal(false);
+  savedSearches = this.searchService.savedSearches;
+  isLoading = this.searchService.isLoading;
 
   ngOnInit(): void {
     this.loadSavedSearches();
   }
 
   loadSavedSearches(): void {
-    this.isLoading.set(true);
-    // Simulate API call - replace with actual service call
-    setTimeout(() => {
-      this.savedSearches.set([
-        {
-          id: '1',
-          name: 'Appartamenti Vomero',
-          filters: {
-            location: 'Vomero, Napoli',
-            propertyType: 'apartment',
-            listingType: 'sale',
-            priceMin: 200000,
-            priceMax: 350000,
-            bedrooms: 2
-          },
-          createdAt: new Date('2024-01-15'),
-          resultsCount: 24,
-          isNotificationEnabled: true,
-          hasNewResults: true
-        },
-        {
-          id: '2',
-          name: 'Villa Posillipo',
-          filters: {
-            location: 'Posillipo, Napoli',
-            propertyType: 'villa',
-            listingType: 'sale',
-            priceMin: 400000,
-            priceMax: 800000,
-            bedrooms: 4,
-            hasGarden: true
-          },
-          createdAt: new Date('2024-01-10'),
-          resultsCount: 8,
-          isNotificationEnabled: false,
-          hasNewResults: false
-        },
-        {
-          id: '3',
-          name: 'Uffici Centro',
-          filters: {
-            location: 'Centro Storico, Napoli',
-            propertyType: 'office',
-            listingType: 'rent',
-            priceMin: 800,
-            priceMax: 2000
-          },
-          createdAt: new Date('2024-01-05'),
-          resultsCount: 15,
-          isNotificationEnabled: true,
-          hasNewResults: false
-        }
-      ]);
-      this.isLoading.set(false);
-    }, 1000);
+    this.searchService.getSavedSearches().subscribe({
+      next: () => {
+        // Dati caricati con successo, già gestiti nel service
+      },
+      error: (error) => {
+        console.error('Errore nel caricamento delle ricerche salvate:', error);
+        this.snackBar.open(
+          'Errore nel caricamento delle ricerche salvate',
+          'Chiudi',
+          { duration: 3000 }
+        );
+      }
+    });
   }
 
-  executeSearch(search: SavedSearch): void {
+  executeSearch(search: SavedSearchModel): void {
     this.router.navigate(['/search'], {
       queryParams: { filters: JSON.stringify(search.filters) }
     });
   }
 
-  toggleNotifications(search: SavedSearch): void {
-    search.isNotificationEnabled = !search.isNotificationEnabled;
-    this.snackBar.open(
-      `Notifiche ${search.isNotificationEnabled ? 'attivate' : 'disattivate'} per "${search.name}"`,
-      'Chiudi',
-      { duration: 3000 }
-    );
-  }
-
-  editSearch(search: SavedSearch): void {
-    // Navigate to search page with pre-filled filters for editing
-    this.router.navigate(['/search'], {
-      queryParams: {
-        filters: JSON.stringify(search.filters),
-        editId: search.id
+  toggleNotifications(search: SavedSearchModel): void {
+    const newValue = !search.isNotificationEnabled;
+    
+    this.searchService.toggleNotifications(search.id, newValue).subscribe({
+      next: () => {
+        this.snackBar.open(
+          `Notifiche ${newValue ? 'attivate' : 'disattivate'} per "${search.name}"`,
+          'Chiudi',
+          { duration: 3000 }
+        );
+      },
+      error: (error) => {
+        console.error('Errore nell\'aggiornamento delle notifiche:', error);
+        this.snackBar.open(
+          'Errore nell\'aggiornamento delle notifiche',
+          'Chiudi',
+          { duration: 3000 }
+        );
       }
     });
   }
 
-  deleteSearch(search: SavedSearch): void {
-    this.savedSearches.update(current =>
-      current.filter(s => s.id !== search.id)
-    );
-    this.snackBar.open(`Ricerca "${search.name}" eliminata`, 'Chiudi', {
-      duration: 3000
+  editSearch(search: SavedSearchModel): void {
+    const dialogRef = this.dialog.open(EditSearchNameDialog, {
+      width: '500px',
+      data: { currentName: search.name }
+    });
+
+    dialogRef.afterClosed().subscribe(newName => {
+      if (newName && newName.trim() && newName !== search.name) {
+        this.searchService.updateSavedSearchName(search.id, newName.trim()).subscribe({
+          next: () => {
+            this.snackBar.open(
+              `Nome aggiornato a "${newName.trim()}"`,
+              'Chiudi',
+              { duration: 3000 }
+            );
+          },
+          error: (error) => {
+            console.error('Errore nell\'aggiornamento del nome:', error);
+            this.snackBar.open(
+              'Errore nell\'aggiornamento del nome',
+              'Chiudi',
+              { duration: 3000 }
+            );
+          }
+        });
+      }
     });
   }
 
-  getFilterSummary(filters: SearchPropertiesFilters): string[] {
+  deleteSearch(search: SavedSearchModel): void {
+    this.searchService.deleteSavedSearch(search.id).subscribe({
+      next: () => {
+        this.snackBar.open(`Ricerca "${search.name}" eliminata`, 'Chiudi', {
+          duration: 3000
+        });
+      },
+      error: (error) => {
+        console.error('Errore nell\'eliminazione della ricerca:', error);
+        this.snackBar.open(
+          'Errore nell\'eliminazione della ricerca',
+          'Chiudi',
+          { duration: 3000 }
+        );
+      }
+    });
+  }
+
+  getFilterSummary(search: SavedSearchModel): string[] {
     const summary: string[] = [];
+    const filters = search.filters?.filters;
+
+    if (!filters) return summary;
 
     if (filters.location) summary.push(filters.location);
     if (filters.propertyType) summary.push(this.getPropertyTypeLabel(filters.propertyType));
@@ -169,11 +163,12 @@ export class SavedSearches implements OnInit {
     return type === 'sale' ? 'Vendita' : 'Affitto';
   }
 
-  formatDate(date: Date): string {
+  formatDate(date: Date | string): string {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
     return new Intl.DateTimeFormat('it-IT', {
       day: 'numeric',
       month: 'long',
       year: 'numeric'
-    }).format(date);
+    }).format(dateObj);
   }
 }

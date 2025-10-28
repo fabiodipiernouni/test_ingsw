@@ -25,6 +25,7 @@ import { PagedRequest } from '@service-shared/dto/pagedRequest';
 import {GetPropertiesCardsRequest} from '@core/services/property/dto/GetPropertiesCardsRequest';
 import {GeoSearchPropertiesFilters} from '@core/services/property/dto/GeoSearchPropertiesFilters';
 import {environment} from '@src/environments/environment';
+import { SavedSearchFilters } from '@src/app/core/services/search/dto/SavedSearchFilters';
 
 // Tipizzazione Google Maps per Autocomplete classico
 interface GoogleMapsWindow extends Window {
@@ -35,6 +36,7 @@ interface GoogleMapsWindow extends Window {
         AutocompleteService: any;
       };
       event: any;
+      Geocoder: any;
     };
   };
 }
@@ -429,6 +431,83 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  /**
+   * Imposta i filtri dal parametro URL o da una ricerca salvata
+   */
+  async setFiltersFromUrl(savedFilters: SavedSearchFilters): Promise<void> {
+    console.log('📝 Impostazione filtri dal parametro URL:', savedFilters);
+    
+    const filters = savedFilters.filters || {};
+    const geoFilters = savedFilters.geoFilters;
+    
+    // Crea l'oggetto per patchValue
+    const formValues: any = {
+      sortBy: savedFilters.sortBy || 'createdAt',
+      sortOrder: savedFilters.sortOrder || 'DESC'
+    };
+
+    // Imposta i filtri standard
+    if (filters.location) {
+      formValues.location = filters.location;
+    }
+    if (filters.propertyType) {
+      formValues.propertyType = filters.propertyType;
+    }
+    if (filters.listingType) {
+      formValues.listingType = filters.listingType;
+    }
+    if (filters.rooms !== undefined && filters.rooms !== null) {
+      formValues.rooms = filters.rooms;
+    }
+    if (filters.bedrooms !== undefined && filters.bedrooms !== null) {
+      formValues.bedrooms = filters.bedrooms;
+    }
+    if (filters.bathrooms !== undefined && filters.bathrooms !== null) {
+      formValues.bathrooms = filters.bathrooms;
+    }
+    if (filters.priceMin !== undefined && filters.priceMin !== null) {
+      formValues.priceMin = filters.priceMin;
+    }
+    if (filters.priceMax !== undefined && filters.priceMax !== null) {
+      formValues.priceMax = filters.priceMax;
+    }
+    if (filters.hasElevator) {
+      formValues.hasElevator = filters.hasElevator;
+    }
+    if (filters.hasBalcony) {
+      formValues.hasBalcony = filters.hasBalcony;
+    }
+    if (filters.hasGarden) {
+      formValues.hasGarden = filters.hasGarden;
+    }
+    if (filters.hasParking) {
+      formValues.hasParking = filters.hasParking;
+    }
+
+    // Se ci sono geoFilters con coordinate, imposta anche selectedPlace
+    if (geoFilters?.radiusSearch?.center) {
+      const coords = geoFilters.radiusSearch.center.coordinates;
+      if (coords && coords.length === 2) {
+        this.selectedPlace = {
+          coordinates: {
+            lng: coords[0],
+            lat: coords[1]
+          }
+        };
+        console.log('📍 Coordinate geo impostate:', this.selectedPlace);
+        
+      }
+    }
+
+    console.log('📝 Valori form da applicare:', formValues);
+
+    // Applica i valori al form
+    this.searchForm.patchValue(formValues);
+    console.log('✅ Filtri applicati al form');
+    
+    this.cdr.detectChanges();
+  }
+
   priceDisplay(): string {
     const min = this.searchForm.get('priceMin')?.value || 0;
     const max = this.searchForm.get('priceMax')?.value || 1000000;
@@ -500,5 +579,83 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
   onLocationInputChange(): void {
     this.formSubmitted = false;
     this.cdr.detectChanges();
+  }
+
+  /**
+   * Genera un nome descrittivo per la ricerca salvata
+   * Usa il nome dell'autocomplete se disponibile, altrimenti genera un nome dai filtri
+   */
+  generateSearchName(): string {
+    const formValue = this.searchForm.value;
+    const parts: string[] = [];
+    
+    // Property type
+    if (formValue.propertyType) {
+      const typeMap: { [key: string]: string } = {
+        'APARTMENT': 'Appartamento',
+        'HOUSE': 'Casa',
+        'VILLA': 'Villa',
+        'OFFICE': 'Ufficio',
+        'COMMERCIAL': 'Commerciale',
+        'GARAGE': 'Garage',
+        'LAND': 'Terreno'
+      };
+      parts.push(typeMap[formValue.propertyType] || formValue.propertyType);
+    }
+    
+    // Listing type
+    if (formValue.listingType) {
+      const listingMap: { [key: string]: string } = {
+        'SALE': 'in vendita',
+        'RENT': 'in affitto'
+      };
+      parts.push(listingMap[formValue.listingType] || formValue.listingType);
+    }
+    
+    // Location - USA IL NOME DELL'AUTOCOMPLETE SE DISPONIBILE
+    if (this.selectedPlace?.formattedAddress) {
+      if (parts.length > 0) {
+        parts.push('a');
+      }
+      parts.push(this.selectedPlace.formattedAddress);
+    } else if (formValue.location) {
+      if (parts.length > 0) {
+        parts.push('a');
+      }
+      parts.push(formValue.location);
+    }
+    
+    // Price range
+    if (formValue.priceMin > 0 || formValue.priceMax < 1000000) {
+      if (formValue.priceMin > 0 && formValue.priceMax < 1000000) {
+        parts.push(`€${formValue.priceMin.toLocaleString('it-IT')}-${formValue.priceMax.toLocaleString('it-IT')}`);
+      } else if (formValue.priceMin > 0) {
+        parts.push(`da €${formValue.priceMin.toLocaleString('it-IT')}`);
+      } else if (formValue.priceMax < 1000000) {
+        parts.push(`fino a €${formValue.priceMax.toLocaleString('it-IT')}`);
+      }
+    }
+    
+    // Rooms/Bedrooms
+    if (formValue.bedrooms) {
+      parts.push(`${formValue.bedrooms}+ camere`);
+    } 
+    if (formValue.rooms) {
+      parts.push(`${formValue.rooms}+ locali`);
+    }
+    
+    // Geo filters (radius)
+    if (this.selectedPlace?.coordinates) {
+      parts.push(`raggio ${environment.geoSearchValues.defaultRadiusKm}km`);
+    }
+    
+    // If no specific filters, generate a generic name with timestamp
+    if (parts.length === 0) {
+      const date = new Date();
+      return `Ricerca del ${date.toLocaleDateString('it-IT')} ${date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+    
+    const name = parts.join(' ').trim();
+    return name ? name.charAt(0).toUpperCase() + name.slice(1) : name;
   }
 }

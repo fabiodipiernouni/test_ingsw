@@ -1,95 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 import { searchService } from '../services/SearchService';
-import { SearchRequest } from '../models/types';
+import { SavedSearchCreateDto } from '../dto/SavedSearchCreateDto';
+import { ToggleNotificationsDto } from '../dto/ToggleNotificationsDto';
+import { UpdateSavedSearchNameDto } from '../dto/UpdateSavedSearchNameDto';
 import { AuthenticatedRequest } from '@shared/dto/AuthenticatedRequest';
-import { setResponseAsSuccess, setResponseAsError, setResponseAsValidationError, setResponseAsNotFound } from '@shared/utils/helpers';
+import { setResponseAsSuccess, setResponseAsError, setResponseAsValidationError, setResponseAsNotFound, formatValidationErrors } from '@shared/utils/helpers';
 import logger from '@shared/utils/logger';
 
 export class SearchController {
   /**
-   * Ricerca proprietà con filtri avanzati
-   * POST /search
-   */
-  async searchProperties(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
-    try {
-      const searchRequest: SearchRequest = req.body;
-      
-      // Estrai l'ID utente se autenticato (opzionale per la ricerca)
-      const userId = req.user?.id;
-      
-      logger.info('Property search request', { 
-        filters: searchRequest,
-        userId: userId || 'anonymous'
-      });
-
-      // Esegui la ricerca
-      const result = await searchService.searchProperties(searchRequest, userId);
-
-      setResponseAsSuccess(res, result, 'Search completed successfully');
-
-    } catch (error: any) {
-      logger.error('Error in searchProperties controller:', error);
-
-      if (error.name === 'ValidationError') {
-        setResponseAsValidationError(res, error.details?.errors || [error.message]);
-        return;
-      }
-
-      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Search failed', 500);
-    }
-  }
-
-  /**
-   * Ottieni suggerimenti di ricerca
-   * GET /search/suggestions
-   */
-  async getSearchSuggestions(req: Request, res: Response, _next: NextFunction): Promise<void> {
-    try {
-      const { query, type = 'location' } = req.query;
-
-      if (!query || typeof query !== 'string') {
-        setResponseAsError(res, 'BAD_REQUEST', 'Query parameter is required', 400);
-        return;
-      }
-
-      if (query.length < 2) {
-        setResponseAsSuccess(res, []);
-        return;
-      }
-
-      const suggestions = await searchService.getSearchSuggestions(query, type as string);
-
-      setResponseAsSuccess(res, suggestions);
-
-    } catch (error: any) {
-      logger.error('Error in getSearchSuggestions controller:', error);
-      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get suggestions', 500);
-    }
-  }
-
-  /**
-   * Ottieni località popolari
-   * GET /search/popular-locations
-   */
-  async getPopularLocations(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
-    //TODO: per ora commento altrimenti non posso eseguire
-    /*try {
-      const popularLocations = await searchService.getPopularLocations();
-
-      successResponse(res, popularLocations);
-
-    } catch (error: any) {
-      logger.error('Error in getPopularLocations controller:', error);
-      errorResponse(res, 'INTERNAL_SERVER_ERROR', 'Failed to get popular locations', 500);
-    }
-    */
-  }
-
-  /**
    * Salva una ricerca
    * POST /search/saved
    */
-  async saveSearch(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+  async saveSearch(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       // Verifica autenticazione
       if (!req.user || !req.user.id) {
@@ -97,25 +22,22 @@ export class SearchController {
         return;
       }
 
-      const { name, filters, isNotificationEnabled = true } = req.body;
-
-      if (!name || !filters) {
-        setResponseAsError(res, 'BAD_REQUEST', 'Name and filters are required', 400);
+      const searchData: SavedSearchCreateDto = plainToInstance(SavedSearchCreateDto, req.body);
+      
+      const errors = await validate(searchData);
+      logger.info('Validation errors:', { errors });
+      if (errors.length > 0) {
+        const str_errors = formatValidationErrors(errors);
+        setResponseAsValidationError(res, str_errors);
         return;
       }
 
       logger.info('Save search request', { 
-        name, 
-        filters, 
-        userId: req.user.id,
-        isNotificationEnabled 
+        filters: searchData.filters, 
+        userId: req.user.id
       });
 
-      const savedSearch = await searchService.createSavedSearch(req.user.id, {
-        name,
-        filters,
-        isNotificationEnabled
-      });
+      const savedSearch = await searchService.createSavedSearch(req.user.id, searchData);
 
       setResponseAsSuccess(res, savedSearch, 'Search saved successfully', 201);
 
@@ -123,7 +45,7 @@ export class SearchController {
       logger.error('Error in saveSearch controller:', error);
 
       if (error.name === 'ValidationError') {
-        setResponseAsValidationError(res, error.details?.errors || [error.message]);
+        setResponseAsValidationError(res, [error.message]);
         return;
       }
 
@@ -149,52 +71,6 @@ export class SearchController {
     } catch (error: any) {
       logger.error('Error in getSavedSearches controller:', error);
       setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get saved searches', 500);
-    }
-  }
-  /**
-   * Aggiorna una ricerca salvata
-   * PUT /search/saved/:searchId
-   */
-  async updateSavedSearch(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
-    try {
-      // Verifica autenticazione
-      if (!req.user || !req.user.id) {
-        setResponseAsError(res, 'UNAUTHORIZED', 'User authentication required', 401);
-        return;
-      }
-
-      const { searchId } = req.params;
-      const updateData = req.body;
-
-      if (!searchId) {
-        setResponseAsError(res, 'BAD_REQUEST', 'Search ID is required', 400);
-        return;
-      }
-
-      logger.info('Update saved search request', { 
-        searchId, 
-        updateData, 
-        userId: req.user.id 
-      });
-
-      const updatedSearch = await searchService.updateSavedSearch(req.user.id, searchId, updateData);
-      setResponseAsSuccess(res, updatedSearch, 'Search updated successfully');
-      next();
-
-    } catch (error: any) {
-      logger.error('Error in updateSavedSearch controller:', error);
-
-      if (error.name === 'NotFoundError') {
-        setResponseAsNotFound(res, error.message);
-        return;
-      }
-
-      if (error.name === 'ValidationError') {
-        setResponseAsValidationError(res, error.details?.errors || [error.message]);
-        return;
-      }
-
-      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to update search', 500);
     }
   }
   /**
@@ -237,10 +113,10 @@ export class SearchController {
   }
 
   /**
-   * Ottieni storico ricerche dell'utente
-   * GET /search/history
+   * Attiva/Disattiva le notifiche per una ricerca salvata
+   * PATCH /search/saved/:searchId/notifications
    */
-  async getSearchHistory(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+  async toggleNotifications(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
       // Verifica autenticazione
       if (!req.user || !req.user.id) {
@@ -248,21 +124,89 @@ export class SearchController {
         return;
       }
 
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      const { searchId } = req.params;
+      
+      const toggleDto: ToggleNotificationsDto = plainToInstance(ToggleNotificationsDto, req.body);
+      
+      const errors = await validate(toggleDto);
+      if (errors.length > 0) {
+        const str_errors = formatValidationErrors(errors);
+        setResponseAsValidationError(res, str_errors);
+        return;
+      }
 
-      logger.info('Get search history request', { 
-        page, 
-        limit, 
-        userId: req.user.id 
+      if (!searchId) {
+        setResponseAsError(res, 'BAD_REQUEST', 'Search ID is required', 400);
+        return;
+      }
+
+      logger.info('Toggle notifications request', { 
+        searchId, 
+        userId: req.user.id,
+        isNotificationEnabled: toggleDto.isNotificationEnabled 
       });
 
-      const historyResponse = await searchService.getUserSearchHistory(req.user.id, page, limit);
-      setResponseAsSuccess(res, historyResponse);
+      const updatedSearch = await searchService.toggleNotifications(req.user.id, searchId, toggleDto.isNotificationEnabled);
+      setResponseAsSuccess(res, updatedSearch, 'Notifications updated successfully');
 
     } catch (error: any) {
-      logger.error('Error in getSearchHistory controller:', error);
-      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get search history', 500);
+      logger.error('Error in toggleNotifications controller:', error);
+
+      if (error.name === 'NotFoundError') {
+        setResponseAsNotFound(res, error.message);
+        return;
+      }
+
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to update notifications', 500);
+    }
+  }
+
+  /**
+   * Aggiorna il nome di una ricerca salvata
+   * PATCH /search/saved/:searchId/name
+   */
+  async updateSavedSearchName(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+    try {
+      // Verifica autenticazione
+      if (!req.user || !req.user.id) {
+        setResponseAsError(res, 'UNAUTHORIZED', 'User authentication required', 401);
+        return;
+      }
+
+      const { searchId } = req.params;
+      
+      const updateDto: UpdateSavedSearchNameDto = plainToInstance(UpdateSavedSearchNameDto, req.body);
+      
+      const errors = await validate(updateDto);
+      if (errors.length > 0) {
+        const str_errors = formatValidationErrors(errors);
+        setResponseAsValidationError(res, str_errors);
+        return;
+      }
+
+      if (!searchId) {
+        setResponseAsError(res, 'BAD_REQUEST', 'Search ID is required', 400);
+        return;
+      }
+
+      logger.info('Update saved search name request', { 
+        searchId, 
+        userId: req.user.id,
+        newName: updateDto.name 
+      });
+
+      const updatedSearch = await searchService.updateSavedSearchName(req.user.id, searchId, updateDto.name);
+      setResponseAsSuccess(res, updatedSearch, 'Search name updated successfully');
+
+    } catch (error: any) {
+      logger.error('Error in updateSavedSearchName controller:', error);
+
+      if (error.name === 'NotFoundError') {
+        setResponseAsNotFound(res, error.message);
+        return;
+      }
+
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to update search name', 500);
     }
   }
 }

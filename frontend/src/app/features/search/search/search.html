@@ -43,12 +43,24 @@
         </div>
 
         <div class="results-actions">
-          @if ((searchResult()?.totalCount ?? 0) > 0) {
-            <button mat-icon-button
-                    (click)="saveCurrentSearch()"
-                    matTooltip="Salva questa ricerca">
-              <mat-icon>bookmark_add</mat-icon>
-            </button>
+          @if (isAuthenticated() && (searchResult()?.totalCount ?? 0) > 0) {
+            @if (currentSavedSearchId()) {
+              <!-- Pulsante per eliminare la ricerca salvata -->
+              <button mat-icon-button
+                      (click)="deleteSavedSearch()"
+                      matTooltip="Elimina ricerca salvata"
+                      class="desktop-map-toggle">
+                <mat-icon>bookmark_remove</mat-icon>
+              </button>
+            } @else {
+              <!-- Pulsante per salvare la ricerca -->
+              <button mat-icon-button
+                      (click)="saveCurrentSearch()"
+                      matTooltip="Salva questa ricerca"
+                      class="desktop-map-toggle">
+                <mat-icon>bookmark_add</mat-icon>
+              </button>
+            }
 
             <!-- Mobile: Toggle Lista/Mappa -->
             <div class="mobile-view-toggle">

@@ -16,6 +16,7 @@ import { PropertyImage } from './PropertyImage';
 import { PropertyFavorite } from './PropertyFavorite';
 import { PropertyView } from './PropertyView';
 import { GeoJSONPoint, createGeoJSONPoint } from '@shared/types/geojson.types';
+import { EnergyClass, LISTING_TYPES, ListingType, PROPERTY_STATUS, PROPERTY_TYPES, PropertyStatus, PropertyType, ENERGY_CLASSES } from '@services/property-service/models/types';
 
 @Table({
   tableName: 'properties',
@@ -54,17 +55,17 @@ export class Property extends Model {
   price!: number;
 
   @AllowNull(false)
-  @Column({ type: DataType.ENUM('apartment', 'villa', 'house', 'loft', 'office', 'commercial', 'land'), field: 'property_type' })
-  propertyType!: 'apartment' | 'villa' | 'house' | 'loft' | 'office' | 'commercial' | 'land';
+  @Column({ type: DataType.ENUM(...PROPERTY_TYPES), field: 'property_type' })
+  propertyType!: PropertyType;
 
   @AllowNull(false)
-  @Column({ type: DataType.ENUM('sale', 'rent'), field: 'listing_type' })
-  listingType!: 'sale' | 'rent';
+  @Column({ type: DataType.ENUM(...LISTING_TYPES), field: 'listing_type' })
+  listingType!: ListingType;
 
   @AllowNull(false)
   @Default('active')
-  @Column(DataType.ENUM('active', 'pending', 'sold', 'rented', 'withdrawn'))
-  status!: 'active' | 'pending' | 'sold' | 'rented' | 'withdrawn';
+  @Column(DataType.ENUM(...PROPERTY_STATUS))
+  status!: PropertyStatus;
 
   @AllowNull(false)
   @Column(DataType.INTEGER)
@@ -87,8 +88,8 @@ export class Property extends Model {
   floor?: string;
 
   @AllowNull(true)
-  @Column({ type: DataType.ENUM('A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G'), field: 'energy_class' })
-  energyClass?: 'A+' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
+  @Column({ type: DataType.ENUM(...ENERGY_CLASSES), field: 'energy_class' })
+  energyClass?: EnergyClass;
 
   @AllowNull(false)
   @Default(false)

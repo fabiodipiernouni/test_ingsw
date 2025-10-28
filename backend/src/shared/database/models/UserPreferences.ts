@@ -90,11 +90,6 @@ export class UserPreferences extends Model {
   @Column(DataType.BOOLEAN)
   profileVisibility!: boolean;
 
-  @AllowNull(false)
-  @Default(false)
-  @Column(DataType.BOOLEAN)
-  shareSearchHistory!: boolean;
-
   // Display preferences
   @AllowNull(false)
   @Default('list')

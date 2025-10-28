@@ -1,5 +1,36 @@
 import { Response } from 'express';
+import { ValidationError } from 'class-validator';
 import { ApiResponse } from '@shared/dto/ApiResponse';
+
+/**
+ * Estrae ricorsivamente tutti i messaggi di errore da un ValidationError,
+ * inclusi gli errori innestati nei children
+ */
+export const extractValidationErrors = (error: ValidationError): string[] => {
+  const errors: string[] = [];
+  
+  // Aggiungi i constraints del livello corrente
+  if (error.constraints) {
+    errors.push(...Object.values(error.constraints));
+  }
+  
+  // Processa ricorsivamente i children (errori innestati)
+  if (error.children && error.children.length > 0) {
+    for (const child of error.children) {
+      errors.push(...extractValidationErrors(child));
+    }
+  }
+  
+  return errors;
+};
+
+/**
+ * Converte un array di ValidationError in un array di stringhe di errore,
+ * gestendo anche gli errori innestati
+ */
+export const formatValidationErrors = (errors: ValidationError[]): string[] => {
+  return errors.flatMap(error => extractValidationErrors(error));
+};
 
 /**
  * Success response helper

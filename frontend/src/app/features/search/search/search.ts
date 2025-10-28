@@ -1,6 +1,6 @@
-import { Component, inject, signal, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, signal, OnDestroy, OnInit, AfterViewInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { Subject, firstValueFrom } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,6 +10,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { PropertyService } from '@core/services/property/property.service';
 import { MapStateService } from '@core/services/shared/map-state.service';
+import { SearchService } from '@core/services/search/search.service';
 
 import {MatTooltip} from '@angular/material/tooltip';
 import {PropertyList} from '@features/properties/property-list/property-list';
@@ -21,6 +22,8 @@ import {GetPropertiesCardsRequest} from '@core/services/property/dto/GetProperti
 import {RadiusSearch} from '@service-shared/dto/RadiusSearch';
 import {GetGeoPropertiesCardsRequest} from '@core/services/property/dto/GetGeoPropertiesCardsRequest';
 import {GeoPropertyCardDto} from '@core/services/property/dto/GeoPropertyCardDto';
+import { AuthService } from '@src/app/core/services/auth/auth.service';
+import { SavedSearchFilters } from '@src/app/core/services/search/dto/SavedSearchFilters';
 
 @Component({
   selector: 'app-search',
@@ -39,12 +42,15 @@ import {GeoPropertyCardDto} from '@core/services/property/dto/GeoPropertyCardDto
   templateUrl: './search.html',
   styleUrl: './search.scss'
 })
-export class Search implements OnInit, OnDestroy {
+export class Search implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild(SearchMap) searchMapComponent?: SearchMap;
   @ViewChild(SearchForm) searchFormComponent?: SearchForm;
 
   private readonly propertyService = inject(PropertyService);
+  private readonly searchService = inject(SearchService);
+  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly snackBar = inject(MatSnackBar);
   private readonly mapStateService = inject(MapStateService);
   private readonly destroy$ = new Subject<void>();
@@ -54,6 +60,9 @@ export class Search implements OnInit, OnDestroy {
   currentFilters = signal<GetPropertiesCardsRequest>({});
   isLoading = signal<boolean>(false);
   emptyResultMessage = signal<string>('');
+  currentSavedSearchId = signal<string | null>(null); // ID della ricerca salvata corrente
+
+  isAuthenticated = this.authService.isAuthenticated;
 
   // Map state
   showMap = signal<boolean>(false);
@@ -68,6 +77,48 @@ export class Search implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Ripristina lo stato della mappa se presente (ritorno da dettaglio)
     this.restoreMapState();
+  }
+
+  ngAfterViewInit(): void {
+    // Controlla se ci sono parametri URL per eseguire una ricerca automatica
+    // Questo ha priorità sul ripristino dello stato della mappa
+    const hasUrlParams = this.route.snapshot.queryParamMap.keys.length > 0;
+    
+    if (hasUrlParams) {
+      // Leggi i filtri dall'URL
+      const filtersParam = this.route.snapshot.queryParamMap.get('filters');
+      this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true }); // Rimuovi i parametri dall'URL
+      
+      if (filtersParam) {
+        try {
+          const filters = JSON.parse(filtersParam) as SavedSearchFilters;
+          
+          // Imposta i filtri nel form
+          this.searchFormComponent?.setFiltersFromUrl(filters);
+         
+          const searchFormData: GetPropertiesCardsRequest = {
+            filters: filters.filters,
+            geoFilters: filters.geoFilters,
+            status: filters.status,
+            agencyId: filters.agencyId,
+            pagedRequest: {
+              page: 1,
+              limit: 20,
+              sortBy: filters.sortBy || 'createdAt',
+              sortOrder: filters.sortOrder || 'DESC'
+            }
+          };
+          if (searchFormData.geoFilters) {
+            this.onMapSearchClicked(searchFormData);
+          } else {
+            this.onSearchStarted(searchFormData);
+          }
+
+        } catch (error) {
+          console.error('Errore:', error);
+        }
+      }
+    }
   }
 
   ngOnDestroy(): void {
@@ -117,6 +168,7 @@ export class Search implements OnInit, OnDestroy {
    */
   async onSearchStarted(searchFormData: GetPropertiesCardsRequest): Promise<void> {
     this.currentFilters.set(searchFormData);
+    this.currentSavedSearchId.set(null); // Reset ID ricerca salvata per nuova ricerca
 
     // NON attivare la mappa qui - la ricerca normale mostra solo la lista
     // (anche se ci sono geoFilters da autocomplete)
@@ -135,8 +187,11 @@ export class Search implements OnInit, OnDestroy {
    */
   async onMapSearchClicked(searchFormData: GetPropertiesCardsRequest): Promise<void> {
     console.log('📥 Ricevuto evento mapSearchClicked in search.ts:', searchFormData);
+    console.log('🔍 Debug geoFilters:', searchFormData.geoFilters);
+    console.log('🔍 Debug radiusSearch:', searchFormData.geoFilters?.radiusSearch);
 
     this.currentFilters.set(searchFormData);
+    this.currentSavedSearchId.set(null); // Reset ID ricerca salvata per nuova ricerca
 
     // Rileva se siamo su mobile o desktop
     const isMobile = window.innerWidth <= 768;
@@ -167,6 +222,7 @@ export class Search implements OnInit, OnDestroy {
 
       // Centra la mappa sulle coordinate dell'autocomplete
       setTimeout(() => {
+        console.log('🔍 Centra la mappa su:', center.coordinates[1], center.coordinates[0], this.searchFormComponent);
         this.searchMapComponent?.setCenter(
           center.coordinates[1],
           center.coordinates[0],
@@ -185,10 +241,12 @@ export class Search implements OnInit, OnDestroy {
       };
 
       await this.executeGeoSearch(geoRequest);
+      console.log('✅ Ricerca geografica completata con coordinate da autocomplete - ESCO dalla funzione');
       return;
     }
 
     // CASO 2: Nessun autocomplete selezionato → richiedi la geolocalizzazione dell'utente
+    console.log('⚠️ Nessun geoFilters.radiusSearch trovato - procedo con geolocalizzazione utente');
     if (navigator.geolocation) {
       console.log('📍 Richiesta geolocalizzazione utente...');
 
@@ -415,21 +473,75 @@ export class Search implements OnInit, OnDestroy {
   }
 
   saveCurrentSearch(): void {
-    const filters = this.currentFilters();
-    if (Object.keys(filters).length === 0) {
+    const currentFilters = this.currentFilters();
+    
+    if (!currentFilters || Object.keys(currentFilters).length === 0) {
       this.snackBar.open('Effettua prima una ricerca per salvarla', 'Chiudi', {
         duration: 3000
       });
       return;
     }
 
-    // Generate a name for the search based on filters
-    const searchName = this.generateSearchName();
+    // Genera il nome della ricerca dal form (include il nome dell'autocomplete)
+    const searchName = this.searchFormComponent?.generateSearchName() || 'Ricerca senza nome';
 
-    // TODO: Implement save search functionality
-    this.snackBar.open(`Ricerca "${searchName}" salvata con successo`, 'Chiudi', {
-      duration: 3000,
-      panelClass: ['success-snackbar']
+    // Prepara i dati per il salvataggio
+    const searchData = {
+      name: searchName, // Nome generato dal frontend
+      filters: {
+        filters: currentFilters.filters,
+        geoFilters: currentFilters.geoFilters,
+        status: currentFilters.status,
+        agencyId: currentFilters.agencyId,
+        sortBy: currentFilters.pagedRequest?.sortBy,
+        sortOrder: currentFilters.pagedRequest?.sortOrder
+      }
+    };
+
+    this.searchService.createSavedSearch(searchData).subscribe({
+      next: (savedSearch) => {
+        this.currentSavedSearchId.set(savedSearch.id); // Salva l'ID
+        this.snackBar.open(
+          `Ricerca "${savedSearch.name}" salvata con successo! Le notifiche sono attive.`,
+          'Chiudi',
+          { duration: 3000, panelClass: ['success-snackbar'] }
+        );
+      },
+      error: (error) => {
+        console.error('Errore nel salvataggio della ricerca:', error);
+        this.snackBar.open(
+          'Errore nel salvataggio della ricerca. Riprova più tardi.',
+          'Chiudi',
+          { duration: 3000, panelClass: ['error-snackbar'] }
+        );
+      }
+    });
+  }
+
+  deleteSavedSearch(): void {
+    const searchId = this.currentSavedSearchId();
+    
+    if (!searchId) {
+      return;
+    }
+
+    this.searchService.deleteSavedSearch(searchId).subscribe({
+      next: () => {
+        this.currentSavedSearchId.set(null); // Reset l'ID
+        this.snackBar.open(
+          'Ricerca salvata eliminata con successo',
+          'Chiudi',
+          { duration: 3000 }
+        );
+      },
+      error: (error) => {
+        console.error('Errore nell\'eliminazione della ricerca:', error);
+        this.snackBar.open(
+          'Errore nell\'eliminazione della ricerca salvata',
+          'Chiudi',
+          { duration: 3000, panelClass: ['error-snackbar'] }
+        );
+      }
     });
   }
 
@@ -438,6 +550,7 @@ export class Search implements OnInit, OnDestroy {
     this.currentFilters.set({});
     this.searchResult.set(null);
     this.searchGeoResult.set([]);
+    this.currentSavedSearchId.set(null); // Reset anche l'ID della ricerca salvata
 
     // Nascondi la mappa e resetta la vista
     this.showMap.set(false);

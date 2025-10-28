@@ -4,7 +4,7 @@ import { validate } from 'class-validator';
 import { authService } from '../services/AuthService';
 import logger from '@shared/utils/logger';
 import { AuthenticatedRequest } from '@shared/dto/AuthenticatedRequest';
-import { setResponseAsSuccess, setResponseAsError, setResponseAsValidationError, setResponseAsNotFound } from '@shared/utils/helpers';
+import { setResponseAsSuccess, setResponseAsError, setResponseAsValidationError, setResponseAsNotFound, formatValidationErrors } from '@shared/utils/helpers';
 import { RegisterDto } from '@auth/dto/RegisterDto';
 import { LoginDto } from '@auth/dto/LoginDto';
 import { CreateAgentDto } from '@auth/dto/CreateAgentDto';
@@ -28,7 +28,7 @@ export class AuthController {
       
       const errors = await validate(registerDto);
       if (errors.length > 0) {
-        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        const str_errors = formatValidationErrors(errors);
         setResponseAsValidationError(res, str_errors);
         return;
       }
@@ -89,7 +89,7 @@ export class AuthController {
       
       const errors = await validate(loginDto);
       if (errors.length > 0) {
-        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        const str_errors = formatValidationErrors(errors);
         setResponseAsValidationError(res, str_errors);
         return;
       }
@@ -150,7 +150,7 @@ export class AuthController {
       
       const errors = await validate(forgotPasswordDto);
       if (errors.length > 0) {
-        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        const str_errors = formatValidationErrors(errors);
         setResponseAsValidationError(res, str_errors);
         return;
       }
@@ -208,7 +208,7 @@ export class AuthController {
 
       const errors = await validate(confirmEmailDto);
       if (errors.length > 0) {
-        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        const str_errors = formatValidationErrors(errors);
         setResponseAsValidationError(res, str_errors);
         return;
       }
@@ -268,7 +268,7 @@ export class AuthController {
 
       const errors = await validate(resendDto);
       if (errors.length > 0) {
-        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        const str_errors = formatValidationErrors(errors);
         setResponseAsValidationError(res, str_errors);
         return;
       }
@@ -315,7 +315,7 @@ export class AuthController {
       
       const errors = await validate(forgotPasswordDto);
       if (errors.length > 0) {
-        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        const str_errors = formatValidationErrors(errors);
         setResponseAsValidationError(res, str_errors);
         return;
       }
@@ -358,7 +358,7 @@ export class AuthController {
 
       const errors = await validate(refreshTokenDto);
       if (errors.length > 0) {
-        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        const str_errors = formatValidationErrors(errors);
         setResponseAsValidationError(res, str_errors);
         return;
       }
@@ -408,7 +408,7 @@ export class AuthController {
 
       const errors = await validate(changePasswordDto);
       if (errors.length > 0) {
-        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        const str_errors = formatValidationErrors(errors);
         setResponseAsValidationError(res, str_errors);
         return;
       }
@@ -547,7 +547,7 @@ export class AuthController {
       const errors = await validate(agentData);
 
       if (errors.length > 0) {
-        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        const str_errors = formatValidationErrors(errors);
         setResponseAsValidationError(res, str_errors);
         return;
       }
@@ -607,7 +607,7 @@ export class AuthController {
       const errors = await validate(adminData);
 
       if (errors.length > 0) {
-        const str_errors = errors.map(err => Object.values(err.constraints || {}).join(', '));
+        const str_errors = formatValidationErrors(errors);
         setResponseAsValidationError(res, str_errors);
         return;
       }

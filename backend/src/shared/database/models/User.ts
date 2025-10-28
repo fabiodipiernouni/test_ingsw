@@ -14,7 +14,6 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { Agency } from './Agency';
 import { Property } from './Property';
-import { SearchHistory } from './SearchHistory';
 import { SavedSearch } from './SavedSearch';
 import { Notification } from './Notification';
 import { NotificationPreferences } from './NotificationPreferences';
@@ -135,9 +134,6 @@ export class User extends Model {
 
   @HasMany(() => Property)
   properties!: Property[];
-
-  @HasMany(() => SearchHistory)
-  searchHistories!: SearchHistory[];
 
   @HasMany(() => SavedSearch)
   savedSearches!: SavedSearch[];

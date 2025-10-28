@@ -567,8 +567,8 @@ const options = {
             },
             name: {
               type: 'string',
-              description: 'Nome della ricerca salvata',
-              example: 'Appartamenti Milano Centro'
+              description: 'Nome della ricerca salvata (auto-generato dal sistema)',
+              example: 'Appartamento in vendita a Milano €300.000-600.000'
             },
             filters: {
               $ref: '#/components/schemas/SearchFilters'
@@ -578,15 +578,11 @@ const options = {
               description: 'Indica se le notifiche sono abilitate per nuovi risultati',
               example: true
             },
-            lastResultCount: {
-              type: 'integer',
-              description: 'Numero di risultati dell\'ultima esecuzione',
-              example: 47
-            },
-            hasNewResults: {
-              type: 'boolean',
-              description: 'Indica se ci sono nuovi risultati dall\'ultima visualizzazione',
-              example: false
+            lastSearchedAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Data e ora dell\'ultima esecuzione della ricerca',
+              example: '2025-09-28T15:45:00.000Z'
             },
             createdAt: {
               type: 'string',
@@ -602,121 +598,22 @@ const options = {
         },
         SavedSearchCreate: {
           type: 'object',
-          required: ['name', 'filters'],
+          required: ['filters'],
           properties: {
-            name: {
-              type: 'string',
-              minLength: 1,
-              maxLength: 100,
-              description: 'Nome della ricerca salvata',
-              example: 'Appartamenti Milano Centro'
-            },
             filters: {
               $ref: '#/components/schemas/SearchFilters'
-            },
-            isNotificationEnabled: {
-              type: 'boolean',
-              description: 'Abilita notifiche per nuovi risultati',
-              example: true,
-              default: false
             }
-          }
+          },
+          description: 'Il nome della ricerca salvata viene generato automaticamente dal sistema in base ai filtri forniti. Le notifiche sono abilitate di default.'
         },
-        SavedSearchUpdate: {
+        ToggleNotifications: {
           type: 'object',
+          required: ['isNotificationEnabled'],
           properties: {
-            name: {
-              type: 'string',
-              minLength: 1,
-              maxLength: 100,
-              description: 'Nome della ricerca salvata',
-              example: 'Appartamenti Milano Centro - Aggiornata'
-            },
-            filters: {
-              $ref: '#/components/schemas/SearchFilters'
-            },
             isNotificationEnabled: {
               type: 'boolean',
-              description: 'Abilita/disabilita notifiche',
+              description: 'Abilita/disabilita notifiche per nuovi risultati',
               example: false
-            }
-          }
-        },
-        SearchHistory: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              example: '507f1f77bcf86cd799439011'
-            },
-            userId: {
-              type: 'string',
-              example: '507f1f77bcf86cd799439011'
-            },
-            filters: {
-              $ref: '#/components/schemas/SearchFilters'
-            },
-            resultCount: {
-              type: 'integer',
-              description: 'Numero di risultati ottenuti',
-              example: 156
-            },
-            searchedAt: {
-              type: 'string',
-              format: 'date-time',
-              description: 'Data e ora della ricerca',
-              example: '2025-09-28T14:30:00.000Z'
-            },
-            source: {
-              type: 'string',
-              enum: ['web', 'mobile', 'api'],
-              description: 'Origine della ricerca',
-              example: 'web'
-            },
-            executionTime: {
-              type: 'number',
-              description: 'Tempo di esecuzione in millisecondi',
-              example: 67
-            }
-          }
-        },
-        SearchHistoryResponse: {
-          type: 'object',
-          properties: {
-            success: {
-              type: 'boolean',
-              example: true
-            },
-            data: {
-              type: 'object',
-              properties: {
-                history: {
-                  type: 'array',
-                  items: {
-                    $ref: '#/components/schemas/SearchHistory'
-                  }
-                },
-                totalCount: {
-                  type: 'integer',
-                  example: 89
-                },
-                currentPage: {
-                  type: 'integer',
-                  example: 1
-                },
-                totalPages: {
-                  type: 'integer',
-                  example: 5
-                },
-                hasNextPage: {
-                  type: 'boolean',
-                  example: true
-                },
-                hasPreviousPage: {
-                  type: 'boolean',
-                  example: false
-                }
-              }
             }
           }
         },
@@ -808,20 +705,8 @@ const options = {
     },
     tags: [
       {
-        name: 'Search',
-        description: 'Ricerca proprietà con filtri avanzati'
-      },
-      {
-        name: 'Search Suggestions',
-        description: 'Suggerimenti per la ricerca'
-      },
-      {
         name: 'Saved Searches',
         description: 'Gestione delle ricerche salvate'
-      },
-      {
-        name: 'Search History',
-        description: 'Storico delle ricerche effettuate'
       },
       {
         name: 'Health',

@@ -116,31 +116,34 @@ export class SearchMap implements OnInit, AfterViewInit, OnChanges, OnDestroy {
     }
 
 // Nessuna location selezionata: prova geolocalizzazione o fallback su Italia
-
-    const mapCenter = await new Promise<{ lat: number; lng: number }>(
-      (resolve) => {
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition((position) =>
-            // Successo: centra sulla posizione utente
-            resolve({
-              "lat": position.coords.latitude,
-              "lng": position.coords.longitude
-            }),
-            (error) => {
-              // Errore/negato: mostra Italia intera
-              console.log('Geolocalizzazione non disponibile o negata, uso centro di default (Italia) - ', error);
-              resolve(this.defaultCenter);
-            },
-            {timeout: 5000} // Max 5 secondi
-          );
-        } else {
-          // Browser non supporta geolocalizzazione: mostra Italia
-          resolve(this.defaultCenter);
+    if (!this.center) {
+      console.log('Nessuna posizione centrale fornita, tentativo di geolocalizzazione...');
+      this.center = await new Promise<{ lat: number; lng: number }>(
+        (resolve) => {
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((position) =>
+              // Successo: centra sulla posizione utente
+              resolve({
+                "lat": position.coords.latitude,
+                "lng": position.coords.longitude
+              }),
+              (error) => {
+                // Errore/negato: mostra Italia intera
+                console.log('Geolocalizzazione non disponibile o negata, uso centro di default (Italia) - ', error);
+                resolve(this.defaultCenter);
+              },
+              {timeout: 5000} // Max 5 secondi
+            );
+          } else {
+            // Browser non supporta geolocalizzazione: mostra Italia
+            resolve(this.defaultCenter);
+          }
         }
-      });
+      );
+    }
 
     this.map = new google.maps.Map(this.mapContainer.nativeElement, {
-      center: mapCenter,
+      center: this.center,
       zoom: this.DEFAULT_ZOOM,
       mapId: '7da3bb3ee01b95aec6b80944', // Map ID creato nella Google Cloud Console
       mapTypeControl: true,
@@ -382,25 +385,6 @@ export class SearchMap implements OnInit, AfterViewInit, OnChanges, OnDestroy {
     });
 
     this.map.fitBounds(bounds);
-  }
-
-  private getMarkerIcon(listingType?: ListingType): any {
-    // Questo metodo non è più usato con AdvancedMarkerElement
-    // Mantenuto per compatibilità ma deprecato
-    const type = listingType?.toString().toUpperCase();
-    const color = type === 'SALE' ? '#E91E63' : '#2196F3';
-
-    const housePath = 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z';
-
-    return {
-      path: housePath,
-      fillColor: color,
-      fillOpacity: 0.9,
-      strokeColor: '#FFFFFF',
-      strokeWeight: 2,
-      scale: 1.5,
-      anchor: new google.maps.Point(12, 24)
-    };
   }
 
   /**

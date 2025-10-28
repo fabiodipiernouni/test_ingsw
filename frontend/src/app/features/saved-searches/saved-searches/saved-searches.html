@@ -31,13 +31,16 @@
   } @else {
     <div class="searches-grid">
       @for (search of savedSearches(); track search.id) {
-        <mat-card class="search-card" [class.has-new-results]="search.hasNewResults">
+        <mat-card class="search-card">
           <mat-card-header>
             <div class="card-header-content">
               <div class="search-info">
                 <mat-card-title>{{ search.name }}</mat-card-title>
                 <mat-card-subtitle>
                   Creata il {{ formatDate(search.createdAt) }}
+                  @if (search.lastSearchedAt) {
+                    • Ultima ricerca: {{ formatDate(search.lastSearchedAt) }}
+                  }
                 </mat-card-subtitle>
               </div>
               <div class="search-actions">
@@ -47,7 +50,7 @@
                 <mat-menu #searchMenu="matMenu">
                   <button mat-menu-item (click)="editSearch(search)">
                     <mat-icon>edit</mat-icon>
-                    <span>Modifica</span>
+                    <span>Modifica nome</span>
                   </button>
                   <button mat-menu-item (click)="toggleNotifications(search)">
                     <mat-icon>{{ search.isNotificationEnabled ? 'notifications_off' : 'notifications' }}</mat-icon>
@@ -65,35 +68,21 @@
           <mat-card-content>
             <!-- Search Filters Summary -->
             <div class="filters-summary">
-              @for (filter of getFilterSummary(search.filters); track $index) {
+              @for (filter of getFilterSummary(search); track $index) {
                 <mat-chip class="filter-chip">{{ filter }}</mat-chip>
               }
             </div>
 
-            <!-- Results Info -->
-            <div class="results-info">
-              <div class="results-count">
-                <mat-icon>home_work</mat-icon>
-                <span>{{ search.resultsCount }} immobili trovati</span>
-              </div>
-
-              <div class="notification-status">
-                @if (search.isNotificationEnabled) {
-                  <mat-icon class="notification-icon enabled">notifications</mat-icon>
-                  <span class="notification-text">Notifiche attive</span>
-                } @else {
-                  <mat-icon class="notification-icon disabled">notifications_off</mat-icon>
-                  <span class="notification-text">Notifiche disattivate</span>
-                }
-              </div>
+            <!-- Notification Status -->
+            <div class="notification-status">
+              @if (search.isNotificationEnabled) {
+                <mat-icon class="notification-icon enabled">notifications</mat-icon>
+                <span class="notification-text">Notifiche attive</span>
+              } @else {
+                <mat-icon class="notification-icon disabled">notifications_off</mat-icon>
+                <span class="notification-text">Notifiche disattivate</span>
+              }
             </div>
-
-            @if (search.hasNewResults) {
-              <div class="new-results-badge">
-                <mat-icon>fiber_new</mat-icon>
-                <span>Nuovi risultati disponibili!</span>
-              </div>
-            }
           </mat-card-content>
 
           <mat-card-actions>
@@ -133,15 +122,15 @@
             </li>
             <li>
               <mat-icon>check_circle</mat-icon>
-              <span>Attiva le notifiche per essere avvisato quando ci sono nuovi immobili</span>
+              <span>Attiva le notifiche per essere avvisato quando ci sono nuovi immobili che corrispondono ai tuoi criteri</span>
             </li>
             <li>
               <mat-icon>check_circle</mat-icon>
-              <span>Modifica i filtri delle tue ricerche in qualsiasi momento</span>
+              <span>Esegui nuovamente le tue ricerche salvate con un semplice click</span>
             </li>
             <li>
               <mat-icon>check_circle</mat-icon>
-              <span>Le ricerche vengono aggiornate automaticamente ogni giorno</span>
+              <span>Il nome della ricerca viene generato automaticamente in base ai filtri selezionati</span>
             </li>
           </ul>
         </mat-card-content>

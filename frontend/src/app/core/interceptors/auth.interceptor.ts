@@ -40,8 +40,10 @@ export const authInterceptor: HttpInterceptorFn = (
               return next(retryReq);
             }),
             catchError(refreshError => {
-              // Refresh failed, logout user
-              authService.logout();
+              if (refreshError.error?.error === 'TOKEN_EXPIRED') {
+                console.warn('Refresh token also expired, logging out user');
+                authService.logout();
+              }
               return throwError(() => refreshError);
             })
           );
