@@ -11,7 +11,7 @@ import {
 } from 'sequelize-typescript';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from './User';
-import { ListingType, PropertyType, PropertyStatus, PROPERTY_TYPES, LISTING_TYPES, PROPERTY_STATUS } from '@property/models/types';
+import { ListingType, PropertyType, PropertyStatus, PROPERTY_TYPES, LISTING_TYPES, PROPERTY_STATUS } from '@shared/types/property.types';
 import { GeoJSONPoint } from '@shared/types/geojson.types';
 import { SavedSearchFilters } from '@services/search-service/dto/SavedSearchFilters';
 import { SearchPropertiesFilters } from '@services/property-service/dto/SearchPropertiesFilters';

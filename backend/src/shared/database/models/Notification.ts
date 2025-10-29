@@ -11,21 +11,7 @@ import {
 } from 'sequelize-typescript';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from './User';
-
-export type NotificationType = 
-  | 'new_property_match'
-  | 'price_change'
-  | 'property_status_change'
-  | 'saved_search_results'
-  | 'account_verification'
-  | 'property_view'
-  | 'favorite_added'
-  | 'message_received'
-  | 'system_maintenance'
-  | 'payment_reminder'
-  | 'new_review'
-  | 'property_approved'
-  | 'property_expired';
+import { NOTIFICATION_TYPES, NotificationType } from '@shared/types/notification.types';
 
 @Table({
   tableName: 'notifications',
@@ -41,27 +27,11 @@ export class Notification extends Model {
   @AllowNull(false)
   @Column({ type: DataType.UUID, field: 'user_id' })
   userId!: string;
-
   @BelongsTo(() => User)
   user!: User;
 
   @AllowNull(false)
-
-  @Column(DataType.ENUM(
-    'new_property_match',
-    'price_change', 
-    'property_status_change',
-    'saved_search_results',
-    'account_verification',
-    'property_view',
-    'favorite_added',
-    'message_received',
-    'system_maintenance',
-    'payment_reminder',
-    'new_review',
-    'property_approved',
-    'property_expired'
-  ))
+  @Column(DataType.ENUM(...NOTIFICATION_TYPES))
   type!: NotificationType;
 
   @AllowNull(false)
@@ -72,53 +42,22 @@ export class Notification extends Model {
   @Column(DataType.STRING(4000))
   message!: string;
 
-  @AllowNull(true)
-  @Column(DataType.JSON)
-  data?: Record<string, any>;
-
   @AllowNull(false)
   @Default(false)
-
   @Column(DataType.BOOLEAN)
   isRead!: boolean;
 
-  @AllowNull(false)
-  @Default('normal')
-
-  @Column(DataType.ENUM('low', 'normal', 'high', 'urgent'))
-  priority!: 'low' | 'normal' | 'high' | 'urgent';
-
-  @AllowNull(false)
-  @Default('in_app')
-  @Column(DataType.ENUM('in_app', 'email', 'push'))
-  channel!: 'in_app' | 'email' | 'push';
+  @AllowNull(true)
+  @Column(DataType.STRING(2000))
+  actionUrl?: string;
 
   @AllowNull(true)
-    @Column(DataType.STRING(2000))
-    actionUrl?: string;
+  @Column(DataType.STRING(2000))
+  imageUrl?: string;
 
   @AllowNull(true)
-    @Column(DataType.STRING(2000))
-    imageUrl?: string;
-
-  @AllowNull(true)
-
-  @Column(DataType.DATE)
-  expiresAt?: Date;
-
-  @AllowNull(true)
-
   @Column(DataType.DATE)
   readAt?: Date;
-
-  @AllowNull(true)
-
-  @Column(DataType.DATE)
-  scheduledAt?: Date;
-
-  @AllowNull(true)
-  @Column(DataType.DATE)
-  sentAt?: Date;
 
   // Instance methods
   async markAsRead(): Promise<void> {
@@ -127,28 +66,6 @@ export class Notification extends Model {
       this.readAt = new Date();
       await this.save();
     }
-  }
-
-  async markAsSent(): Promise<void> {
-    this.sentAt = new Date();
-    await this.save();
-  }
-
-  isExpired(): boolean {
-    return this.expiresAt ? new Date() > this.expiresAt : false;
-  }
-
-  isScheduled(): boolean {
-    return this.scheduledAt ? new Date() < this.scheduledAt : false;
-  }
-
-  shouldBeSent(): boolean {
-    return !this.sentAt && !this.isExpired() && !this.isScheduled();
-  }
-
-  getPriorityLevel(): number {
-    const levels = { low: 1, normal: 2, high: 3, urgent: 4 };
-    return levels[this.priority];
   }
 
   // Static methods
@@ -252,12 +169,4 @@ export class Notification extends Model {
     };
   }
 
-  // JSON serialization
-  toJSON(): any {
-    const values = { ...this.get() };
-    values.priorityLevel = this.getPriorityLevel();
-    values.isExpired = this.isExpired();
-    values.isScheduled = this.isScheduled();
-    return values;
-  }
 }

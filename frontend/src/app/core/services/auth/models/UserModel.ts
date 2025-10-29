@@ -1,6 +1,7 @@
 import { AgencyModel } from '@service-shared/models/AgencyModel';
-import { OAuthProvider } from '@core-services/auth/models/OAuthProvider';
-import { UserRole } from '@core-services/auth/models/UserRole';
+import { OAuthProvider } from '@core-services/shared/types/auth.types';
+import { UserRole } from '@core-services/shared/types/user.types';
+import { NotificationType } from '@core-services/shared/types/notification.types';
 
 export interface UserModel {
   id: string;

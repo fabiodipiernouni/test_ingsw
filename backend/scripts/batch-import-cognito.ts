@@ -57,8 +57,6 @@ interface CognitoUserResult {
   AGENCY_ID: string;
   LICENSE_NUMBER: string | null;
   BIOGRAPHY: string | null;
-  RATING: number | null;
-  REVIEWS_COUNT: number | null;
   SPECIALIZATIONS: string | null;
   CREATED_AT: string;
   UPDATED_AT: string;
@@ -102,8 +100,6 @@ async function createCognitoUser(user: UserToImport): Promise<CognitoUserResult>
     AGENCY_ID: user.agency_id,
     LICENSE_NUMBER: null,
     BIOGRAPHY: null,
-    RATING: null,
-    REVIEWS_COUNT: null,
     SPECIALIZATIONS: null,
     CREATED_AT: currentDate,
     UPDATED_AT: currentDate,

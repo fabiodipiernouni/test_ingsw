@@ -1,6 +1,7 @@
 import { AgencyModel } from '@shared/models/AgencyModel';
-import { UserRole } from '@user/models/UserRole';
-import { OAuthProvider } from '@services/auth-service/models/OAuthProvider';
+import { UserRole } from '@shared/types/user.types';
+import { OAuthProvider } from '@shared/types/auth.types';
+import { NotificationType } from '@shared/types/notification.types';
 
 export interface UserModel {
   id: string;
@@ -15,7 +16,6 @@ export interface UserModel {
   isActive: boolean;
   linkedProviders: Array<OAuthProvider>;
   cognitoSub?: string;
-  cognitoUsername?: string;
   lastLoginAt?: Date;
   agencyId?: string;
   Agency?: AgencyModel;

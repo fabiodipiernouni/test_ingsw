@@ -10,7 +10,7 @@ import { PropertyModel } from '@property/models/PropertyModel';
 import { isValidGeoJSONPoint } from '@shared/types/geojson.types';
 import { Helper } from '@services/property-service/utils/helper';
 import { SearchPropertiesFilters } from '@property/dto/SearchPropertiesFilters';
-import { PropertyStatus } from '@property/models/types';
+import { PropertyStatus } from '@shared/types/property.types';
 import { GeoSearchPropertiesFilters } from '@property/dto/GeoSearchPropertiesFilters';
 import { GeoPropertyCardDto } from '@property/dto/GeoPropertyCardDto';
 import { Mappers } from '@property/utils/mappers';

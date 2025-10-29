@@ -1,9 +1,7 @@
-// TODO: controllare se si può eliminare questo file, mi sembra che non venga più usato
-
 import { Request, Response, NextFunction } from 'express';
 import { body, param, query, validationResult, ValidationChain } from 'express-validator';
 import { setResponseAsValidationError } from '@shared/utils/helpers';
-import { plainToClass, plainToInstance } from 'class-transformer';
+import { plainToInstance } from 'class-transformer';
 import { validate as classValidate } from 'class-validator';
 import { GetPropertiesCardsRequest } from '../../services/property-service/dto/GetPropertiesCardsRequest';
 import { ApiResponse } from '@shared/dto/ApiResponse';
@@ -127,7 +125,7 @@ export const commonValidations = {
     body('password')
       .isLength({ min: 8 })
       .withMessage('Password must be at least 8 characters long')
-      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/)
       .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
       
   phone: () => 
@@ -303,8 +301,8 @@ export const authValidations = {
     body('newPassword')
       .isLength({ min: 8 })
       .withMessage('New password must be at least 8 characters long')
-      .matches(/^(?=.*[A-Za-z])(?=.*\d)/)
-      .withMessage('New password must contain at least one letter and one number')
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/)
+      .withMessage('New password must contain at least one uppercase letter, one lowercase letter, one number, and one special character')
   ]
 };
 

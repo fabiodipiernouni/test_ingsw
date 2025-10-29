@@ -24,7 +24,6 @@
       "@auth/*": ["src/services/auth-service/*"],
       "@property/*": ["src/services/property-service/*"],
       "@search/*": ["src/services/search-service/*"],
-      "@user/*": ["src/services/user-service/*"],
       "@notification/*": ["src/services/notification-service/*"],
       "@generated/*": ["src/services/generated/*"]
     },

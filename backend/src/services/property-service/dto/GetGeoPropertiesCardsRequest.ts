@@ -1,5 +1,5 @@
 import { SearchPropertiesFilters } from '@property/dto/SearchPropertiesFilters';
-import { PropertyStatus } from '@property/models/types';
+import { PropertyStatus } from '@shared/types/property.types';
 import { IsOptional, ValidateNested, IsUUID, IsString, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
 import { GeoSearchPropertiesFilters } from '@property/dto/GeoSearchPropertiesFilters';

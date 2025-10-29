@@ -7,11 +7,7 @@ import {
   Property,
   PropertyImage,
   SavedSearch,
-  Notification,
-  NotificationPreferences,
-  UserPreferences,
-  PropertyFavorite,
-  PropertyView
+  Notification
 } from './models';
 
 class Database {
@@ -34,11 +30,7 @@ class Database {
         Property,
         PropertyImage,
         SavedSearch,
-        Notification,
-        NotificationPreferences,
-        UserPreferences,
-        PropertyFavorite,
-        PropertyView
+        Notification
       ],
       define: {
         // Oracle naming conventions

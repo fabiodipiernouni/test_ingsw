@@ -1,6 +1,6 @@
 import { IsOptional, IsString, IsNumber, Min, Max, IsBoolean, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
-import { LISTING_TYPES, ListingType, PROPERTY_TYPES, PropertyType } from '@services/property-service/models/types';
+import { LISTING_TYPES, ListingType, PROPERTY_TYPES, PropertyType } from '@shared/types/property.types';
 
 export class SearchPropertiesFilters {
   @IsOptional()

@@ -1,5 +1,5 @@
 import { GeoJSONPoint } from '@shared/types/geojson.types';
-import { ListingType, PropertyType } from '@property/models/types';
+import { ListingType, PropertyType } from '@shared/types/property.types';
 import { PrimaryImageGeoResultSmallDto } from '@property/dto/PrimaryImageGeoResultSmallDto';
 
 export class GeoPropertyCardDto {

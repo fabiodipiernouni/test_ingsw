@@ -194,7 +194,6 @@ async function createAgencyAndAdmin() {
         id: uuidv4(),
         email: adminEmail,
         cognitoSub: cognitoSub,
-        cognitoUsername: adminEmail,
         firstName: firstName,
         lastName: lastName,
         role: 'owner',
@@ -203,9 +202,9 @@ async function createAgencyAndAdmin() {
         isActive: true,
         agencyId: null, // sarà aggiornato dopo
         linkedProviders: [],
-        reviewsCount: 0,
         acceptedPrivacyAt: new Date(),
-        acceptedTermsAt: new Date()
+        acceptedTermsAt: new Date(),
+        enabledNotificationTypes: []
       }, { transaction });
 
       logger.info('Record utente owner creato nel DB');

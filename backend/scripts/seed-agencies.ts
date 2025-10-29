@@ -39,7 +39,8 @@ async function createCreatorUser(agencyNameFormatted: string, agencyCityFormatte
         acceptedTermsAt: new Date(),
         acceptedPrivacyAt: new Date(),
         agencyId: null,
-        shouldChangePassword: true
+        shouldChangePassword: true,
+        enabledNotificationTypes: []
     });
     return user;
 }
@@ -60,7 +61,8 @@ async function createAgentUser(agencyNameFormatted: string, agencyCityFormatted:
         acceptedTermsAt: new Date(),
         acceptedPrivacyAt: new Date(),
         agencyId: null,
-        shouldChangePassword: true
+        shouldChangePassword: true,
+        enabledNotificationTypes: []
     });
     return user;
 }

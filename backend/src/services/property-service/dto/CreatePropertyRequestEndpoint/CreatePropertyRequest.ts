@@ -1,5 +1,5 @@
 import { Address } from '@shared/models/Address';
-import { EnergyClass, ListingType, PropertyType } from '@property/models/types';
+import { EnergyClass, ListingType, PropertyType } from '@shared/types/property.types';
 import { GeoJSONPoint } from '@shared/types/geojson.types';
 
 export interface CreatePropertyRequest {

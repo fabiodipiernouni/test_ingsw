@@ -16,8 +16,6 @@ import {
 } from '@aws-sdk/client-cognito-identity-provider';
 import { User } from '@shared/database/models/User';
 import { Agency } from '@shared/database/models/Agency';
-import { UserPreferences } from '@shared/database/models/UserPreferences';
-import { NotificationPreferences } from '@shared/database/models/NotificationPreferences';
 import config from '@shared/config';
 import logger from '@shared/utils/logger';
 import { RegisterDto } from '@auth/dto/RegisterDto';
@@ -42,7 +40,7 @@ import { CreateAdminDto } from '@auth/dto/CreateAdminDto';
 import { ResendVerificationCodeDto } from '@auth/dto/ResendVerificationCodeDto';
 import { Address } from '@shared/models/Address';
 import { Contacts } from '@shared/models/Contacts';
-import { OAuthProvider } from '@auth/models/OAuthProvider';
+import { OAuthProvider } from '@shared/types/auth.types';
 
 // Cognito Client
 const cognitoClient = new CognitoIdentityProviderClient({
@@ -166,7 +164,6 @@ export class AuthService {
       const user = await User.create({
         email: registerData.email,
         cognitoSub,
-        cognitoUsername: registerData.email,
         firstName: registerData.firstName,
         lastName: registerData.lastName,
         phone: registerData.phone,
@@ -175,12 +172,9 @@ export class AuthService {
         acceptedTermsAt: registerData.acceptTerms ? new Date() : undefined,
         acceptedPrivacyAt: registerData.acceptPrivacy ? new Date() : undefined,
         isActive: true,
-        isVerified: false // Sarà true dopo conferma email
+        isVerified: false, // Sarà true dopo conferma email
+        enabledNotificationTypes: []
       });
-
-      // 4. CREA PREFERENZE PREDEFINITE
-      await UserPreferences.create({ userId: user.id });
-      await NotificationPreferences.create({ userId: user.id });
 
       logger.info('User registered successfully', { email: registerData.email, cognitoSub });
 
@@ -674,7 +668,6 @@ export class AuthService {
     const newUser = await User.create({
       email: email,
       cognitoSub: cognitoSub,
-      cognitoUsername: email,
       firstName: idTokenDecoded.given_name || '',
       lastName: idTokenDecoded.family_name || '',
       phone: idTokenDecoded.phone_number || undefined,
@@ -684,14 +677,9 @@ export class AuthService {
       isVerified: true, // OAuth providers verificano sempre l'email
       linkedProviders: [provider],
       acceptedTermsAt: new Date(),
-      acceptedPrivacyAt: new Date()
+      acceptedPrivacyAt: new Date(),
+      enabledNotificationTypes: []
     });
-
-    // Crea preferenze per nuovo utente
-    await Promise.all([
-      UserPreferences.create({ userId: newUser.id }),
-      NotificationPreferences.create({ userId: newUser.id })
-    ]);
 
     // Aggiungi a gruppo Cognito
     await this.addUserToGroup(cognitoSub, config.cognito.groups.clients);
@@ -939,7 +927,6 @@ export class AuthService {
       const agent = await User.create({
         email: agentData.email,
         cognitoSub: cognitoSub,
-        cognitoUsername: agentData.email,
         firstName: agentData.firstName,
         lastName: agentData.lastName,
         phone: agentData.phone,
@@ -949,12 +936,9 @@ export class AuthService {
         isActive: true,
         isVerified: true, // Verificato dall'admin
         acceptedTermsAt: new Date(),
-        acceptedPrivacyAt: new Date()
+        acceptedPrivacyAt: new Date(),
+        enabledNotificationTypes: []
       });
-
-      // 6. CREA PREFERENZE PREDEFINITE
-      await UserPreferences.create({ userId: agent.id });
-      await NotificationPreferences.create({ userId: agent.id });
 
       logger.info('Agent created in local DB', { userId: agent.id, email: agent.email });
 
@@ -1054,7 +1038,6 @@ export class AuthService {
       const newAdmin = await User.create({
         email: adminData.email,
         cognitoSub: cognitoSub,
-        cognitoUsername: adminData.email,
         firstName: adminData.firstName,
         lastName: adminData.lastName,
         phone: adminData.phone,
@@ -1063,12 +1046,9 @@ export class AuthService {
         isActive: true,
         isVerified: true,
         acceptedTermsAt: new Date(),
-        acceptedPrivacyAt: new Date()
+        acceptedPrivacyAt: new Date(),
+        enabledNotificationTypes: []
       });
-
-      // 6. CREA PREFERENZE
-      await UserPreferences.create({ userId: newAdmin.id });
-      await NotificationPreferences.create({ userId: newAdmin.id });
 
       logger.info('Admin created in local DB', { userId: newAdmin.id, email: newAdmin.email });
 

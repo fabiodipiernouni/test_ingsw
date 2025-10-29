@@ -17,7 +17,7 @@ import { RefreshTokenRequest } from '@core-services/auth/dto/RefreshTokenRequest
 import { RegisterRequest } from '@core-services/auth/dto/RegisterRequest';
 import { ResendVerificationCodeRequest } from '@core-services/auth/dto/ResendVerificationCodeRequest';
 import { UserResponse } from '@core-services/auth/dto/UserResponse';
-import { OAuthProvider } from '@core-services/auth/models/OAuthProvider';
+import { OAuthProvider } from '@core-services/shared/types/auth.types';
 
 import { ApiResponse } from '@service-shared/dto/ApiResponse';
 import { RefreshTokenResponse } from '@core-services/auth/dto/RefreshTokenResponse';
@@ -355,7 +355,7 @@ export class AuthService {
       updatedAt: new Date(userResponse.updatedAt),
       licenseNumber: userResponse.licenseNumber,
       biography: userResponse.biography,
-      specializations: userResponse.specializations,
+      specializations: userResponse.specializations
     };
     return userModel;
   }

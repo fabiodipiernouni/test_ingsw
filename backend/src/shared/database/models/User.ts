@@ -16,11 +16,9 @@ import { Agency } from './Agency';
 import { Property } from './Property';
 import { SavedSearch } from './SavedSearch';
 import { Notification } from './Notification';
-import { NotificationPreferences } from './NotificationPreferences';
-import { UserPreferences } from './UserPreferences';
-import { PropertyFavorite } from './PropertyFavorite';
-import { PropertyView } from './PropertyView';
-import { OAuthProvider } from '@auth/models/OAuthProvider';
+import { OAuthProvider } from '@shared/types/auth.types';
+import { NOTIFICATION_TYPES, NotificationType } from '@shared/types/notification.types';
+import { USER_ROLES, UserRole } from '@shared/types/user.types';
 
 @Table({
   tableName: 'users',
@@ -44,10 +42,6 @@ export class User extends Model {
   cognitoSub!: string;
 
   @AllowNull(false)
-  @Column(DataType.STRING(255))
-  cognitoUsername!: string;
-
-  @AllowNull(false)
   @Column(DataType.STRING(100))
   firstName!: string;
 
@@ -57,8 +51,8 @@ export class User extends Model {
 
   @AllowNull(false)
   @Default('client')
-  @Column(DataType.ENUM('client', 'agent', 'admin', 'owner'))
-  role!: 'client' | 'agent' | 'admin' | 'owner';
+  @Column(DataType.ENUM(...USER_ROLES))
+  role!: UserRole;
 
   @AllowNull(true)
   @Column(DataType.STRING(2000))
@@ -116,17 +110,13 @@ export class User extends Model {
   biography?: string;
 
   @AllowNull(true)
-  @Column(DataType.FLOAT)
-  rating?: number;
-
-  @AllowNull(false)
-  @Default(0)
-  @Column(DataType.INTEGER)
-  reviewsCount!: number;
-
-  @AllowNull(true)
   @Column(DataType.JSON)
   specializations?: string[];
+
+  @AllowNull(false)
+  @Default(JSON.stringify([])) // GDPR compliance: user must opt-in manually
+  @Column({ type: DataType.JSON, field: 'enabled_notification_types' })
+  enabledNotificationTypes!: NotificationType[];
 
   // Associations
   @BelongsTo(() => Agency, { foreignKey: 'agencyId', as: 'agency' })
@@ -140,18 +130,6 @@ export class User extends Model {
 
   @HasMany(() => Notification)
   notifications!: Notification[];
-
-  @HasMany(() => NotificationPreferences)
-  notificationPreferences!: NotificationPreferences[];
-
-  @HasMany(() => UserPreferences)
-  userPreferences!: UserPreferences[];
-
-  @HasMany(() => PropertyFavorite)
-  favorites!: PropertyFavorite[];
-
-  @HasMany(() => PropertyView)
-  views!: PropertyView[];
 
   // Instance methods
   get fullName(): string {

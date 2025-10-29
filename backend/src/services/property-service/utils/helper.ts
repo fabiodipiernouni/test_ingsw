@@ -1,6 +1,6 @@
 import { User } from '@shared/database/models/User';
-import { UserModel } from '@user/models/UserModel';
-import { UserRole } from '@user/models/UserRole';
+import { UserModel } from '@shared/models/UserModel';
+import { UserRole } from '@shared/types/user.types';
 import { Op, Sequelize } from 'sequelize';
 import { SearchPropertiesFilters } from '@property/dto/SearchPropertiesFilters';
 import { GeoSearchPropertiesFilters } from '@property/dto/GeoSearchPropertiesFilters';
@@ -38,7 +38,6 @@ export class Helper {
       passwordChangeRequired: user.passwordChangeRequired,
       linkedProviders: user.linkedProviders || [],
       cognitoSub: user.cognitoSub,
-      cognitoUsername: user.cognitoUsername,
       lastLoginAt: user.lastLoginAt,
       agencyId: user.agencyId,
       createdAt: user.createdAt,

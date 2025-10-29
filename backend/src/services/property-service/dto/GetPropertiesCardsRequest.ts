@@ -1,6 +1,6 @@
 import { SearchPropertiesFilters } from '@property/dto/SearchPropertiesFilters';
 import { PagedRequest } from '@shared/dto/pagedRequest';
-import { PropertyStatus } from '@property/models/types';
+import { PropertyStatus } from '@shared/types/property.types';
 import { IsOptional, ValidateNested, IsUUID } from 'class-validator';
 import { Type } from 'class-transformer';
 import { GeoSearchPropertiesFilters } from '@property/dto/GeoSearchPropertiesFilters';

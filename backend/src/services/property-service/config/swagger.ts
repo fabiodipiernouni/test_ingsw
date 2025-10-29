@@ -279,18 +279,6 @@ const options: swaggerJsdoc.Options = {
           }
         },
 
-        PropertyViewRequest: {
-          type: 'object',
-          properties: {
-            source: {
-              type: 'string',
-              default: 'web',
-              example: 'web',
-              description: 'Fonte della visualizzazione'
-            }
-          }
-        },
-
         // ==================== RESPONSE DTOs ====================
 
         PropertyCardDto: {

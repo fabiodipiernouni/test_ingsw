@@ -2,7 +2,7 @@ import { IsOptional, ValidateNested, IsUUID, IsString, IsIn } from 'class-valida
 import { Type } from 'class-transformer';
 import { SearchPropertiesFilters } from './SearchPropertiesFilters';
 import { GeoSearchPropertiesFilters } from './GeoSearchPropertiesFilters';
-import { PROPERTY_STATUS, PropertyStatus } from '@services/property-service/models/types';
+import { PROPERTY_STATUS, PropertyStatus } from '@shared/types/property.types';
 
 export class SavedSearchFilters {
   @IsOptional()

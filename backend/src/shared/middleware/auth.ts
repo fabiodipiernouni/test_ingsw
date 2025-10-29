@@ -5,7 +5,7 @@ import { User, Agency } from '@shared/database/models';
 import { AuthenticatedRequest } from '@shared/dto/AuthenticatedRequest';
 import { unauthorizedResponse, setResponseAsForbidden, setResponseAsError } from '@shared/utils/helpers';
 import appConfig from '@shared/config';
-import { UserRole } from '@user/models/UserRole';
+import { UserRole } from '@shared/types/user.types';
 import logger from '@shared/utils/logger';
 
 // JWKS Client per validare token Cognito
@@ -66,7 +66,6 @@ export const authenticateToken = async (
         try {
           // Estrai dati da token Cognito
           const cognitoSub = decoded.sub;
-          //const cognitoUsername = decoded.username || decoded['cognito:username'];
           const cognitoGroups: string[] = decoded['cognito:groups'] || [];
 
           // Recupera utente dal DB locale

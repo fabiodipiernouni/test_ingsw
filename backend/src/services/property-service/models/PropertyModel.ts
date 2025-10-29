@@ -1,8 +1,8 @@
 import { PropertyImageModel } from './PropertyImageModel';
-import { EnergyClass, ListingType, PropertyStatus, PropertyType } from '@property/models/types';
+import { EnergyClass, ListingType, PropertyStatus, PropertyType } from '@shared/types/property.types';
 import { Address } from '@shared/models/Address';
 import { GeoJSONPoint } from '@shared/types/geojson.types';
-import { UserModel } from '@user/models/UserModel';
+import { UserModel } from '@shared/models/UserModel';
 
 
 export interface PropertyModel {

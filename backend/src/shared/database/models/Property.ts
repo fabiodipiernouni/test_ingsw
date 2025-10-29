@@ -13,10 +13,8 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { User } from './User';
 import { PropertyImage } from './PropertyImage';
-import { PropertyFavorite } from './PropertyFavorite';
-import { PropertyView } from './PropertyView';
 import { GeoJSONPoint, createGeoJSONPoint } from '@shared/types/geojson.types';
-import { EnergyClass, LISTING_TYPES, ListingType, PROPERTY_STATUS, PROPERTY_TYPES, PropertyStatus, PropertyType, ENERGY_CLASSES } from '@services/property-service/models/types';
+import { EnergyClass, LISTING_TYPES, ListingType, PROPERTY_STATUS, PROPERTY_TYPES, PropertyStatus, PropertyType, ENERGY_CLASSES } from '@shared/types/property.types';
 
 @Table({
   tableName: 'properties',
@@ -200,12 +198,6 @@ export class Property extends Model {
   // Associations
   @HasMany(() => PropertyImage)
   images!: PropertyImage[];
-
-  @HasMany(() => PropertyFavorite)
-  propertyFavorites!: PropertyFavorite[];
-
-  @HasMany(() => PropertyView)
-  propertyViews!: PropertyView[];
 
   // Helper getters per accesso semplificato alle coordinate
   // Estraggono lat/lng dal formato GeoJSON

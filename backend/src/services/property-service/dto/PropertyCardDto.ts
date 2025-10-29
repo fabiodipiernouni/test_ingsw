@@ -1,5 +1,5 @@
 import { PropertyImageModel } from '../models/PropertyImageModel';
-import { EnergyClass, ListingType, PropertyStatus, PropertyType } from '@property/models/types';
+import { EnergyClass, ListingType, PropertyStatus, PropertyType } from '@shared/types/property.types';
 import { GeoJSONPoint } from '@shared/types/geojson.types';
 
 

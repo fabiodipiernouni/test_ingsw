@@ -1,4 +1,4 @@
-import { OAuthProvider } from '@services/auth-service/models/OAuthProvider';
+import { OAuthProvider } from '@shared/types/auth.types';
 
 export interface OAuthUrlParams {
   provider: OAuthProvider;

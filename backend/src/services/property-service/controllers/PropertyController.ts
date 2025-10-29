@@ -163,40 +163,6 @@ export class PropertyController {
       setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get properties', 500);
     }
   }
-
-
-  /**
-   * Registra visualizzazione proprietà
-   * POST /properties/:propertyId/view
-   */
-  async recordPropertyView(req: Request, res: Response, _next: NextFunction): Promise<void> {
-    try {
-      const { propertyId } = req.params;
-      const { source = 'web' } = req.body;
-
-      if (!propertyId) {
-        setResponseAsError(res, 'BAD_REQUEST', 'Property ID is required', 400);
-        return;
-      }
-
-      // TODO: Implementare la logica per registrare la visualizzazione
-      // Per ora restituiamo solo un successo
-      
-      logger.info('Property view recorded', { propertyId, source });
-      
-      setResponseAsSuccess(res, { message: 'View recorded' });
-
-    } catch (error: any) {
-      logger.error('Error in recordPropertyView controller:', error);
-
-      if (error.name === 'NotFoundError') {
-        setResponseAsNotFound(res, error.message);
-        return;
-      }
-
-      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to record view', 500);
-    }
-  }
 }
 
 export const propertyController = new PropertyController();

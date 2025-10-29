@@ -1,6 +1,7 @@
-import {UserRole} from '@core-services/auth/models/UserRole';
+import {UserRole} from '@core-services/shared/types/user.types';
 import {AgencyResponse} from '@core-services/auth/dto/AgencyResponse';
-import {OAuthProvider} from '@core-services/auth/models/OAuthProvider';
+import { OAuthProvider } from '@core-services/shared/types/auth.types';
+import { NotificationType } from '@core-services/shared/types/notification.types';
 
 export interface UserResponse {
   id: string;
