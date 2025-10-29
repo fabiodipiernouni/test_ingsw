@@ -1,4 +1,4 @@
-import { SavedSearch } from '@shared/database/models';
+import { SavedSearch, User } from '@shared/database/models';
 import { SavedSearchCreateDto } from '../dto/SavedSearchCreateDto';
 import { SavedSearchResponse } from '../dto/SavedSearchResponse';
 import { SavedSearchFilters } from '../dto/SavedSearchFilters';
@@ -8,6 +8,13 @@ class NotFoundError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'NotFoundError';
+  }
+}
+
+class NotificationsDisabledError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'NotificationsDisabledError';
   }
 }
 
@@ -102,6 +109,17 @@ export class SearchService {
    */
   async toggleNotifications(userId: string, searchId: string, isNotificationEnabled: boolean): Promise<SavedSearchResponse> {
     try {
+      const userModel = await User.findOne({ attributes: ['enabledNotificationTypes'], where: { id: userId } });
+      if (!userModel) {
+        throw new NotFoundError('User not found');
+      }
+      console.log(userModel);
+      console.log(userModel.enabledNotificationTypes);
+
+      if (isNotificationEnabled && !(userModel.enabledNotificationTypes.some(type => type === 'new_property_match_saved_search'))) {
+        throw new NotificationsDisabledError('User has disabled notifications for new property matches on saved searches');
+      }
+
       const savedSearch = await SavedSearch.findOne({
         where: {
           id: searchId,

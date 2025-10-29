@@ -729,4 +729,216 @@ router.post('/create-admin',
   authController.createAdmin.bind(authController)
 );
 
+/**
+ * @swagger
+ * /notification-preferences:
+ *   put:
+ *     summary: Aggiorna le preferenze di notifica dell'utente
+ *     description: Permette all'utente autenticato di configurare quali categorie di notifiche desidera ricevere. L'utente può scegliere tra notifiche per nuove proprietà corrispondenti, messaggi promozionali e aggiornamenti sullo stato delle visite.
+ *     tags:
+ *       - User Preferences
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - enabledNotificationTypes
+ *             properties:
+ *               enabledNotificationTypes:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   enum:
+ *                     - new_property_match_saved_search
+ *                     - promotional_message
+ *                     - visit_status_update
+ *                 uniqueItems: true
+ *                 example: ["new_property_match_saved_search", "visit_status_update"]
+ *                 description: |
+ *                   Array di categorie di notifiche che l'utente desidera ricevere.
+ *                   - `new_property_match_saved_search`: Notifiche quando nuove proprietà corrispondono alle ricerche salvate
+ *                   - `promotional_message`: Messaggi promozionali e offerte speciali
+ *                   - `visit_status_update`: Aggiornamenti sullo stato delle visite programmate
+ *           examples:
+ *             allEnabled:
+ *               summary: Tutte le notifiche abilitate
+ *               value:
+ *                 enabledNotificationTypes: ["new_property_match_saved_search", "promotional_message", "visit_status_update"]
+ *             onlyPropertyMatches:
+ *               summary: Solo notifiche proprietà corrispondenti
+ *               value:
+ *                 enabledNotificationTypes: ["new_property_match_saved_search"]
+ *             allDisabled:
+ *               summary: Tutte le notifiche disabilitate
+ *               value:
+ *                 enabledNotificationTypes: []
+ *     responses:
+ *       200:
+ *         description: Preferenze di notifica aggiornate con successo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     enabledNotificationTypes:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       example: ["new_property_match_saved_search", "visit_status_update"]
+ *                 message:
+ *                   type: string
+ *                   example: "Notification preferences updated successfully"
+ *       400:
+ *         description: Richiesta non valida - formato dati errato o tipi di notifica non validi
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               invalidType:
+ *                 summary: Tipo di notifica non valido
+ *                 value:
+ *                   success: false
+ *                   error: "VALIDATION_ERROR"
+ *                   message: "Invalid notification types. Allowed values are: new_property_match_saved_search, promotional_message, visit_status_update"
+ *               missingField:
+ *                 summary: Campo obbligatorio mancante
+ *                 value:
+ *                   success: false
+ *                   error: "VALIDATION_ERROR"
+ *                   message: "enabledNotificationTypes is required"
+ *       401:
+ *         description: Non autenticato - token mancante o non valido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error: "UNAUTHORIZED"
+ *               message: "Authentication required"
+ *       404:
+ *         description: Utente non trovato
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error: "NOT_FOUND"
+ *               message: "User not found"
+ *       500:
+ *         description: Errore interno del server
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error: "INTERNAL_SERVER_ERROR"
+ *               message: "Failed to update notification preferences"
+ */
+router.put('/notification-preferences',
+  authenticateToken,
+  authController.updateNotificationPreferences.bind(authController)
+);
+
+/**
+ * @swagger
+ * /notification-preferences:
+ *   get:
+ *     summary: Ottiene le preferenze di notifica dell'utente
+ *     description: Recupera le categorie di notifiche attualmente abilitate per l'utente autenticato
+ *     tags:
+ *       - User Preferences
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Preferenze di notifica recuperate con successo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     enabledNotificationTypes:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                         enum:
+ *                           - new_property_match_saved_search
+ *                           - promotional_message
+ *                           - visit_status_update
+ *                       example: ["new_property_match_saved_search", "visit_status_update"]
+ *                       description: Lista delle categorie di notifiche attualmente abilitate per l'utente
+ *                 message:
+ *                   type: string
+ *                   example: "Notification preferences retrieved successfully"
+ *             examples:
+ *               someEnabled:
+ *                 summary: Alcune notifiche abilitate
+ *                 value:
+ *                   success: true
+ *                   data:
+ *                     enabledNotificationTypes: ["new_property_match_saved_search", "visit_status_update"]
+ *                   message: "Notification preferences retrieved successfully"
+ *               allDisabled:
+ *                 summary: Nessuna notifica abilitata
+ *                 value:
+ *                   success: true
+ *                   data:
+ *                     enabledNotificationTypes: []
+ *                   message: "Notification preferences retrieved successfully"
+ *       401:
+ *         description: Non autenticato - token mancante o non valido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error: "UNAUTHORIZED"
+ *               message: "Authentication required"
+ *       404:
+ *         description: Utente non trovato
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error: "NOT_FOUND"
+ *               message: "User not found"
+ *       500:
+ *         description: Errore interno del server
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error: "INTERNAL_SERVER_ERROR"
+ *               message: "Failed to retrieve notification preferences"
+ */
+router.get('/notification-preferences',
+  authenticateToken,
+  authController.getNotificationPreferences.bind(authController)
+);
+
 export default router;

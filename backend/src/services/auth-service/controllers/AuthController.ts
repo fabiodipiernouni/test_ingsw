@@ -10,12 +10,14 @@ import { LoginDto } from '@auth/dto/LoginDto';
 import { CreateAgentDto } from '@auth/dto/CreateAgentDto';
 import { CreateAdminDto } from '@auth/dto/CreateAdminDto';
 import config from '@shared/config';
-import { ConfirmForgotPasswordDto } from '../dto/ConfirmForgotPasswordDto';
-import { ConfirmEmailDto } from '../dto/ConfirmEmailDto';
-import { ForgotPasswordDto } from '../dto/ForgotPasswordDto';
-import { ChangePasswordDto } from '../dto/ChangePasswordDto';
-import { RefreshTokenDto } from '../dto/RefreshTokenDto';
-import { ResendVerificationCodeDto } from '../dto/ResendVerificationCodeDto';
+import { ConfirmForgotPasswordDto } from '@auth/dto/ConfirmForgotPasswordDto';
+import { ConfirmEmailDto } from '@auth/dto/ConfirmEmailDto';
+import { ForgotPasswordDto } from '@auth/dto/ForgotPasswordDto';
+import { ChangePasswordDto } from '@auth/dto/ChangePasswordDto';
+import { RefreshTokenDto } from '@auth/dto/RefreshTokenDto';
+import { ResendVerificationCodeDto } from '@auth/dto/ResendVerificationCodeDto';
+import { UpdateNotificationPreferencesDto } from '@auth/dto/UpdateNotificationPreferencesDto';
+import { NotificationPreferencesResponse } from '@auth/dto/NotificationPreferencesResponse';
 
 export class AuthController {
   /**
@@ -648,6 +650,84 @@ export class AuthController {
       }
 
       setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to create admin', 500);
+    }
+  }
+
+  /**
+   * Ottiene le preferenze di notifica dell'utente autenticato
+   */
+  async getNotificationPreferences(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user!.id;
+
+      logger.info('Retrieving notification preferences', { userId });
+
+      const notificationPreferences: NotificationPreferencesResponse = await authService.getNotificationPreferences(userId);
+
+      setResponseAsSuccess(
+        res,
+        notificationPreferences,
+        'Notification preferences retrieved successfully',
+        200
+      );
+
+    } catch (error: any) {
+      logger.error('Error retrieving notification preferences:', error);
+
+      if (error.message === 'User not found') {
+        setResponseAsNotFound(res, error.message);
+        return;
+      }
+
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to retrieve notification preferences', 500);
+    }
+  }
+
+  /**
+   * Aggiorna le preferenze di notifica dell'utente autenticato
+   */
+  async updateNotificationPreferences(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user!.id;
+
+      const dto: UpdateNotificationPreferencesDto = plainToInstance(
+        UpdateNotificationPreferencesDto,
+        req.body
+      );
+
+      const errors = await validate(dto);
+      if (errors.length > 0) {
+        const str_errors = formatValidationErrors(errors);
+        setResponseAsValidationError(res, str_errors);
+        return;
+      }
+
+      logger.info('Updating notification preferences', { 
+        userId,
+        enabledTypes: dto.enabledNotificationTypes 
+      });
+
+      await authService.updateNotificationPreferences(
+        userId,
+        dto
+      );
+
+      setResponseAsSuccess(
+        res,
+        null,
+        'Notification preferences updated successfully',
+        200
+      );
+
+    } catch (error: any) {
+      logger.error('Error updating notification preferences:', error);
+
+      if (error.message === 'User not found') {
+        setResponseAsNotFound(res, error.message);
+        return;
+      }
+
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to update notification preferences', 500);
     }
   }
 

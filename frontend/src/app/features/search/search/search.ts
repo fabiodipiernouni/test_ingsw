@@ -537,7 +537,7 @@ export class Search implements OnInit, AfterViewInit, OnDestroy {
       next: (savedSearch) => {
         this.currentSavedSearchId.set(savedSearch.id); // Salva l'ID
         this.snackBar.open(
-          `Ricerca "${savedSearch.name}" salvata con successo! Le notifiche sono attive.`,
+          `Ricerca "${savedSearch.name}" salvata con successo!`,
           'Chiudi',
           { duration: 3000, panelClass: ['success-snackbar'] }
         );

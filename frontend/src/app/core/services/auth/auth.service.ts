@@ -18,6 +18,8 @@ import { RegisterRequest } from '@core-services/auth/dto/RegisterRequest';
 import { ResendVerificationCodeRequest } from '@core-services/auth/dto/ResendVerificationCodeRequest';
 import { UserResponse } from '@core-services/auth/dto/UserResponse';
 import { OAuthProvider } from '@core-services/shared/types/auth.types';
+import { NotificationPreferencesResponse } from '@core-services/auth/dto/NotificationPreferencesResponse';
+import { UpdateNotificationPreferencesDto } from '@core-services/auth/dto/UpdateNotificationPreferencesDto';
 
 import { ApiResponse } from '@service-shared/dto/ApiResponse';
 import { RefreshTokenResponse } from '@core-services/auth/dto/RefreshTokenResponse';
@@ -192,6 +194,22 @@ export class AuthService {
    */
   createAgent(request: CreateAgentRequest): Observable<ApiResponse<null>> {
     return this.http.post<ApiResponse<null>>(`${this.API_URL}/create-agent`, request)
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  /**
+   * Get Notification Preferences
+   */
+  getNotificationPreferences(): Observable<ApiResponse<NotificationPreferencesResponse>> {
+    return this.http.get<ApiResponse<NotificationPreferencesResponse>>(`${this.API_URL}/notification-preferences`)
+      .pipe(catchError(this.handleError.bind(this)));
+  }
+
+  /**
+   * Update Notification Preferences
+   */
+  updateNotificationPreferences(request: UpdateNotificationPreferencesDto): Observable<ApiResponse<null>> {
+    return this.http.put<ApiResponse<null>>(`${this.API_URL}/notification-preferences`, request)
       .pipe(catchError(this.handleError.bind(this)));
   }
 

@@ -78,6 +78,7 @@ export class User extends Model {
   isActive!: boolean;
 
   @AllowNull(true)
+  @Default([])
   @Column(DataType.JSON)
   linkedProviders?: Array<OAuthProvider>;
 
@@ -110,11 +111,12 @@ export class User extends Model {
   biography?: string;
 
   @AllowNull(true)
+  @Default([])
   @Column(DataType.JSON)
   specializations?: string[];
 
   @AllowNull(false)
-  @Default(JSON.stringify([])) // GDPR compliance: user must opt-in manually
+  @Default([]) // GDPR compliance: user must opt-in manually
   @Column({ type: DataType.JSON, field: 'enabled_notification_types' })
   enabledNotificationTypes!: NotificationType[];
 

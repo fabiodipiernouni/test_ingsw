@@ -157,6 +157,11 @@ export class SearchController {
         return;
       }
 
+      if (error.name === 'NotificationsDisabledError') {
+        setResponseAsError(res, 'NOTIFICATIONS_DISABLED', error.message, 400);
+        return;
+      }
+
       setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to update notifications', 500);
     }
   }

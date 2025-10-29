@@ -41,6 +41,9 @@ import { ResendVerificationCodeDto } from '@auth/dto/ResendVerificationCodeDto';
 import { Address } from '@shared/models/Address';
 import { Contacts } from '@shared/models/Contacts';
 import { OAuthProvider } from '@shared/types/auth.types';
+import { UpdateNotificationPreferencesDto } from '@auth/dto/UpdateNotificationPreferencesDto';
+import { NotificationType } from '@shared/types/notification.types';
+import { NotificationPreferencesResponse } from '../dto/NotificationPreferencesResponse';
 
 // Cognito Client
 const cognitoClient = new CognitoIdentityProviderClient({
@@ -1136,6 +1139,52 @@ export class AuthService {
     };
 
     return agencyResponse;
+  }
+
+  /**
+   * Ottiene le preferenze di notifica di un utente
+   */
+  async getNotificationPreferences(
+    userId: string
+  ): Promise<NotificationPreferencesResponse> {
+    const user = await User.findByPk(userId, {
+      attributes: ['id', 'enabledNotificationTypes']
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    logger.info(`Retrieved notification preferences for user ${userId}`);
+
+    let notificationPreferencesResponse: NotificationPreferencesResponse = {
+      enabledNotificationTypes: user.enabledNotificationTypes || []
+    };
+    return notificationPreferencesResponse;
+  }
+
+  /**
+   * Aggiorna le preferenze di notifica di un utente
+   */
+  async updateNotificationPreferences(
+    userId: string,
+    UpdateNotificationPreferencesDto: UpdateNotificationPreferencesDto
+  ): Promise<void> {
+    const user = await User.findByPk(userId);
+
+    const { enabledNotificationTypes: enabledTypes } = UpdateNotificationPreferencesDto;
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    user.enabledNotificationTypes = enabledTypes;
+    await user.save();
+
+    logger.info(`Updated notification preferences for user ${userId}`, {
+      enabledTypes
+    });
+
   }
 }
 

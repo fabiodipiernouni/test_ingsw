@@ -76,7 +76,7 @@ export class SavedSearches implements OnInit {
       error: (error) => {
         console.error('Errore nell\'aggiornamento delle notifiche:', error);
         this.snackBar.open(
-          'Errore nell\'aggiornamento delle notifiche',
+          error.error.message || 'Errore nell\'aggiornamento delle notifiche',
           'Chiudi',
           { duration: 3000 }
         );

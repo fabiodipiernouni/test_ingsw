@@ -5,163 +5,62 @@
       <mat-icon>notifications</mat-icon>
       Preferenze di Notifica
     </h2>
-    <p>Gestisci quando e come vuoi ricevere le notifiche. Puoi scegliere tra email, notifiche push e SMS per ogni tipo di comunicazione.</p>
+    <p>Gestisci quali notifiche desideri ricevere. Abilita o disabilita i tipi di notifica secondo le tue preferenze.</p>
   </div>
 
-  <form [formGroup]="notificationForm" (ngSubmit)="onSubmit()" class="preferences-form">
-    
-    <!-- Quick Actions -->
-    <div class="quick-actions">
-      <button type="button" 
-              mat-outlined-button 
-              color="primary"
-              (click)="resetToDefaults()">
-        <mat-icon>restore</mat-icon>
-        Ripristina Predefinite
-      </button>
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>Caricamento preferenze...</p>
     </div>
+  }
 
-    <!-- Notification Categories -->
-    @for (category of getDisplayCategories(); track category.id) {
-      <mat-card class="category-card">
-        <mat-card-header class="category-header">
-          <div mat-card-avatar>
-            <mat-icon [class]="'category-icon-' + category.id">{{ category.icon }}</mat-icon>
-          </div>
-          <mat-card-title>{{ category.title }}</mat-card-title>
-          <mat-card-subtitle>{{ category.description }}</mat-card-subtitle>
-        </mat-card-header>
-
-        <mat-card-content>
-            <!-- Category-wide toggles -->
-          <div class="category-toggles">
-            <div class="toggle-group">
-              <span class="toggle-label">Attiva tutto per:</span>
-              <div class="toggle-buttons">
-                <button type="button" 
-                        mat-icon-button 
-                        class="toggle-btn email-toggle"
-                        (click)="toggleCategoryEmail(category, true)"
-                        title="Attiva tutte le email">
-                  <mat-icon>email</mat-icon>
-                </button>
-                <button type="button" 
-                        mat-icon-button 
-                        class="toggle-btn push-toggle"
-                        (click)="toggleCategoryPush(category, true)"
-                        title="Attiva tutte le notifiche push">
-                  <mat-icon>notifications</mat-icon>
-                </button>
-              </div>
-            </div>
-          </div>          <mat-divider></mat-divider>
-
-          <!-- Individual preferences -->
-          <div class="preferences-list">
-            @for (preference of category.preferences; track preference.id) {
-              <div class="preference-item">
-                <div class="preference-info">
-                  <h4>{{ preference.title }}</h4>
-                  <p>{{ preference.description }}</p>
-                </div>
-                
-                <div class="preference-toggles">
-                  <div class="toggle-item">
-                    <mat-slide-toggle 
-                      [formControlName]="preference.id + '_email'"
-                      color="primary">
-                      <mat-icon>email</mat-icon>
-                      <span>Email</span>
-                    </mat-slide-toggle>
-                  </div>
-                  
-                  <div class="toggle-item">
-                    <mat-slide-toggle 
-                      [formControlName]="preference.id + '_push'"
-                      color="primary"
-                      (change)="onPushToggleChange(preference.id, $event.checked)">
-                      <mat-icon>notifications</mat-icon>
-                      <span>Push</span>
-                      @if (pushPermissionStatus() === 'denied') {
-                        <mat-icon class="permission-icon denied" title="Permesso negato">block</mat-icon>
-                      } @else if (pushPermissionStatus() === 'default') {
-                        <mat-icon class="permission-icon pending" title="Permesso richiesto">help_outline</mat-icon>
-                      } @else if (pushPermissionStatus() === 'granted') {
-                        <mat-icon class="permission-icon granted" title="Permesso concesso">check_circle</mat-icon>
-                      }
-                    </mat-slide-toggle>
-                  </div>
-                </div>
-              </div>
-
-              @if (!$last) {
-                <mat-divider class="preference-divider"></mat-divider>
-              }
-            }
-          </div>
-        </mat-card-content>
-      </mat-card>
-    }
-
-    <!-- Push Notification Status -->
-    <div class="push-notification-status" [ngClass]="'status-' + pushPermissionStatus()">
-      @if (pushPermissionStatus() === 'denied') {
-        <mat-icon>block</mat-icon>
-        <div class="status-content">
-          <h4>Notifiche Push Bloccate</h4>
-          <p>Le notifiche push sono state bloccate dal browser. Per abilitarle, vai nelle impostazioni del browser e autorizza le notifiche per questo sito.</p>
-        </div>
-      } @else if (pushPermissionStatus() === 'default') {
-        <mat-icon>notifications_none</mat-icon>
-        <div class="status-content">
-          <h4>Notifiche Push Non Configurate</h4>
-          <p>Le notifiche push non sono ancora state configurate. Attiva una notifica push per richiedere il permesso.</p>
-        </div>
-      } @else if (pushPermissionStatus() === 'granted') {
-        <mat-icon>notifications_active</mat-icon>
-        <div class="status-content">
-          <h4>Notifiche Push Attive</h4>
-          <p>Le notifiche push sono state autorizzate e possono essere utilizzate.</p>
-        </div>
-      }
-    </div>
-
-    <!-- Information Notice -->
-    <div class="info-notice">
-      <mat-icon>info</mat-icon>
-      <div class="notice-content">
-        <h4>Importante da Sapere</h4>
-        <ul>
-          <li><strong>Email:</strong> Le notifiche via email sono sempre disponibili se hai un indirizzo verificato</li>
-          <li><strong>Push:</strong> Le notifiche push richiedono il consenso del browser e vengono disabilitate se il permesso viene revocato</li>
-          <li><strong>Sicurezza:</strong> Alcune notifiche di sicurezza critiche non possono essere disabilitate</li>
-          <li><strong>Compatibilità:</strong> Le notifiche push funzionano su tutti i browser moderni che supportano le Web Notifications API</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- Form Actions -->
-    <div class="form-actions">
-      <button type="button" 
-              mat-button
-              [disabled]="isLoading() || !hasChanges()"
-              (click)="notificationForm.markAsPristine(); hasChanges.set(false)">
-        <mat-icon>cancel</mat-icon>
-        Annulla Modifiche
-      </button>
+  <!-- Preferences Form -->
+  @if (!isLoading()) {
+    <form [formGroup]="notificationForm" (ngSubmit)="onSubmit()" class="preferences-form">
       
-      <button type="submit" 
-              mat-raised-button 
-              color="primary"
-              [disabled]="isLoading() || notificationForm.invalid || !hasChanges()">
-        @if (isLoading()) {
-          <mat-icon class="spin">refresh</mat-icon>
-        } @else {
-          <mat-icon>save</mat-icon>
-        }
-        Salva Preferenze
-      </button>
-    </div>
+      <!-- Notification Types List -->
+      <div class="notification-types-list">
+        @for (notifType of notificationTypes; track notifType.type) {
+          <mat-card class="notification-type-card">
+            <mat-card-header>
+              <div mat-card-avatar class="notification-icon">
+                <mat-icon>{{ notifType.icon }}</mat-icon>
+              </div>
+              <mat-card-title>{{ notifType.title }}</mat-card-title>
+              <mat-card-subtitle>{{ notifType.description }}</mat-card-subtitle>
+            </mat-card-header>
 
-  </form>
+            <mat-card-content>
+              <div class="toggle-container">
+                <mat-slide-toggle 
+                  [formControlName]="notifType.type"
+                  color="primary">
+                  {{ isEnabled(notifType.type) ? 'Abilitato' : 'Disabilitato' }}
+                </mat-slide-toggle>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="form-actions">
+        <button 
+          type="submit" 
+          mat-raised-button 
+          color="primary"
+          [disabled]="!notificationForm.dirty || isSaving()">
+          @if (isSaving()) {
+            <mat-spinner diameter="20" style="display: inline-block; margin-right: 8px;"></mat-spinner>
+            Salvataggio...
+          } @else {
+            <mat-icon>save</mat-icon>
+            Salva Preferenze
+          }
+        </button>
+      </div>
+    </form>
+  }
 </div>
