@@ -15,17 +15,17 @@
     <button mat-mini-fab
             color="primary"
             class="recenter-button"
-            (click)="triggerSearch()"
+            (click)="searchCurrentArea()"
             matTooltip="Cerca in questa area">
       <mat-icon>search</mat-icon>
     </button>
   </div>
 
   <!-- Property Count Badge -->
-  @if (properties.length > 0) {
+  @if (properties().length > 0) {
     <div class="property-count-badge">
       <mat-icon>home</mat-icon>
-      {{ properties.length }} immobili
+      {{ properties().length }} immobili
     </div>
   }
 </div>

@@ -64,10 +64,10 @@ export class Search implements OnInit, AfterViewInit, OnDestroy {
 
   isAuthenticated = this.authService.isAuthenticated;
 
-  // Map state
+  // Map state - devono sempre essere forniti alla mappa, mai undefined
   showMap = signal<boolean>(false);
   viewMode = signal<'list' | 'map' | 'split'>('list');
-  mapCenter = signal<{ lat: number; lng: number } | undefined>(undefined);
+  mapCenter = signal<{ lat: number; lng: number }>({ lat: 42.5, lng: 12.5 }); // Default: Italia
   mapRadius = signal<number>(100); // Default 100km
   private enableAutoSearch = true; // Flag per controllare se l'auto-search è abilitato
 
@@ -136,23 +136,13 @@ export class Search implements OnInit, AfterViewInit, OnDestroy {
       this.viewMode.set(savedState.viewMode);
       this.showMap.set(savedState.showMap);
 
+      // Ripristina il centro della mappa PRIMA di mostrarla
       if (savedState.center) {
         this.mapCenter.set(savedState.center);
       }
 
       // Esegui la ricerca con i filtri salvati
       this.executeSearch(savedState.filters);
-
-      // Centra la mappa sulla posizione salvata
-      if (savedState.center && savedState.zoom) {
-        setTimeout(() => {
-          this.searchMapComponent?.setCenter(
-            savedState.center!.lat,
-            savedState.center!.lng,
-            savedState.zoom
-          );
-        }, 200);
-      }
 
       // Pulisci lo stato salvato dopo averlo ripristinato
       this.mapStateService.clearState();
@@ -165,14 +155,28 @@ export class Search implements OnInit, AfterViewInit, OnDestroy {
    *
    * Nota: anche se ci sono geoFilters (autocomplete selezionato), NON attiva la mappa.
    * La mappa si attiva SOLO con "Cerca in mappa" (onMapSearchClicked).
+   * 
+   * IMPORTANTE: Se ci sono geoFilters, salva il centro per un eventuale futuro "Mostra mappa"
    */
   async onSearchStarted(searchFormData: GetPropertiesCardsRequest): Promise<void> {
     this.currentFilters.set(searchFormData);
     this.currentSavedSearchId.set(null); // Reset ID ricerca salvata per nuova ricerca
 
-    // NON attivare la mappa qui - la ricerca normale mostra solo la lista
-    // (anche se ci sono geoFilters da autocomplete)
+    // Se ci sono geoFilters (autocomplete selezionato), salva il centro per un eventuale "Mostra mappa"
+    if (searchFormData.geoFilters?.radiusSearch) {
+      const center = searchFormData.geoFilters.radiusSearch.center;
+      const radius = searchFormData.geoFilters.radiusSearch.radius;
+      
+      this.mapCenter.set({
+        lat: center.coordinates[1],
+        lng: center.coordinates[0]
+      });
+      this.mapRadius.set(radius);
+      
+      console.log('📍 Centro mappa salvato da autocomplete per futuro uso:', this.mapCenter());
+    }
 
+    // NON attivare la mappa qui - la ricerca normale mostra solo la lista
     await this.executeSearch(searchFormData);
   }
 
@@ -196,17 +200,6 @@ export class Search implements OnInit, AfterViewInit, OnDestroy {
     // Rileva se siamo su mobile o desktop
     const isMobile = window.innerWidth <= 768;
 
-    // Mobile: solo vista mappa | Desktop: vista split (lista + mappa)
-    if (isMobile) {
-      this.viewMode.set('map');
-      this.showMap.set(true);
-    } else {
-      this.viewMode.set('split');
-      this.showMap.set(true);
-    }
-
-    console.log('✅ Vista mappa attivata - viewMode:', this.viewMode(), 'showMap:', this.showMap(), 'isMobile:', isMobile);
-
     // CASO 1: Se ci sono già geoFilters (autocomplete selezionato), usa quelle coordinate
     if (searchFormData.geoFilters?.radiusSearch) {
       console.log('📍 Uso coordinate da autocomplete:', searchFormData.geoFilters.radiusSearch);
@@ -214,21 +207,23 @@ export class Search implements OnInit, AfterViewInit, OnDestroy {
       const center = searchFormData.geoFilters.radiusSearch.center;
       const radius = searchFormData.geoFilters.radiusSearch.radius;
 
+      // PRIMA imposta il centro, POI attiva la mappa
       this.mapCenter.set({
         lat: center.coordinates[1],
         lng: center.coordinates[0]
       });
       this.mapRadius.set(radius);
 
-      // Centra la mappa sulle coordinate dell'autocomplete
-      setTimeout(() => {
-        console.log('🔍 Centra la mappa su:', center.coordinates[1], center.coordinates[0], this.searchFormComponent);
-        this.searchMapComponent?.setCenter(
-          center.coordinates[1],
-          center.coordinates[0],
-          this.getZoomFromRadius(radius)
-        );
-      }, 100);
+      // Ora attiva la vista mappa
+      if (isMobile) {
+        this.viewMode.set('map');
+        this.showMap.set(true);
+      } else {
+        this.viewMode.set('split');
+        this.showMap.set(true);
+      }
+
+      console.log('✅ Vista mappa attivata - viewMode:', this.viewMode(), 'showMap:', this.showMap(), 'isMobile:', isMobile);
 
       // Esegui la ricerca geografica con le coordinate dell'autocomplete
       const geoRequest: GetGeoPropertiesCardsRequest = {
@@ -259,13 +254,20 @@ export class Search implements OnInit, AfterViewInit, OnDestroy {
 
           console.log('✅ Geolocalizzazione ottenuta:', { lat: userLat, lng: userLng });
 
+          // PRIMA imposta il centro, POI attiva la mappa
           this.mapCenter.set({ lat: userLat, lng: userLng });
           this.mapRadius.set(radiusKm);
 
-          // Centra la mappa sulla posizione dell'utente
-          setTimeout(() => {
-            this.searchMapComponent?.setCenter(userLat, userLng, this.getZoomFromRadius(radiusKm));
-          }, 100);
+          // Ora attiva la vista mappa
+          if (isMobile) {
+            this.viewMode.set('map');
+            this.showMap.set(true);
+          } else {
+            this.viewMode.set('split');
+            this.showMap.set(true);
+          }
+
+          console.log('✅ Vista mappa attivata con geolocalizzazione');
 
           // Crea i geoFilters con la posizione dell'utente
           const geoRequest: GetGeoPropertiesCardsRequest = {
@@ -301,9 +303,19 @@ export class Search implements OnInit, AfterViewInit, OnDestroy {
           // DISABILITA l'auto-search - l'utente deve fare zoom manualmente
           this.enableAutoSearch = false;
 
-          // Mostra l'Italia intera senza avviare la ricerca
+          // PRIMA imposta il centro (Italia intera), POI attiva la mappa
           const defaultCenter = { lat: 42.5, lng: 12.5 };
           this.mapCenter.set(defaultCenter);
+          this.mapRadius.set(300); // Raggio grande per l'Italia intera
+
+          // Ora attiva la vista mappa
+          if (isMobile) {
+            this.viewMode.set('map');
+            this.showMap.set(true);
+          } else {
+            this.viewMode.set('split');
+            this.showMap.set(true);
+          }
 
           // Imposta risultati vuoti per mostrare la mappa
           this.searchGeoResult.set([]); // Mappa vuota senza marker
@@ -315,10 +327,6 @@ export class Search implements OnInit, AfterViewInit, OnDestroy {
             hasNextPage: false,
             hasPreviousPage: false
           });
-
-          setTimeout(() => {
-            this.searchMapComponent?.setCenter(defaultCenter.lat, defaultCenter.lng, 6); // Zoom Italia
-          }, 100);
 
           // NON eseguire la ricerca - l'utente deve fare zoom manualmente
           // La ricerca partirà solo quando farà zoom abbastanza (vedi onMapBoundsChanged)
@@ -343,8 +351,19 @@ export class Search implements OnInit, AfterViewInit, OnDestroy {
       // DISABILITA l'auto-search - l'utente deve fare zoom manualmente
       this.enableAutoSearch = false;
 
+      // PRIMA imposta il centro (Italia intera), POI attiva la mappa
       const defaultCenter = { lat: 42.5, lng: 12.5 };
       this.mapCenter.set(defaultCenter);
+      this.mapRadius.set(300); // Raggio grande per l'Italia intera
+
+      // Ora attiva la vista mappa
+      if (isMobile) {
+        this.viewMode.set('map');
+        this.showMap.set(true);
+      } else {
+        this.viewMode.set('split');
+        this.showMap.set(true);
+      }
 
       // Imposta risultati vuoti per mostrare la mappa
       this.searchGeoResult.set([]); // Mappa vuota senza marker
@@ -356,10 +375,6 @@ export class Search implements OnInit, AfterViewInit, OnDestroy {
         hasNextPage: false,
         hasPreviousPage: false
       });
-
-      setTimeout(() => {
-        this.searchMapComponent?.setCenter(defaultCenter.lat, defaultCenter.lng, 6);
-      }, 100);
     }
   }
 
@@ -391,11 +406,31 @@ export class Search implements OnInit, AfterViewInit, OnDestroy {
     this.router.navigate(['/properties', property.id]);
   }
 
-  toggleMapView(): void {
-    this.showMap.update(current => !current);
+  async toggleMapView(): Promise<void> {
+    const willShowMap = !this.showMap();
+    
+    // Se sto per MOSTRARE la mappa e NON ci sono geoFilters, richiedi geolocalizzazione
+    if (willShowMap && !this.currentFilters().geoFilters?.radiusSearch) {
+      console.log('📍 Mostra mappa da ricerca normale - richiedo geolocalizzazione');
+      
+      // Prepara i filtri attuali per la ricerca geografica
+      const searchFormData: GetPropertiesCardsRequest = {
+        filters: this.currentFilters().filters || {},
+        status: this.currentFilters().status,
+        agencyId: this.currentFilters().agencyId,
+        pagedRequest: this.currentFilters().pagedRequest
+      };
+      
+      // Usa la logica di onMapSearchClicked per gestire geolocalizzazione
+      await this.onMapSearchClicked(searchFormData);
+      return; // onMapSearchClicked gestirà showMap e viewMode
+    }
+    
+    // Altrimenti, semplice toggle della mappa (i geoFilters esistono già)
+    this.showMap.set(willShowMap);
 
     // Cambia viewMode in base allo stato
-    if (this.showMap()) {
+    if (willShowMap) {
       this.viewMode.set('split');
     } else {
       this.viewMode.set('list');

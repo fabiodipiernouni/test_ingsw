@@ -1,13 +1,9 @@
 import {
   Component,
-  Input,
-  Output,
-  EventEmitter,
-  OnInit,
+  input,
+  output,
   OnDestroy,
   AfterViewInit,
-  OnChanges,
-  SimpleChanges,
   ViewChild,
   ElementRef,
   signal,
@@ -40,48 +36,53 @@ interface MarkerData {
   templateUrl: './search-map.html',
   styleUrls: ['./search-map.scss']
 })
-export class SearchMap implements OnInit, AfterViewInit, OnChanges, OnDestroy {
+export class SearchMap implements AfterViewInit, OnDestroy {
   @ViewChild('mapContainer', { static: false }) mapContainer!: ElementRef;
 
-  @Input() properties: GeoPropertyCardDto[] = [];
-  @Input() center?: { lat: number; lng: number };
-  @Input() radius?: number; // in kilometers
+  // Input signals - la mappa riceve sempre centro e proprietà dal parent
+  properties = input.required<GeoPropertyCardDto[]>();
+  center = input.required<{ lat: number; lng: number }>();
+  radius = input<number>(); // in kilometers (opzionale)
 
-  @Output() boundsChanged = new EventEmitter<RadiusSearch>();
-  @Output() propertySelected = new EventEmitter<GeoPropertyCardDto>();
+  // Output signals
+  boundsChanged = output<RadiusSearch>();
+  propertySelected = output<GeoPropertyCardDto>();
 
   public map: any; // Pubblica per permettere l'accesso allo stato della mappa
   private markers: MarkerData[] = [];
   private searchDebounceTimer: any;
-  private readonly defaultCenter = { lat: 42.5, lng: 12.5 }; // Fallback: Italia intera
-  private readonly DEFAULT_ZOOM = 10;
+  private isMapInitialized = false;
 
   isLoading = signal<boolean>(false);
 
   constructor() {
+    // Effect per sincronizzare il centro della mappa
+    effect(() => {
+      const mapCenter = this.center();
+      if (this.isMapInitialized && this.map && mapCenter) {
+        console.log('⚡ Effect centro - aggiorno mappa:', mapCenter);
+        this.map.setCenter(mapCenter);
+      }
+    });
+
     // Effect per aggiornare markers quando cambiano le properties
     effect(() => {
-      if (this.map && this.properties) {
-        console.log('⚡ Effect attivato - properties:', this.properties.length);
+      const props = this.properties();
+      if (this.isMapInitialized && this.map) {
+        console.log('⚡ Effect properties - aggiorno markers:', props.length);
         this.updateMarkers();
       }
     });
   }
 
-  ngOnInit(): void {
-    // Initialization logic
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    // Rileva quando le properties cambiano dall'esterno
-    if (changes['properties'] && this.map) {
-      console.log('🔄 ngOnChanges - properties cambiate:', this.properties.length);
-      this.updateMarkers();
-    }
-  }
-
   ngAfterViewInit(): void {
-    this.initializeMap();
+    // Inizializza la mappa SOLO quando abbiamo il centro
+    const mapCenter = this.center();
+    if (mapCenter) {
+      this.initializeMap();
+    } else {
+      console.error('❌ Impossibile inizializzare mappa: centro non fornito');
+    }
   }
 
   ngOnDestroy(): void {
@@ -115,36 +116,13 @@ export class SearchMap implements OnInit, AfterViewInit, OnChanges, OnDestroy {
       }
     }
 
-// Nessuna location selezionata: prova geolocalizzazione o fallback su Italia
-    if (!this.center) {
-      console.log('Nessuna posizione centrale fornita, tentativo di geolocalizzazione...');
-      this.center = await new Promise<{ lat: number; lng: number }>(
-        (resolve) => {
-          if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition((position) =>
-              // Successo: centra sulla posizione utente
-              resolve({
-                "lat": position.coords.latitude,
-                "lng": position.coords.longitude
-              }),
-              (error) => {
-                // Errore/negato: mostra Italia intera
-                console.log('Geolocalizzazione non disponibile o negata, uso centro di default (Italia) - ', error);
-                resolve(this.defaultCenter);
-              },
-              {timeout: 5000} // Max 5 secondi
-            );
-          } else {
-            // Browser non supporta geolocalizzazione: mostra Italia
-            resolve(this.defaultCenter);
-          }
-        }
-      );
-    }
+    const mapCenter = this.center();
+    
+    console.log('🗺️ Inizializzazione mappa con centro:', mapCenter);
 
     this.map = new google.maps.Map(this.mapContainer.nativeElement, {
-      center: this.center,
-      zoom: this.DEFAULT_ZOOM,
+      center: mapCenter,
+      zoom: this.calculateInitialZoom(),
       mapId: '7da3bb3ee01b95aec6b80944', // Map ID creato nella Google Cloud Console
       mapTypeControl: true,
       streetViewControl: false,
@@ -153,15 +131,33 @@ export class SearchMap implements OnInit, AfterViewInit, OnChanges, OnDestroy {
       styles: this.getMapStyles()
     });
 
+    this.isMapInitialized = true;
+
     // Listener per bounds change (auto-search)
     google.maps.event.addListener(this.map, 'bounds_changed', () => {
       this.onBoundsChanged();
     });
 
     // Aggiungi markers iniziali se ci sono properties
-    if (this.properties.length > 0) {
+    const initialProperties = this.properties();
+    if (initialProperties.length > 0) {
+      console.log('🏠 Aggiunta markers iniziali:', initialProperties.length);
       this.updateMarkers();
     }
+  }
+
+  private calculateInitialZoom(): number {
+    const radiusKm = this.radius();
+    if (!radiusKm) return 10; // Default zoom
+    
+    // Calcola zoom in base al raggio
+    if (radiusKm <= 5) return 13;
+    if (radiusKm <= 10) return 12;
+    if (radiusKm <= 25) return 11;
+    if (radiusKm <= 50) return 10;
+    if (radiusKm <= 100) return 9;
+    if (radiusKm <= 200) return 8;
+    return 7;
   }
 
   private onBoundsChanged(): void {
@@ -247,13 +243,14 @@ export class SearchMap implements OnInit, AfterViewInit, OnChanges, OnDestroy {
   }
 
   private updateMarkers(): void {
-    console.log('🏠 updateMarkers chiamato - Numero proprietà:', this.properties.length);
+    const props = this.properties();
+    console.log('🏠 updateMarkers chiamato - Numero proprietà:', props.length);
 
     // Rimuovi markers esistenti
     this.clearMarkers();
 
     // Aggiungi nuovi markers
-    this.properties.forEach((property, index) => {
+    props.forEach((property, index) => {
       console.log(`  Proprietà ${index + 1}:`, {
         id: property.id,
         title: property.title,
@@ -274,10 +271,11 @@ export class SearchMap implements OnInit, AfterViewInit, OnChanges, OnDestroy {
 
     console.log('✅ Totale markers aggiunti:', this.markers.length);
 
-    // Fit bounds se ci sono markers e non è stato specificato un centro
-    if (this.markers.length > 0 && !this.center) {
-      console.log('📐 Adattamento bounds della mappa ai markers');
-      this.fitBounds();
+    // Fit bounds solo se non è stato specificato un centro specifico
+    // e ci sono markers da mostrare
+    if (this.markers.length > 0 && this.properties().length > 0) {
+      console.log('📐 Markers aggiunti, mantieni il centro corrente');
+      // Non facciamo fitBounds per mantenere il centro impostato dal parent
     }
   }
 
@@ -487,19 +485,9 @@ export class SearchMap implements OnInit, AfterViewInit, OnChanges, OnDestroy {
   }
 
   /**
-   * Metodi pubblici per controllo esterno
+   * Metodo pubblico per forzare la ricerca nell'area corrente della mappa
    */
-  public setCenter(lat: number, lng: number, zoom?: number): void {
-    if (this.map) {
-      this.map.setCenter({ lat, lng });
-      if (zoom) {
-        this.map.setZoom(zoom);
-      }
-    }
-  }
-
-  public triggerSearch(): void {
+  public searchCurrentArea(): void {
     this.emitBoundsChanged();
   }
 }
-

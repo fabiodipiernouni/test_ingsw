@@ -77,16 +77,15 @@
                 <mat-icon>map</mat-icon>
               </button>
             </div>
-
-            <!-- Desktop: Toggle Mappa -->
-            <button mat-icon-button
-                    class="desktop-map-toggle"
-                    (click)="toggleMapView()"
-                    [class.active]="showMap()"
-                    matTooltip="{{ showMap() ? 'Nascondi mappa' : 'Mostra mappa' }}">
-              <mat-icon>{{ showMap() ? 'list' : 'map' }}</mat-icon>
-            </button>
           }
+          <!-- Desktop: Toggle Mappa -->
+          <button mat-icon-button
+                  class="desktop-map-toggle"
+                  (click)="toggleMapView()"
+                  [class.active]="showMap()"
+                  matTooltip="{{ showMap() ? 'Nascondi mappa' : 'Mostra mappa' }}">
+            <mat-icon>{{ showMap() ? 'list' : 'map' }}</mat-icon>
+          </button>
 
           @if (hasSearched()) {
             <button mat-button (click)="clearSearch()">
@@ -118,7 +117,7 @@
                [class.hidden-mobile]="viewMode() === 'list'"
                [class.visible-mobile]="viewMode() === 'map'">
             <app-search-map
-              [properties]="searchGeoResult() || []"
+              [properties]="searchGeoResult()"
               [center]="mapCenter()"
               [radius]="mapRadius()"
               (boundsChanged)="onMapBoundsChanged($event)"
