@@ -1,6 +1,9 @@
-import { IsEmail, IsString, MinLength, IsBoolean, IsOptional, Matches, MaxLength } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsBoolean, IsOptional, Matches, MaxLength, IsArray, ArrayUnique, IsEnum } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { NotificationType, NOTIFICATION_TYPES } from '@shared/types/notification.types';
 
 export class RegisterDto {
+  @Transform(({ value }) => value?.trim().toLowerCase())
   @IsEmail({}, { message: 'Email is not valid' })
   email: string;
 
@@ -33,4 +36,9 @@ export class RegisterDto {
     message: 'Phone number must be in E.164 format (e.g. +391234567890)'
   })
   phone?: string;
+
+  @IsArray()
+  @ArrayUnique()
+  @IsEnum(NOTIFICATION_TYPES, { each: true })
+  enabledNotificationTypes!: NotificationType[];
 }

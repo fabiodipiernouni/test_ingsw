@@ -37,20 +37,7 @@
     <div class="user-actions">
       @if (isAuthenticated()) {
         <!-- Notifications -->
-        <button mat-icon-button
-                class="notification-button"
-                (click)="onNotificationsClick()"
-                matTooltip="Notifiche">
-          @if (unreadNotifications() > 0) {
-            <mat-icon [matBadge]="unreadNotifications()"
-                      matBadgeColor="warn"
-                      matBadgeSize="small">
-              notifications
-            </mat-icon>
-          } @else {
-            <mat-icon>notifications_none</mat-icon>
-          }
-        </button>
+        <app-notification-menu></app-notification-menu>
 
         <!-- User Menu -->
         <button mat-icon-button
@@ -96,20 +83,7 @@
             <span>Ricerche Salvate</span>
           </button>
 
-          <button mat-menu-item routerLink="/notifications">
-            <mat-icon>notifications</mat-icon>
-            <span>Notifiche</span>
-            @if (unreadNotifications() > 0) {
-              <mat-chip class="unread-badge">{{ unreadNotifications() }}</mat-chip>
-            }
-          </button>
-
           <mat-divider></mat-divider>
-
-          <button mat-menu-item routerLink="/settings">
-            <mat-icon>settings</mat-icon>
-            <span>Impostazioni</span>
-          </button>
 
           <button mat-menu-item (click)="onLogout()" class="logout-item">
             <mat-icon>logout</mat-icon>
@@ -180,14 +154,6 @@
               <span>Ricerche Salvate</span>
             </a>
 
-            <a mat-button routerLink="/notifications" (click)="toggleMobileMenu()">
-              <mat-icon>notifications</mat-icon>
-              <span>Notifiche</span>
-              @if (unreadNotifications() > 0) {
-                <mat-chip class="unread-badge">{{ unreadNotifications() }}</mat-chip>
-              }
-            </a>
-
             @if (isAgent()) {
               <a mat-button routerLink="/properties/upload" (click)="toggleMobileMenu()">
                 <mat-icon>add_home</mat-icon>
@@ -204,12 +170,7 @@
               <mat-icon>person</mat-icon>
               <span>Il Mio Profilo</span>
             </a>
-
-            <a mat-button routerLink="/settings" (click)="toggleMobileMenu()">
-              <mat-icon>settings</mat-icon>
-              <span>Impostazioni</span>
-            </a>
-
+            
             <mat-divider></mat-divider>
 
             <button mat-button (click)="onLogout()" class="logout-button">

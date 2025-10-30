@@ -6,6 +6,7 @@ import { validate as classValidate } from 'class-validator';
 import { GetPropertiesCardsRequest } from '../../services/property-service/dto/GetPropertiesCardsRequest';
 import { ApiResponse } from '@shared/dto/ApiResponse';
 import logger from '@shared/utils/logger';
+import { NOTIFICATION_TYPES } from '@shared/types/notification.types';
 
 
 
@@ -119,7 +120,7 @@ export const commonValidations = {
     param(field).isUUID().withMessage(`${field} must be a valid UUID`),
     
   email: () => 
-    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('email').isEmail().withMessage('Valid email is required'),
     
   password: () => 
     body('password')
@@ -277,7 +278,18 @@ export const authValidations = {
       
     body('acceptPrivacy')
       .isBoolean()
-      .withMessage('Privacy acceptance is required')
+      .withMessage('Privacy acceptance is required'),
+
+    body('enabledNotificationTypes')
+      .isArray()
+      .withMessage('Enabled notification types must be an array')
+      .custom((value) => {
+        const isValid = value.every((type: any) => NOTIFICATION_TYPES.includes(type));
+        if (!isValid) {
+          throw new Error(`Enabled notification types must be one of: ${NOTIFICATION_TYPES.join(', ')}`);
+        }
+        return true;
+      })
   ],
   
   login: [

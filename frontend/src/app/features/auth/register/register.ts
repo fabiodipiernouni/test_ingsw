@@ -9,10 +9,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '@core/services/auth/auth.service';
 import { OAuthProviders } from '@features-auth/oauth-providers/oauth-providers';
 import { AuthLayoutComponent, AuthLayoutConfig } from '@shared/components/auth-layout/auth-layout';
 import { RouterLink } from '@angular/router';
+import { NotificationType } from '@core/services/shared/types/notification.types';
 
 @Component({
   selector: 'app-register',
@@ -26,6 +28,7 @@ import { RouterLink } from '@angular/router';
     MatIconModule,
     MatSelectModule,
     MatCheckboxModule,
+    MatTooltipModule,
     OAuthProviders,
     AuthLayoutComponent,
     RouterLink
@@ -60,7 +63,9 @@ export class Register {
     password: ['', [Validators.required, Validators.minLength(8), this.passwordValidator]],
     confirmPassword: ['', Validators.required],
     acceptTerms: [false, Validators.requiredTrue],
-    acceptPrivacy: [false, Validators.requiredTrue]
+    acceptPrivacy: [false, Validators.requiredTrue],
+    notifyPropertyAndVisit: [false],
+    notifyPromotional: [false]
   }, { validators: this.passwordMatchValidator });
 
   onSubmit(): void {
@@ -68,6 +73,16 @@ export class Register {
       this.isLoading.set(true);
 
       const formValue = this.registrationForm.value;
+      
+      // Build enabledNotificationTypes array based on checkbox selections
+      const enabledNotificationTypes: NotificationType[] = [];
+      if (formValue.notifyPropertyAndVisit) {
+        enabledNotificationTypes.push('new_property_match_saved_search', 'visit_status_update');
+      }
+      if (formValue.notifyPromotional) {
+        enabledNotificationTypes.push('promotional_message');
+      }
+      
       const userData = {
         firstName: formValue.firstName,
         lastName: formValue.lastName,
@@ -75,7 +90,8 @@ export class Register {
         phone: formValue.phone || undefined,
         password: formValue.password,
         acceptTerms: formValue.acceptTerms,
-        acceptPrivacy: formValue.acceptPrivacy
+        acceptPrivacy: formValue.acceptPrivacy,
+        enabledNotificationTypes
       };
 
       this.authService.register(userData).subscribe({

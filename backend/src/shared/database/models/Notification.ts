@@ -12,6 +12,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { User } from './User';
 import { NOTIFICATION_TYPES, NotificationType } from '@shared/types/notification.types';
+import { Op } from 'sequelize';
 
 @Table({
   tableName: 'notifications',
@@ -42,10 +43,15 @@ export class Notification extends Model {
   @Column(DataType.STRING(4000))
   message!: string;
 
-  @AllowNull(false)
-  @Default(false)
-  @Column(DataType.BOOLEAN)
-  isRead!: boolean;
+  @Column(DataType.VIRTUAL)
+  get isRead(): boolean {
+    return this.readAt != null;
+  }
+
+  @Column(DataType.VIRTUAL)
+  get isSent(): boolean {
+    return this.sentAt != null;
+  }
 
   @AllowNull(true)
   @Column(DataType.STRING(2000))
@@ -59,56 +65,30 @@ export class Notification extends Model {
   @Column(DataType.DATE)
   readAt?: Date;
 
+  @AllowNull(true)
+  @Column(DataType.DATE)
+  sentAt?: Date; // sarà true quando la notifica sarà stata effettivamente inviata
+
   // Instance methods
   async markAsRead(): Promise<void> {
-    if (!this.isRead) {
-      this.isRead = true;
+    if (!this.readAt) {
       this.readAt = new Date();
       await this.save();
     }
   }
 
-  // Static methods
-  static async getUserUnreadNotifications(userId: string, limit?: number): Promise<Notification[]> {
-    const options: any = {
-      where: {
-        userId,
-        isRead: false
-      },
-      order: [['createdAt', 'DESC']]
-    };
-
-    if (limit) {
-      options.limit = limit;
+  async markAsUnread(): Promise<void> {
+    if (this.readAt) {
+      this.readAt = null as any;
+      await this.save();
     }
-
-    return await Notification.findAll(options);
-  }
-
-  static async getUserNotificationsByType(
-    userId: string, 
-    type: NotificationType,
-    limit?: number
-  ): Promise<Notification[]> {
-    const options: any = {
-      where: {
-        userId,
-        type
-      },
-      order: [['createdAt', 'DESC']]
-    };
-
-    if (limit) {
-      options.limit = limit;
-    }
-
-    return await Notification.findAll(options);
   }
 
   static async markAllAsReadForUser(userId: string, type?: NotificationType): Promise<number> {
     const whereClause: any = {
       userId,
-      isRead: false
+      readAt: null,
+      sentAt: { [Op.ne]: null } // Only sent notifications
     };
 
     if (type) {
@@ -117,7 +97,6 @@ export class Notification extends Model {
 
     const [affectedCount] = await Notification.update(
       { 
-        isRead: true, 
         readAt: new Date() 
       },
       { 
@@ -128,45 +107,15 @@ export class Notification extends Model {
     return affectedCount;
   }
 
-  static async getNotificationStats(userId: string, days: number = 30): Promise<any> {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-
-    const notifications = await Notification.findAll({
+  static async getTotalUnreadCountForUser(userId: string): Promise<number> {
+    const count = await Notification.count({
       where: {
         userId,
-        createdAt: {
-          $gte: startDate
-        }
+        readAt: null,
+        sentAt: { [Op.ne]: null } // Only sent notifications
       }
     });
-
-    const totalSent = notifications.length;
-    const totalRead = notifications.filter(n => n.isRead).length;
-    const unreadCount = totalSent - totalRead;
-    const readRate = totalSent > 0 ? totalRead / totalSent : 0;
-
-    // Group by type
-    const byType: any = {};
-    notifications.forEach(notification => {
-      if (!byType[notification.type]) {
-        byType[notification.type] = { sent: 0, read: 0, unread: 0 };
-      }
-      byType[notification.type].sent++;
-      if (notification.isRead) {
-        byType[notification.type].read++;
-      } else {
-        byType[notification.type].unread++;
-      }
-    });
-
-    return {
-      totalSent,
-      totalRead,
-      unreadCount,
-      readRate,
-      byType
-    };
+    return count;
   }
 
 }

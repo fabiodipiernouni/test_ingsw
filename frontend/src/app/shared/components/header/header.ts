@@ -11,6 +11,7 @@ import { AuthService } from '@core/services/auth/auth.service';
 import {MatDivider} from '@angular/material/divider';
 import {MatChip} from '@angular/material/chips';
 import { UserAvatar } from '@shared/components/user-avatar/user-avatar';
+import { NotificationMenu } from '@shared/components/notification-menu/notification-menu';
 
 @Component({
   selector: 'app-header',
@@ -25,31 +26,23 @@ import { UserAvatar } from '@shared/components/user-avatar/user-avatar';
     MatBadgeModule,
     MatTooltipModule,
     MatDivider,
-    MatChip,
-    UserAvatar
+    UserAvatar,
+    NotificationMenu
   ],
   templateUrl: './header.html',
   styleUrl: './header.scss'
 })
 export class Header implements OnInit {
   private readonly authService = inject(AuthService);
-  // private notificationService = inject(NotificationService); //TODO
   private readonly router = inject(Router);
 
-  // Use signals directly from AuthService
+  // Use signals directly from services
   currentUser = this.authService.currentUser;
   isAuthenticated = this.authService.isAuthenticated;
-  unreadNotifications = signal<number>(0);
   isMobileMenuOpen = signal<boolean>(false);
 
   ngOnInit(): void {
-    // Subscribe to notification count
-    // TODO
-    /*
-    this.notificationService.unreadCount$.subscribe(count => {
-      this.unreadNotifications.set(count);
-    });
-    */
+    // Il polling delle notifiche viene gestito automaticamente dal NotificationService
   }
 
   onLogin(): void {
@@ -68,10 +61,6 @@ export class Header implements OnInit {
   onProfileClick(): void {
     this.router.navigate(['/profile']);
     this.isMobileMenuOpen.set(false);
-  }
-
-  onNotificationsClick(): void {
-    this.router.navigate(['/notifications']);
   }
 
   onUploadProperty(): void {

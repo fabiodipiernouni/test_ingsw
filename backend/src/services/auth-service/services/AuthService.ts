@@ -42,7 +42,6 @@ import { Address } from '@shared/models/Address';
 import { Contacts } from '@shared/models/Contacts';
 import { OAuthProvider } from '@shared/types/auth.types';
 import { UpdateNotificationPreferencesDto } from '@auth/dto/UpdateNotificationPreferencesDto';
-import { NotificationType } from '@shared/types/notification.types';
 import { NotificationPreferencesResponse } from '../dto/NotificationPreferencesResponse';
 
 // Cognito Client
@@ -176,7 +175,7 @@ export class AuthService {
         acceptedPrivacyAt: registerData.acceptPrivacy ? new Date() : undefined,
         isActive: true,
         isVerified: false, // Sarà true dopo conferma email
-        enabledNotificationTypes: []
+        enabledNotificationTypes: registerData.enabledNotificationTypes
       });
 
       logger.info('User registered successfully', { email: registerData.email, cognitoSub });

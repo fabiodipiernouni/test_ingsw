@@ -2,11 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import yaml from 'js-yaml';
-import { config } from '../../config/index';
-import { errorHandler, notFoundHandler } from '../../shared/middleware/errorHandler';
-import logger from '../../shared/utils/logger';
+import { config } from '@config/index';
+import { errorHandler, notFoundHandler } from '@shared/middleware/errorHandler';
+import notificationRoutes from '@notification/routes/notification';
+import logger from '@shared/utils/logger';
 import { connectToDatabase } from '@shared/database';
-import { specs } from './config/swagger';
+import { specs } from '@notification/config/swagger';
 
 const app = express();
 const PORT = config.notification?.port || 3005;
@@ -119,9 +120,8 @@ app.get('/api/health', (req, res) => {
 });
 
 // Routes
-// TODO: Implementare le routes per le notifiche
-// import notificationRoutes from './routes/notifications';
-// app.use('/api/notifications', notificationRoutes);
+app.use('/api/', notificationRoutes);
+logger.debug('Route /api configurata');
 
 // 404 handler for undefined routes
 app.use(notFoundHandler);

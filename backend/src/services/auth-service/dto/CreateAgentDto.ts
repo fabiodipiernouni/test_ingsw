@@ -1,6 +1,8 @@
 import { IsEmail, IsString, MinLength, MaxLength, IsOptional, Matches } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateAgentDto {
+  @Transform(({ value }) => value?.trim().toLowerCase())
   @IsEmail({}, { message: 'Email is invalid' })
   email: string;
 

@@ -1,3 +1,5 @@
+import { NotificationType } from "@core-services/shared/types/notification.types";
+
 export interface RegisterRequest {
   email: string;
   password: string;
@@ -6,4 +8,5 @@ export interface RegisterRequest {
   acceptTerms: boolean;
   acceptPrivacy: boolean;
   phone?: string;
+  enabledNotificationTypes: NotificationType[];
 }
