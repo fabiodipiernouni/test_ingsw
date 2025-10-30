@@ -1,0 +1,424 @@
+{
+  "info": {
+    "name": "DietiEstates - Property Images Upload",
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "description": "Collection per testare l'upload di immagini delle proprietà",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Upload Images",
+      "item": [
+        {
+          "name": "Upload Single Image",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text",
+                "description": "JWT Token ottenuto dal login"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": [],
+                  "description": "Seleziona un'immagine (JPEG, PNG, WebP)"
+                },
+                {
+                  "key": "metadata",
+                  "value": "[\n  {\n    \"isPrimary\": true,\n    \"order\": 0,\n    \"caption\": \"Foto principale\",\n    \"altText\": \"Vista frontale dell'immobile\"\n  }\n]",
+                  "type": "text",
+                  "description": "Metadata JSON per l'immagine"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/property/{{property_id}}/images",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "property",
+                "{{property_id}}",
+                "images"
+              ]
+            },
+            "description": "Upload di una singola immagine per una proprietà"
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Multiple Images (2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": [],
+                  "description": "Prima immagine"
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": [],
+                  "description": "Seconda immagine"
+                },
+                {
+                  "key": "metadata",
+                  "value": "[\n  {\n    \"isPrimary\": true,\n    \"order\": 0,\n    \"caption\": \"Soggiorno luminoso\",\n    \"altText\": \"Vista del soggiorno con finestre panoramiche\"\n  },\n  {\n    \"isPrimary\": false,\n    \"order\": 1,\n    \"caption\": \"Cucina moderna\",\n    \"altText\": \"Cucina completamente attrezzata\"\n  }\n]",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/property/{{property_id}}/images",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "property",
+                "{{property_id}}",
+                "images"
+              ]
+            },
+            "description": "Upload di 2 immagini per una proprietà"
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Multiple Images (5)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "metadata",
+                  "value": "[\n  {\n    \"isPrimary\": true,\n    \"order\": 0,\n    \"caption\": \"Esterno\",\n    \"altText\": \"Vista frontale dell'immobile\"\n  },\n  {\n    \"isPrimary\": false,\n    \"order\": 1,\n    \"caption\": \"Soggiorno\",\n    \"altText\": \"Ampio soggiorno\"\n  },\n  {\n    \"isPrimary\": false,\n    \"order\": 2,\n    \"caption\": \"Cucina\",\n    \"altText\": \"Cucina moderna\"\n  },\n  {\n    \"isPrimary\": false,\n    \"order\": 3,\n    \"caption\": \"Camera da letto\",\n    \"altText\": \"Camera matrimoniale\"\n  },\n  {\n    \"isPrimary\": false,\n    \"order\": 4,\n    \"caption\": \"Bagno\",\n    \"altText\": \"Bagno con doccia\"\n  }\n]",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/property/{{property_id}}/images",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "property",
+                "{{property_id}}",
+                "images"
+              ]
+            },
+            "description": "Upload di 5 immagini per una proprietà"
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Minimal Metadata",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "metadata",
+                  "value": "[\n  {\n    \"isPrimary\": true,\n    \"order\": 0\n  },\n  {\n    \"isPrimary\": false,\n    \"order\": 1\n  }\n]",
+                  "type": "text",
+                  "description": "Solo campi obbligatori"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/property/{{property_id}}/images",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "property",
+                "{{property_id}}",
+                "images"
+              ]
+            },
+            "description": "Upload con metadata minimale (solo campi obbligatori)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoint per l'upload di immagini delle proprietà"
+    },
+    {
+      "name": "Error Tests",
+      "item": [
+        {
+          "name": "Error - Duplicate Primary",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "metadata",
+                  "value": "[\n  {\n    \"isPrimary\": true,\n    \"order\": 0\n  },\n  {\n    \"isPrimary\": true,\n    \"order\": 1\n  }\n]",
+                  "type": "text",
+                  "description": "ERRORE: Due immagini con isPrimary true"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/property/{{property_id}}/images",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "property",
+                "{{property_id}}",
+                "images"
+              ]
+            },
+            "description": "Test errore: più di un'immagine marcata come primary"
+          },
+          "response": []
+        },
+        {
+          "name": "Error - Duplicate Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "metadata",
+                  "value": "[\n  {\n    \"isPrimary\": true,\n    \"order\": 0\n  },\n  {\n    \"isPrimary\": false,\n    \"order\": 0\n  }\n]",
+                  "type": "text",
+                  "description": "ERRORE: Due immagini con lo stesso order"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/property/{{property_id}}/images",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "property",
+                "{{property_id}}",
+                "images"
+              ]
+            },
+            "description": "Test errore: order duplicati"
+          },
+          "response": []
+        },
+        {
+          "name": "Error - Metadata Mismatch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "metadata",
+                  "value": "[\n  {\n    \"isPrimary\": true,\n    \"order\": 0\n  }\n]",
+                  "type": "text",
+                  "description": "ERRORE: 2 file ma solo 1 metadata"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/property/{{property_id}}/images",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "property",
+                "{{property_id}}",
+                "images"
+              ]
+            },
+            "description": "Test errore: numero di metadata non corrisponde al numero di file"
+          },
+          "response": []
+        },
+        {
+          "name": "Error - No Token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "metadata",
+                  "value": "[\n  {\n    \"isPrimary\": true,\n    \"order\": 0\n  }\n]",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/property/{{property_id}}/images",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "property",
+                "{{property_id}}",
+                "images"
+              ]
+            },
+            "description": "Test errore: richiesta senza token di autenticazione"
+          },
+          "response": []
+        }
+      ],
+      "description": "Test degli scenari di errore"
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "YOUR_JWT_TOKEN_HERE",
+      "type": "string"
+    },
+    {
+      "key": "property_id",
+      "value": "550e8400-e29b-41d4-a716-446655440000",
+      "type": "string"
+    }
+  ]
+}
+

@@ -44,3 +44,189 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyOWU5M
 
 ### Ottenere Dettagli di una Proprietà
 GET http://localhost:3002/api/properties/ca06467f-4bc2-5ba2-865d-3f584d01dd9e
+
+###############################################
+# UPLOAD IMMAGINI PROPRIETÀ
+###############################################
+# IMPORTANTE: Prima di usare queste richieste:
+# 1. Modifica il file http-client.env.json nella stessa cartella
+# 2. Inserisci il tuo JWT token (ottenuto dal login)
+# 3. Inserisci un property_id valido di una proprietà esistente
+# 4. Assicurati che i path alle immagini esistano sul tuo sistema
+
+### Upload Singola Immagine
+POST {{base_url}}/api/property/{{property_id}}/images
+Authorization: Bearer {{jwt_token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="images"; filename="soggiorno.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/soggiorno.jpg
+--boundary
+Content-Disposition: form-data; name="metadata"
+
+[
+  {
+    "isPrimary": true,
+    "order": 0,
+    "caption": "Soggiorno luminoso",
+    "altText": "Vista del soggiorno principale con finestre panoramiche"
+  }
+]
+POST {{base_url}}/api/property/{{property_id}}/images
+
+### Upload Multiple Immagini (2)
+POST http://localhost:3001/api/property/550e8400-e29b-41d4-a716-446655440000/images
+Authorization: Bearer {{jwt_token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="images"; filename="soggiorno.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/soggiorno.jpg
+--boundary
+Content-Disposition: form-data; name="images"; filename="cucina.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/cucina.jpg
+--boundary
+Content-Disposition: form-data; name="metadata"
+
+[
+  {
+    "isPrimary": true,
+    "order": 0,
+    "caption": "Soggiorno luminoso",
+    "altText": "Vista del soggiorno con finestre panoramiche"
+  },
+  {
+    "isPrimary": false,
+    "order": 1,
+    "caption": "Cucina moderna",
+    "altText": "Cucina completamente attrezzata"
+  }
+]
+--boundary--
+
+### Upload con Metadata Minimale
+POST {{base_url}}/api/property/{{property_id}}/images
+Authorization: Bearer {{jwt_token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="images"; filename="image1.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image1.jpg
+--boundary
+Content-Disposition: form-data; name="images"; filename="image2.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image2.jpg
+--boundary
+Content-Disposition: form-data; name="metadata"
+
+[
+  {
+    "isPrimary": true,
+    "order": 0
+  },
+  {
+    "isPrimary": false,
+    "order": 1
+  }
+]
+--boundary--
+
+###############################################
+# TEST ERRORI - UPLOAD IMMAGINI
+###############################################
+
+### Errore: Due immagini primary
+POST {{base_url}}/api/property/{{property_id}}/images
+Authorization: Bearer {{jwt_token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="images"; filename="image1.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image1.jpg
+--boundary
+Content-Disposition: form-data; name="images"; filename="image2.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image2.jpg
+--boundary
+Content-Disposition: form-data; name="metadata"
+
+[
+  {
+    "isPrimary": true,
+    "order": 0
+  },
+  {
+    "isPrimary": true,
+    "order": 1
+  }
+]
+--boundary--
+
+### Errore: Order duplicati
+POST {{base_url}}/api/property/{{property_id}}/images
+Authorization: Bearer {{jwt_token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="images"; filename="image1.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image1.jpg
+--boundary
+Content-Disposition: form-data; name="images"; filename="image2.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image2.jpg
+--boundary
+Content-Disposition: form-data; name="metadata"
+
+[
+  {
+    "isPrimary": true,
+    "order": 0
+  },
+  {
+    "isPrimary": false,
+    "order": 0
+  }
+]
+--boundary--
+
+### Errore: Metadata mismatch (2 file, 1 metadata)
+POST {{base_url}}/api/property/{{property_id}}/images
+Authorization: Bearer {{jwt_token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="images"; filename="image1.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image1.jpg
+--boundary
+Content-Disposition: form-data; name="images"; filename="image2.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image2.jpg
+--boundary
+Content-Disposition: form-data; name="metadata"
+
+[
+  {
+    "isPrimary": true,
+    "order": 0
+  }
+]
+--boundary--

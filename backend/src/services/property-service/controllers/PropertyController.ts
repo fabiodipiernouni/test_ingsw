@@ -163,6 +163,98 @@ export class PropertyController {
       setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get properties', 500);
     }
   }
+
+  /**
+   * Registra visualizzazione proprietà
+   * POST /properties/:propertyId/view
+   *
+  async recordPropertyView(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    try {
+      const { propertyId } = req.params;
+      const { source = 'web' } = req.body;
+
+      if (!propertyId) {
+        setResponseAsError(res, 'BAD_REQUEST', 'Property ID is required', 400);
+        return;
+      }
+
+      // TODO: Implementare la logica per registrare la visualizzazione
+      // Per ora restituiamo solo un successo
+      
+      logger.info('Property view recorded', { propertyId, source });
+      
+      setResponseAsSuccess(res, { message: 'View recorded' });
+
+    } catch (error: any) {
+      logger.error('Error in recordPropertyView controller:', error);
+
+      if (error.name === 'NotFoundError') {
+        setResponseAsNotFound(res, error.message);
+        return;
+      }
+
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to record view', 500);
+    }
+  }*/
+
+  /**
+   * Aggiunge immagini a una proprietà
+   * POST /properties/:propertyId/images
+   *
+   * Nota: Tutti i controlli di validazione sono gestiti dai middleware.
+   * Questo metodo contiene solo la logica di business.
+   */
+  async addPropertyImagePost(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+    try {
+      // Ottieni i dati validati dai middleware
+      const propertyId = (req as any).validatedPropertyId;
+      const files = req.files as Express.Multer.File[];
+      const metadata = req.body.metadata;
+      const userId = req.user!.id;
+
+      logger.info(`Adding ${files.length} images to property ${propertyId}`, {
+        userId,
+        propertyId,
+        fileCount: files.length
+      });
+
+      // Chiama il service che gestirà l'upload e il salvataggio
+      const result = await propertyService.addPropertyImages(
+        propertyId,
+        files,
+        metadata,
+        userId
+      );
+
+      setResponseAsSuccess(
+        res,
+        result,
+        `Successfully uploaded ${result.images.length} image(s)`,
+        201
+      );
+
+    } catch (error: any) {
+      logger.error('Error in addPropertyImagePost controller:', error);
+
+
+      if (error.name === 'NotFoundError') {
+        setResponseAsNotFound(res, error.message);
+        return;
+      }
+
+      if (error.name === 'ValidationError') {
+        setResponseAsValidationError(res, error.details?.errors || [error.message]);
+        return;
+      }
+
+      if (error.message?.includes('permission')) {
+        setResponseAsError(res, 'FORBIDDEN', error.message, 403);
+        return;
+      }
+
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to upload images', 500);
+    }
+  }
 }
 
 export const propertyController = new PropertyController();

@@ -7,7 +7,7 @@ export const PROPERTY_TYPES = [
   'loft',
   'office',
   'commercial',
-  'land',
+  'land'
 ] as const;
 export type PropertyType = (typeof PROPERTY_TYPES)[number];
 
@@ -19,7 +19,7 @@ export const PROPERTY_STATUS = [
   'pending',
   'sold',
   'rented',
-  'withdrawn',
+  'withdrawn'
 ] as const;
 export type PropertyStatus = (typeof PROPERTY_STATUS)[number];
 

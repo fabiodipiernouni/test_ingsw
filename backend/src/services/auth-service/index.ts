@@ -2,12 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import yaml from 'js-yaml';
-import { config } from '../../config/index';
-import { errorHandler, notFoundHandler } from '../../shared/middleware/errorHandler';
-import authRoutes from './routes/auth';
-import logger from '../../shared/utils/logger';
+import { config } from '@config/index';
+import { errorHandler, notFoundHandler } from '@shared/middleware/errorHandler';
+import authRoutes from '@services/auth-service/routes/auth';
+import logger from '@shared/utils/logger';
 import { connectToDatabase } from '@shared/database';
-import { specs } from './config/swagger';
+import { specs } from '@services/auth-service/config/swagger';
 
 const app = express();
 const PORT = config.auth.port || 3001;
