@@ -26,7 +26,6 @@ export interface PropertyCardDto {
   hasGarden: boolean;
   hasParking: boolean;
   agentId?: string; // per mostrare il nome dell'agente,
-  //isFavorite?: boolean; // per mostrare l'icona del cuore
   views?: number;
   createdAt: string;
   updatedAt: string;

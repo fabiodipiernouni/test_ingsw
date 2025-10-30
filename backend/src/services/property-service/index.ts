@@ -120,10 +120,10 @@ app.get('/api/health', (req, res) => {
 
 // Routes
 import propertyRoutes from './routes/properties';
-import imageRoutes from './routes/images';
+
 
 app.use('/api/properties', propertyRoutes);
-app.use('/api/properties', imageRoutes); // This handles /properties/:id/images and /images/:id routes
+//app.use('/api/properties', imageRoutes); // This handles /properties/:id/images and /images/:id routes
 
 // 404 handler for undefined routes
 app.use(notFoundHandler);

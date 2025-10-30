@@ -31,23 +31,22 @@ const options: swaggerJsdoc.Options = {
 
         CreatePropertyRequest: {
           type: 'object',
-          required: ['title', 'description', 'price', 'propertyType', 'listingType', 'bedrooms', 'bathrooms', 'area', 'address', 'location'],
+          required: ['title', 'description', 'price', 'propertyType', 'listingType', 'status', 'rooms', 'bedrooms', 'bathrooms', 'area', 'address', 'location'],
           properties: {
             title: {
               type: 'string',
-              minLength: 10,
               maxLength: 200,
               example: 'Appartamento luminoso in centro'
             },
             description: {
               type: 'string',
-              minLength: 50,
-              maxLength: 2000,
+              maxLength: 4000,
               example: 'Splendido appartamento di 100mq situato nel cuore della città...'
             },
             price: {
               type: 'number',
-              minimum: 1,
+              minimum: 0,
+              maximum: 99999999.99,
               example: 250000
             },
             propertyType: {
@@ -60,26 +59,35 @@ const options: swaggerJsdoc.Options = {
               enum: ['sale', 'rent'],
               example: 'sale'
             },
+            status: {
+              type: 'string',
+              enum: ['active', 'pending', 'sold', 'rented', 'withdrawn'],
+              example: 'active'
+            },
+            rooms: {
+              type: 'integer',
+              minimum: 0,
+              example: 4
+            },
             bedrooms: {
               type: 'integer',
               minimum: 0,
-              maximum: 20,
               example: 3
             },
             bathrooms: {
               type: 'integer',
               minimum: 0,
-              maximum: 20,
               example: 2
             },
             area: {
               type: 'number',
-              minimum: 1,
-              maximum: 10000,
+              minimum: 0,
+              maximum: 999999.99,
               example: 100
             },
             floor: {
               type: 'string',
+              maxLength: 50,
               example: '2'
             },
             energyClass: {
@@ -108,7 +116,6 @@ const options: swaggerJsdoc.Options = {
               items: {
                 type: 'string'
               },
-              maxItems: 20,
               example: ['aria condizionata', 'riscaldamento autonomo', 'doppi vetri']
             },
             address: {
@@ -141,6 +148,69 @@ const options: swaggerJsdoc.Options = {
               type: 'string',
               format: 'uuid',
               description: 'Filtra per agenzia specifica (solo per admin)'
+            }
+          }
+        },
+
+        GetGeoPropertiesCardsRequest: {
+          type: 'object',
+          required: ['sortBy'],
+          properties: {
+            filters: {
+              $ref: '#/components/schemas/SearchPropertiesFilters'
+            },
+            geoFilters: {
+              $ref: '#/components/schemas/GeoSearchPropertiesFilters'
+            },
+            status: {
+              type: 'string',
+              enum: ['active', 'pending', 'sold', 'rented', 'withdrawn'],
+              description: 'Filtra per stato (solo per agenti e admin)'
+            },
+            agencyId: {
+              type: 'string',
+              format: 'uuid',
+              description: 'Filtra per agenzia specifica (solo per admin)'
+            },
+            sortBy: {
+              type: 'string',
+              example: 'createdAt',
+              description: 'Campo per ordinamento'
+            },
+            sortOrder: {
+              type: 'string',
+              enum: ['ASC', 'DESC'],
+              default: 'DESC',
+              example: 'DESC',
+              description: 'Direzione ordinamento'
+            }
+          }
+        },
+
+        GetPropertiesByIdListRequest: {
+          type: 'object',
+          required: ['ids'],
+          properties: {
+            ids: {
+              type: 'array',
+              items: {
+                type: 'string',
+                format: 'uuid'
+              },
+              minItems: 1,
+              description: 'Lista di ID delle proprietà',
+              example: ['550e8400-e29b-41d4-a716-446655440000', '6ba7b810-9dad-11d1-80b4-00c04fd430c8']
+            },
+            sortBy: {
+              type: 'string',
+              example: 'createdAt',
+              description: 'Campo per ordinamento'
+            },
+            sortOrder: {
+              type: 'string',
+              enum: ['ASC', 'DESC'],
+              default: 'DESC',
+              example: 'DESC'
             }
           }
         },
@@ -291,6 +361,37 @@ const options: swaggerJsdoc.Options = {
           }
         },
 
+        PropertyImageMetadata: {
+          type: 'object',
+          required: ['isPrimary', 'order'],
+          properties: {
+            isPrimary: {
+              type: 'boolean',
+              description: 'Se questa è l\'immagine principale',
+              example: true
+            },
+            order: {
+              type: 'integer',
+              minimum: 0,
+              maximum: 99,
+              description: 'Ordine di visualizzazione dell\'immagine',
+              example: 0
+            },
+            caption: {
+              type: 'string',
+              maxLength: 500,
+              description: 'Didascalia dell\'immagine',
+              example: 'Soggiorno luminoso'
+            },
+            altText: {
+              type: 'string',
+              maxLength: 255,
+              description: 'Testo alternativo per accessibilità',
+              example: 'Vista del soggiorno con finestre panoramiche'
+            }
+          }
+        },
+
         // ==================== RESPONSE DTOs ====================
 
         PropertyCardDto: {
@@ -423,6 +524,7 @@ const options: swaggerJsdoc.Options = {
               type: 'string',
               enum: ['active', 'pending', 'sold', 'rented', 'withdrawn']
             },
+            rooms: { type: 'integer' },
             bedrooms: { type: 'integer' },
             bathrooms: { type: 'integer' },
             area: { type: 'number' },
@@ -529,7 +631,7 @@ const options: swaggerJsdoc.Options = {
             },
             zipCode: {
               type: 'string',
-              pattern: '^\\d{5}$',
+              pattern: String.raw`^\d{5}$`,
               example: '80100'
             },
             country: {
@@ -753,6 +855,10 @@ const options: swaggerJsdoc.Options = {
       {
         name: 'Properties',
         description: 'Gestione delle proprietà immobiliari'
+      },
+      {
+        name: 'Property Views',
+        description: 'Tracking delle visualizzazioni delle proprietà'
       }
     ]
   },
@@ -760,4 +866,3 @@ const options: swaggerJsdoc.Options = {
 };
 
 export const specs = swaggerJsdoc(options);
-export const swaggerSpec = specs;

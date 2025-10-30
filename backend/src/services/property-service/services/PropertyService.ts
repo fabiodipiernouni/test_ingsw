@@ -1,4 +1,4 @@
-import { Property, PropertyImage } from '@shared/database/models';
+import { Property, PropertyImage, User } from '@shared/database/models';
 import logger from '@shared/utils/logger';
 import { imageService } from '@shared/services/ImageService';
 import config from '@shared/config';
@@ -519,16 +519,24 @@ export class PropertyService {
   }
 
   /**
-   * Add images to a property from S3 upload results
+   * Add images to a property - gestisce upload S3 e salvataggio DB
    */
   async addPropertyImages(
     propertyId: string,
-    uploadResults: any[],
+    files: Express.Multer.File[],
+    metadata: any[],
     userId: string
-  ): Promise<PropertyImage[]> {
+  ): Promise<{ images: PropertyImage[], warnings?: any[] }> {
     try {
       // Verify property exists and user has permission
-      const property = await Property.findByPk(propertyId);
+      const property = await Property.findByPk(propertyId, {
+        include: [{
+          model: User,
+          as: 'agent',
+          attributes: ['id', 'agencyId']
+        }]
+      });
+
       if (!property) {
         throw new NotFoundError('Property not found');
       }
@@ -538,44 +546,121 @@ export class PropertyService {
         throw new Error('You do not have permission to add images to this property');
       }
 
+      // Validate metadata array length matches files
+      if (metadata.length !== files.length) {
+        throw new ValidationError('Metadata count must match uploaded files count');
+      }
+
       const images: PropertyImage[] = [];
+      const warnings: any[] = [];
 
-      // Get current max order
-      const maxOrderImage = await PropertyImage.findOne({
-        where: { propertyId },
-        order: [['order', 'DESC']]
-      });
-      let currentOrder = maxOrderImage ? maxOrderImage.order + 1 : 0;
+      // Get user's agency for S3 path
+      const agent = property.agent as any;
+      const agencyId = agent?.agencyId;
 
-      // Check if this is the first image (make it primary)
+      if (!agencyId) {
+        throw new Error('Agent must belong to an agency');
+      }
+
+      // Check if there are existing images
       const existingImages = await PropertyImage.count({ where: { propertyId } });
-      const isFirstImage = existingImages === 0;
 
-      for (const result of uploadResults) {
-        if (result.error) continue;
+      // Handle primary image logic
+      const hasPrimaryInMetadata = metadata.some(m => m.isPrimary);
 
-        const image = await PropertyImage.create({
-          propertyId,
-          s3KeyOriginal: result.originalKey,
-          s3KeySmall: result.smallKey,
-          s3KeyMedium: result.mediumKey,
-          s3KeyLarge: result.largeKey,
-          bucketName: config.s3.bucketName,
-          fileName: result.fileName,
-          contentType: result.contentType,
-          fileSize: result.fileSize,
-          uploadDate: new Date(),
-          width: result.width,
-          height: result.height,
-          isPrimary: isFirstImage && currentOrder === 0,
-          order: currentOrder++
-        });
+      // If a new primary is being set, unset existing primary images
+      if (hasPrimaryInMetadata && existingImages > 0) {
+        await PropertyImage.update(
+          { isPrimary: false },
+          { where: { propertyId } }
+        );
+      }
 
-        images.push(image);
+      // Import imageService dynamically to avoid circular dependencies
+      const { imageService } = await import('@shared/services/ImageService');
+
+      // Process each file
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const imageMetadata = metadata[i];
+
+        try {
+          // Upload to S3 with variants
+          const uploadResult = await imageService.uploadImage(
+            file.buffer,
+            file.originalname,
+            file.mimetype,
+            propertyId,
+            agencyId,
+            property.listingType
+          );
+
+          // Determine if this image should be primary
+          let isPrimary = false;
+          if (existingImages === 0 && i === 0 && !hasPrimaryInMetadata) {
+            // First image of property and no explicit primary set
+            isPrimary = true;
+          } else {
+            isPrimary = imageMetadata.isPrimary || false;
+          }
+
+          // Get image metadata from file
+          const fileMetadata = (file as any).imageMetadata;
+
+          // Create database record
+          const image = await PropertyImage.create({
+            propertyId,
+            s3KeyOriginal: uploadResult.originalKey,
+            s3KeySmall: uploadResult.smallKey,
+            s3KeyMedium: uploadResult.mediumKey,
+            s3KeyLarge: uploadResult.largeKey,
+            bucketName: config.s3.bucketName,
+            fileName: uploadResult.fileName,
+            contentType: uploadResult.contentType,
+            fileSize: uploadResult.fileSize,
+            uploadDate: new Date(),
+            width: fileMetadata?.width || uploadResult.width,
+            height: fileMetadata?.height || uploadResult.height,
+            isPrimary: isPrimary,
+            order: imageMetadata.order,
+            caption: imageMetadata.caption || null,
+            alt: imageMetadata.altText || null
+          });
+
+          images.push(image);
+
+        } catch (fileError) {
+          logger.error(`Error uploading file ${file.originalname}:`, fileError);
+          warnings.push({
+            fileName: file.originalname,
+            error: fileError instanceof Error ? fileError.message : 'Upload failed'
+          });
+        }
+      }
+
+      // If no images were successfully uploaded, throw error
+      if (images.length === 0) {
+        throw new Error('All image uploads failed');
       }
 
       logger.info(`Added ${images.length} images to property ${propertyId}`);
-      return images;
+
+      return {
+        images: images.map(img => ({
+          id: img.id,
+          fileName: img.fileName,
+          fileSize: img.fileSize,
+          contentType: img.contentType,
+          width: img.width,
+          height: img.height,
+          isPrimary: img.isPrimary,
+          order: img.order,
+          caption: img.caption,
+          alt: img.alt,
+          uploadDate: img.uploadDate
+        } as any)),
+        warnings: warnings.length > 0 ? warnings : undefined
+      };
 
     } catch (error) {
       logger.error('Error adding property images:', error);
