@@ -1,6 +1,8 @@
 import { IsString, MinLength, Matches, IsEmail } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class ConfirmForgotPasswordDto {
+  @Transform(({ value }) => value?.trim().toLowerCase())
   @IsEmail({}, { message: 'The email is not valid' })
   email: string;
 

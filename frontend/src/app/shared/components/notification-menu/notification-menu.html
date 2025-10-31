@@ -1,0 +1,112 @@
+<button 
+  mat-icon-button 
+  [matMenuTriggerFor]="notificationMenu"
+  [matBadge]="unreadCount() > 0 ? unreadCount() : null"
+  matBadgeColor="warn"
+  matBadgeSize="small"
+  [matTooltip]="unreadCount() > 0 ? unreadCount() + ' notifiche non lette' : 'Nessuna notifica'"
+  (click)="onNotificationClick()">
+  <mat-icon>notifications</mat-icon>
+</button>
+
+<mat-menu #notificationMenu="matMenu" class="notification-menu">
+  <div class="notification-header" (click)="$event.stopPropagation()">
+    <h3>Notifiche</h3>
+    @if (unreadCount() > 0) {
+      <button mat-button color="primary" (click)="onMarkAllAsRead()">
+        Segna tutte come lette
+      </button>
+    }
+  </div>
+  
+  <mat-divider></mat-divider>
+  
+  @if (isLoading() && notifications().length === 0) {
+    <div class="loading-container" (click)="$event.stopPropagation()">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Caricamento notifiche...</p>
+    </div>
+  } @else if (notifications().length === 0) {
+    <div class="no-notifications" (click)="$event.stopPropagation()">
+      <mat-icon>notifications_none</mat-icon>
+      <p>Nessuna notifica</p>
+    </div>
+  } @else {
+    <div class="notifications-list">
+      @for (notification of notifications(); track notification.id) {
+        <button 
+          mat-menu-item 
+          class="notification-item"
+          [class.unread]="!notification.isRead"
+          (click)="onNotificationItemClick(notification)">
+          <div class="notification-content">
+            <div class="notification-icon-wrapper">
+              @if (notification.imageUrl) {
+                <img 
+                  [src]="notification.imageUrl" 
+                  [alt]="notification.title"
+                  class="notification-image">
+              } @else {
+                <mat-icon 
+                  [color]="getNotificationColor(notification)"
+                  class="notification-type-icon">
+                  {{ getNotificationIcon(notification) }}
+                </mat-icon>
+              }
+              @if (!notification.isRead) {
+                <span class="unread-indicator"></span>
+              }
+            </div>
+            
+            <div class="notification-text">
+              <div class="notification-title">
+                {{ notification.title }}
+                @if (notification.actionUrl) {
+                  <mat-icon class="link-icon">open_in_new</mat-icon>
+                }
+              </div>
+              <div class="notification-message">{{ notification.message }}</div>
+              <div class="notification-date">{{ formatDate(notification.createdAt) }}</div>
+            </div>
+            
+            <div class="notification-actions" (click)="$event.stopPropagation()">
+              @if (notification.isRead) {
+                <button 
+                  mat-icon-button 
+                  matTooltip="Segna come da leggere"
+                  [matTooltipPosition]="'left'"
+                  class="action-button"
+                  (click)="markAsUnread(notification, $event)">
+                  <mat-icon>mark_email_unread</mat-icon>
+                </button>
+              } @else {
+                <button 
+                  mat-icon-button 
+                  matTooltip="Segna come letta"
+                  [matTooltipPosition]="'left'"
+                  class="action-button"
+                  (click)="markAsRead(notification, $event)">
+                  <mat-icon>mark_email_read</mat-icon>
+                </button>
+              }
+            </div>
+          </div>
+        </button>
+        <mat-divider></mat-divider>
+      }
+    </div>
+    
+    @if (hasMore()) {
+      <div class="load-more-container" (click)="$event.stopPropagation()">
+        @if (isLoading()) {
+          <mat-spinner diameter="30"></mat-spinner>
+        } @else {
+          <button mat-button color="primary" (click)="loadMore()">
+            <mat-icon>expand_more</mat-icon>
+            Carica altre notifiche
+          </button>
+        }
+      </div>
+    }
+  }
+</mat-menu>

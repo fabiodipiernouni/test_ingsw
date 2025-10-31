@@ -73,7 +73,6 @@ export class App implements OnInit {
         'saved-searches': 'Ricerche Salvate',
         'notifications': 'Notifiche',
         'favorites': 'I Miei Preferiti',
-        'settings': 'Impostazioni'
       };
 
       const pageName = pageMap[urlSegments[0]];

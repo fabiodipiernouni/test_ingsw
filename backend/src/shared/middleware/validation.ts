@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { body, param, query, validationResult, ValidationChain } from 'express-validator';
 import { setResponseAsValidationError } from '@shared/utils/helpers';
+import { NOTIFICATION_TYPES } from '@shared/types/notification.types';
 
 /**
  * Wrapper to apply validation chains and error handling
@@ -14,7 +15,7 @@ export const validate = (validations: ValidationChain[]) => {
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
-      const str_errors = Array<string>();
+      const str_errors = new Array<string>();
       for (const err of errors.array()) { str_errors.push(err.msg); }
       return setResponseAsValidationError(res, str_errors);
     }
@@ -34,7 +35,7 @@ export const commonValidations = {
     param(field).isUUID().withMessage(`${field} must be a valid UUID`),
     
   email: () => 
-    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('email').isEmail().withMessage('Valid email is required'),
     
   password: () => 
     body('password')
@@ -192,7 +193,18 @@ export const authValidations = {
       
     body('acceptPrivacy')
       .isBoolean()
-      .withMessage('Privacy acceptance is required')
+      .withMessage('Privacy acceptance is required'),
+
+    body('enabledNotificationTypes')
+      .isArray()
+      .withMessage('Enabled notification types must be an array')
+      .custom((value) => {
+        const isValid = value.every((type: any) => NOTIFICATION_TYPES.includes(type));
+        if (!isValid) {
+          throw new Error(`Enabled notification types must be one of: ${NOTIFICATION_TYPES.join(', ')}`);
+        }
+        return true;
+      })
   ],
   
   login: [

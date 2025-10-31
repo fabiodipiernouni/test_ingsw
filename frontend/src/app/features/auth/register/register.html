@@ -118,11 +118,25 @@
     <div class="terms-section">
       <div class="terms-checkbox">
         <mat-checkbox formControlName="acceptTerms">
-          Dichiaro di essere maggiorenne ed accetto i <a class="terms-link" [routerLink]="['/terms']">Termini di Servizio</a>
+          Dichiaro di essere maggiorenne ed accetto i <a class="terms-link" [routerLink]="['/terms']">Termini di Servizio</a>*
         </mat-checkbox>
         
         <mat-checkbox formControlName="acceptPrivacy">
-          Accetto la <a class="terms-link" [routerLink]="['/privacy']">Privacy Policy</a>
+          Accetto la <a class="terms-link" [routerLink]="['/privacy']">Privacy Policy</a>*
+        </mat-checkbox>
+
+        <mat-checkbox 
+          formControlName="notifyPropertyAndVisit"
+          matTooltip="Puoi modificare le tue preferenze in qualsiasi momento dalla pagina profilo"
+          matTooltipPosition="above">
+          Desidero ricevere notifiche via email riguardo nuovi immobili in linea con le mie ricerche salvate e aggiornamenti sullo stato delle mie visite.
+        </mat-checkbox>
+
+        <mat-checkbox 
+          formControlName="notifyPromotional"
+          matTooltip="Puoi modificare le tue preferenze in qualsiasi momento dalla pagina profilo"
+          matTooltipPosition="above">
+          Acconsento a ricevere comunicazioni di marketing e promozionali.
         </mat-checkbox>
       </div>
 
@@ -139,7 +153,7 @@
         } @else {
           <ng-container>
             <mat-icon>person_add</mat-icon>
-            Crea Account Cliente
+            Crea Account
           </ng-container>
         }
       </button>

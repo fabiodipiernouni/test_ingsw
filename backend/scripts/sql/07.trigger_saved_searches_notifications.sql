@@ -72,3 +72,38 @@ EXCEPTION
         RAISE;
 END;
 /
+
+-- Trigger to delete notifications not sent yet when user removes 
+-- 'new_property_match_saved_search' from their enabled notification types
+
+CREATE OR REPLACE TRIGGER trg_users_delete_unsent_notifications
+BEFORE INSERT OR UPDATE ON users
+FOR EACH ROW
+DECLARE
+    v_has_notification_type NUMBER;
+BEGIN
+    -- Check if 'new_property_match_saved_search' exists in the JSON array
+    SELECT CASE 
+        WHEN JSON_EXISTS(
+            :NEW.enabled_notification_types, 
+            '$[*]?(@ == "new_property_match_saved_search")'
+        ) THEN 1
+        ELSE 0
+    END
+    INTO v_has_notification_type
+    FROM DUAL;
+    
+    -- If the notification type is NOT in the preferences, delete unsent notifications
+    IF v_has_notification_type = 0 THEN
+        DELETE FROM notifications
+        WHERE user_id = :NEW.id
+          AND sent_at IS NULL
+          AND type = 'new_property_match_saved_search';
+    END IF;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Log error or handle as needed
+        RAISE;
+END;
+/
