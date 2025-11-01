@@ -31,13 +31,9 @@ export class SearchService {
       filters: savedSearch.getFiltersObject(),
       isNotificationEnabled: savedSearch.isNotificationEnabled,
       createdAt: savedSearch.createdAt.toISOString(),
-      updatedAt: savedSearch.updatedAt.toISOString()
+      updatedAt: savedSearch.updatedAt.toISOString(),
+      lastSearchedAt: savedSearch.lastSearchedAt.toISOString()
     };
-
-    // Aggiungi lastSearchedAt solo se presente
-    if (savedSearch.lastSearchedAt) {
-      response.lastSearchedAt = savedSearch.lastSearchedAt.toISOString();
-    }
 
     return response;
   }

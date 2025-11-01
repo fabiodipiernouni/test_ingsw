@@ -62,12 +62,26 @@ export class EmailService {
     actionUrl?: string,
     imageUrl?: string
   ): Promise<boolean> {
-    const html = this.generateNotificationEmailTemplate(title, message, actionUrl, imageUrl);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+    
+    // If actionUrl is a relative path, prepend the frontend URL
+    let fullActionUrl = actionUrl;
+    if (actionUrl) {
+      try {
+        // Try to parse as URL - if it fails, it's a relative path
+        new URL(actionUrl);
+      } catch {
+        // It's a relative path, prepend the frontend URL
+        fullActionUrl = new URL(actionUrl, frontendUrl).href;
+      }
+    }
+    
+    const html = this.generateNotificationEmailTemplate(title, message, fullActionUrl, imageUrl);
     
     return this.sendEmail({
       to,
       subject: `${title} - DietiEstates25`,
-      text: `${title}\n\n${message}${actionUrl ? `\n\nLink: ${actionUrl}` : ''}`,
+      text: `${title}\n\n${message}${fullActionUrl ? `\n\nLink: ${fullActionUrl}` : ''}`,
       html,
     });
   }

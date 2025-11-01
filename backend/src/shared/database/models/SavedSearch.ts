@@ -131,9 +131,9 @@ export class SavedSearch extends Model {
   isNotificationEnabled!: boolean;
 
   // Last searched date
-  @AllowNull(true)
+  @AllowNull(false)
   @Column({ type: DataType.DATE, field: 'last_searched_at' })
-  lastSearchedAt?: Date;
+  lastSearchedAt!: Date;
 
   // Instance methods
   
