@@ -34,7 +34,10 @@ export class EmailSenderWorker {
 
     logger.info('Email sender worker started successfully');
 
-    this.processNow(); // Esegue immediatamente al momento dell'avvio
+    if (emailWorkerConfig.runOnInit) {
+      logger.info('Running initial email sending process on startup');
+      this.processUnsentNotifications();
+    }
   }
 
   /**
@@ -174,14 +177,6 @@ export class EmailSenderWorker {
     } finally {
       this.isRunning = false;
     }
-  }
-
-  /**
-   * Esegue immediatamente il processo di invio email (per testing o trigger manuali)
-   */
-  async processNow(): Promise<void> {
-    logger.info('Manual trigger: processing unsent notifications');
-    await this.processUnsentNotifications();
   }
 
   /**
