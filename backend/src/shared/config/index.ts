@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { AppConfig, DatabaseConfig, CognitoConfig, EmailConfig, RedisConfig, UploadConfig, S3Config } from '@shared/types/config.types';
+import { AppConfig, DatabaseConfig, CognitoConfig, UploadConfig, S3Config } from '@shared/types/config.types';
 
 dotenv.config();
 
@@ -36,20 +36,6 @@ const cognitoConfig: CognitoConfig = {
   }
 };
 
-const emailConfig: EmailConfig = {
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  user: process.env.SMTP_USER || '',
-  password: process.env.SMTP_PASSWORD || '',
-  from: process.env.EMAIL_FROM || 'noreply@dietiestates25.com'
-};
-
-const redisConfig: RedisConfig = {
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  password: process.env.REDIS_PASSWORD
-};
-
 const uploadConfig: UploadConfig = {
   dir: process.env.UPLOAD_DIR || 'uploads',
   maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760'), // 10MB default
@@ -74,16 +60,10 @@ const config: AppConfig = {
   port: parseInt(process.env.PORT || '3000'),
   database: databaseConfig,
   cognito: cognitoConfig,
-  email: emailConfig,
-  redis: redisConfig,
   upload: uploadConfig,
   s3: s3Config,
   serviceSecret: process.env.SERVICE_SECRET || 'your-internal-service-secret',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
-  rateLimit: {
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-    maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100')
-  }
 };
 
 // Service-specific ports
