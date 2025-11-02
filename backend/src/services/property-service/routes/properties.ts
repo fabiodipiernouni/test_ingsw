@@ -273,8 +273,43 @@ router.post('/', authenticateToken, PropertiesMiddlewareValidation.validatePrope
  * @swagger
  * /properties/{propertyId}/images:
  *   post:
- *     summary: Upload images for a property
- *     description: Upload one or multiple images to a property. Images are validated and uploaded to S3.
+ *     summary: Upload immagini per una proprietà
+ *     description: |
+ *       Carica una o più immagini per una proprietà. Le immagini vengono validate e caricate su S3.
+ *
+ *       **Flusso di validazione (7 middleware):**
+ *       1. `authenticateToken` - Verifica JWT e popola req.user
+ *       2. `validatePropertyImageUploadPermissions` - Verifica UUID propertyId e che utente appartenga a un'agenzia
+ *       3. `uploadToMemory.array('images', 10)` - Upload file in memoria con Multer (max 10 file, 5MB ciascuno)
+ *       4. `handleMulterError` - Gestisce errori Multer con messaggi user-friendly
+ *       5. `validateImageFiles` - Valida formato reale con Sharp (sicurezza anti-malware, dimensioni, compression ratio)
+ *       6. `validatePropertyImageMetadata` - **Combina file + metadata in DTO tipizzato, valida con class-validator**
+ *       7. Controller - Business logic (upload S3 + salvataggio DB)
+ *
+ *       **Tipizzazione:**
+ *       - Request Body: `AddPropertyImageRequest` (usato in AuthenticatedRequest)
+ *         - Contiene: `PropertyImageFileRequest[]` dove ogni elemento ha `file` + `metadata`
+ *       - Metadata: `PropertyImageMetadata` (validato con class-validator)
+ *         - Campi: isPrimary, order, caption?, altText?
+ *       - Response: `UploadImagesResponse`
+ *
+ *       **Vincoli validazione:**
+ *       - Utente deve appartenere a un'agenzia
+ *       - PropertyId deve essere UUID v4 valido
+ *       - File: MIME type valido (jpeg, jpg, png, webp), dimensione ≤ 5MB, numero ≤ 10
+ *       - Formato reale verificato con Sharp (non solo estensione)
+ *       - Dimensioni immagine ≤ 10000x10000 pixel, risoluzione ≤ 25 megapixel
+ *       - Numero di metadata deve corrispondere esattamente al numero di file
+ *       - Solo una immagine può avere isPrimary = true
+ *       - Ogni order deve essere univoco (0-99)
+ *       - caption ≤ 500 caratteri, altText ≤ 255 caratteri
+ *
+ *       **Formato richiesta Postman:**
+ *       - Body type: form-data
+ *       - Campo `images` (File) - ripetuto per ogni file con lo stesso nome
+ *       - Campo `metadata` (Text) - array JSON stringa
+ *
+ *       Esempio metadata: `[{"isPrimary":true,"order":0},{"isPrimary":false,"order":1}]`
  *     tags:
  *       - Properties
  *     security:
@@ -286,58 +321,102 @@ router.post('/', authenticateToken, PropertiesMiddlewareValidation.validatePrope
  *         schema:
  *           type: string
  *           format: uuid
- *         description: Property ID
+ *         description: ID della proprietà (deve appartenere all'agente autenticato)
+ *         example: '550e8400-e29b-41d4-a716-446655440000'
  *     requestBody:
  *       required: true
  *       content:
  *         multipart/form-data:
  *           schema:
- *             type: object
- *             required:
- *               - images
- *               - metadata
- *             properties:
- *               images:
- *                 type: array
- *                 items:
- *                   type: string
- *                   format: binary
- *                 description: Image files (max 10 files, 10MB each)
- *                 maxItems: 10
- *               metadata:
- *                 type: array
- *                 items:
- *                   type: object
- *                   required:
- *                     - isPrimary
- *                     - order
- *                   properties:
- *                     isPrimary:
- *                       type: boolean
- *                       description: Whether this is the primary image
- *                     order:
- *                       type: integer
- *                       minimum: 0
- *                       maximum: 99
- *                       description: Display order of the image
- *                     caption:
- *                       type: string
- *                       maxLength: 500
- *                       description: Image caption
- *                     altText:
- *                       type: string
- *                       maxLength: 255
- *                       description: Alt text for accessibility
- *                 description: Metadata for each image (must match number of images)
+ *             $ref: '#/components/schemas/UploadImagesRequest'
+ *           examples:
+ *             singleImage:
+ *               summary: Upload singola immagine
+ *               value:
+ *                 images: ['[binary file]']
+ *                 metadata: '[{"isPrimary":true,"order":0,"caption":"Soggiorno luminoso","altText":"Vista del soggiorno"}]'
+ *             multipleImages:
+ *               summary: Upload multiple immagini
+ *               value:
+ *                 images: ['[binary file 1]', '[binary file 2]']
+ *                 metadata: '[{"isPrimary":true,"order":0,"caption":"Soggiorno"},{"isPrimary":false,"order":1,"caption":"Cucina"}]'
  *     responses:
  *       201:
- *         description: Images uploaded successfully
+ *         description: Immagini caricate con successo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UploadImagesResponse'
+ *             example:
+ *               success: true
+ *               message: 'Successfully uploaded 2 image(s)'
+ *               data:
+ *                 images:
+ *                   - id: '550e8400-e29b-41d4-a716-446655440000'
+ *                     fileName: 'image1.jpg'
+ *                     isPrimary: true
+ *                     order: 0
+ *                     urls:
+ *                       original: 'https://s3.../original.jpg'
+ *                       small: 'https://s3.../small.jpg'
+ *                       medium: 'https://s3.../medium.jpg'
+ *                       large: 'https://s3.../large.jpg'
  *       400:
- *         description: Validation error
+ *         description: Errore di validazione
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationErrorResponse'
+ *             examples:
+ *               invalidMetadata:
+ *                 summary: Metadata non validi
+ *                 value:
+ *                   success: false
+ *                   error: 'Validation failed'
+ *                   details:
+ *                     - 'metadata[0].isPrimary: isPrimary must be a boolean'
+ *                     - 'metadata[1].order: order must not exceed 99'
+ *               multiplePrimary:
+ *                 summary: Multiple immagini primary
+ *                 value:
+ *                   success: false
+ *                   error: 'Validation failed'
+ *                   details:
+ *                     - 'Only one image can be marked as primary'
+ *               countMismatch:
+ *                 summary: Numero metadata != numero file
+ *                 value:
+ *                   success: false
+ *                   error: 'Metadata count mismatch'
+ *                   message: 'Metadata count (2) must match files count (3)'
  *       401:
- *         description: Unauthorized
+ *         description: Non autenticato
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       403:
- *         description: Forbidden
+ *         description: Non autorizzato (proprietà non appartiene all'agente)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error: 'FORBIDDEN'
+ *               message: 'You do not have permission to add images to this property'
+ *       404:
+ *         description: Proprietà non trovata
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Errore interno del server
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post(
   '/:propertyId/images',
@@ -364,8 +443,9 @@ router.post(
  *         required: true
  *         schema:
  *           type: string
- *         description: ID univoco della proprietà
- *         example: 507f1f77bcf86cd799439011
+ *           format: uuid
+ *         description: ID univoco della proprietà (UUID v4)
+ *         example: 550e8400-e29b-41d4-a716-446655440000
  *     responses:
  *       200:
  *         description: Dettagli della proprietà recuperati con successo

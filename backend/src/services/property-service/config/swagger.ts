@@ -145,6 +145,103 @@ const options: swaggerJsdoc.Options = {
           }
         },
 
+        GetGeoPropertiesCardsRequest: {
+          type: 'object',
+          properties: {
+            filters: {
+              $ref: '#/components/schemas/SearchPropertiesFilters'
+            },
+            geoFilters: {
+              $ref: '#/components/schemas/GeoSearchPropertiesFilters'
+            },
+            status: {
+              type: 'string',
+              enum: ['active', 'pending', 'sold', 'rented', 'withdrawn'],
+              description: 'Filtra per stato (solo per agenti e admin)'
+            },
+            agencyId: {
+              type: 'string',
+              format: 'uuid',
+              description: 'Filtra per agenzia specifica (solo per admin)'
+            }
+          }
+        },
+
+        GetPropertiesByIdListRequest: {
+          type: 'object',
+          required: ['propertyIds'],
+          properties: {
+            propertyIds: {
+              type: 'array',
+              items: {
+                type: 'string',
+                format: 'uuid'
+              },
+              minItems: 1,
+              maxItems: 100,
+              description: 'Lista di ID delle proprietà da recuperare',
+              example: ['550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440001']
+            }
+          }
+        },
+
+        ImageMetadataDto: {
+          type: 'object',
+          required: ['isPrimary', 'order'],
+          properties: {
+            isPrimary: {
+              type: 'boolean',
+              description: 'Indica se questa è l\'immagine principale (solo una può essere primary)',
+              example: true
+            },
+            order: {
+              type: 'integer',
+              minimum: 0,
+              maximum: 99,
+              description: 'Ordine di visualizzazione dell\'immagine (deve essere univoco)',
+              example: 0
+            },
+            caption: {
+              type: 'string',
+              maxLength: 500,
+              description: 'Didascalia dell\'immagine',
+              example: 'Soggiorno luminoso con vista mare'
+            },
+            altText: {
+              type: 'string',
+              maxLength: 255,
+              description: 'Testo alternativo per accessibilità',
+              example: 'Foto del soggiorno principale'
+            }
+          }
+        },
+
+        UploadImagesRequest: {
+          type: 'object',
+          required: ['images', 'metadata'],
+          properties: {
+            images: {
+              type: 'array',
+              items: {
+                type: 'string',
+                format: 'binary'
+              },
+              minItems: 1,
+              maxItems: 10,
+              description: 'File immagine (JPEG, PNG, WebP). Max 10 file, 10MB ciascuno, max 10000x10000 pixel'
+            },
+            metadata: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/ImageMetadataDto'
+              },
+              minItems: 1,
+              maxItems: 10,
+              description: 'Metadata per ogni immagine (deve corrispondere al numero di file)'
+            }
+          }
+        },
+
         SearchPropertiesFilters: {
           type: 'object',
           properties: {
@@ -670,6 +767,35 @@ const options: swaggerJsdoc.Options = {
                 message: {
                   type: 'string',
                   example: 'View recorded'
+                }
+              }
+            },
+            timestamp: {
+              type: 'string',
+              format: 'date-time'
+            }
+          }
+        },
+
+        UploadImagesResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true
+            },
+            message: {
+              type: 'string',
+              example: 'Successfully uploaded 2 image(s)'
+            },
+            data: {
+              type: 'object',
+              properties: {
+                images: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/PropertyImageModel'
+                  }
                 }
               }
             },

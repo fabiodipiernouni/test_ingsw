@@ -3,7 +3,7 @@ import { setResponseAsValidationError } from '@shared/utils/helpers';
 import { isValidGeoJSONPoint } from '@shared/types/geojson.types';
 import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequestEndpoint/CreatePropertyRequest';
 import { ApiResponse } from '@shared/dto/ApiResponse';
-import { validate } from 'class-validator';
+import { validate, ValidationError } from 'class-validator';
 import logger from '@shared/utils/logger';
 import { plainToInstance } from 'class-transformer';
 import { GetPropertiesCardsRequest } from '@property/dto/GetPropertiesCardsRequest';
@@ -17,20 +17,59 @@ export class PropertiesMiddlewareValidation {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    const data: CreatePropertyRequest = plainToInstance(CreatePropertyRequest, req.body);
+    const data: CreatePropertyRequest = plainToInstance(CreatePropertyRequest, req.body, {
+      enableImplicitConversion: true
+    });
     const errors = await validate(data);
     const str_errors: Array<string> = [];
 
-    // Validazione location (GeoJSON Point)
-    if (!isValidGeoJSONPoint(data.location)) {
+    // Log dettagliato per debug
+    if (errors.length > 0) {
+      logger.debug('Validation errors found:', {
+        errorCount: errors.length,
+        errors: errors.map(err => ({
+          property: err.property,
+          value: err.value,
+          constraints: err.constraints,
+          children: err.children?.map(child => ({
+            property: child.property,
+            value: child.value,
+            constraints: child.constraints
+          }))
+        }))
+      });
+    }
+
+    // Funzione ricorsiva per estrarre tutti i messaggi di errore (inclusi nested)
+    const extractErrors = (validationErrors: ValidationError[]): string[] => {
+      const messages: string[] = [];
+      for (const error of validationErrors) {
+        if (error.constraints) {
+          messages.push(...Object.values(error.constraints) as string[]);
+        }
+        if (error.children && error.children.length > 0) {
+          const childErrors = extractErrors(error.children);
+          messages.push(...childErrors.map(msg => `${error.property}.${msg}`));
+        }
+      }
+      return messages;
+    };
+
+    // Estrai tutti gli errori (inclusi nested)
+    if (errors.length > 0) {
+      str_errors.push(...extractErrors(errors));
+    }
+
+    // Validazione location (GeoJSON Point) - solo se non ci sono già errori su location
+    const hasLocationError = errors.some(err => err.property === 'location');
+    if (!hasLocationError && !isValidGeoJSONPoint(data.location)) {
       str_errors.push(
         'Location must be a valid GeoJSON Point with coordinates [longitude, latitude]'
       );
     }
 
     // Se ci sono errori, restituisce una risposta di errore
-    if (errors.length > 0) {
-      str_errors.push(...errors.map(err => Object.values(err.constraints || {}).join(', ')));
+    if (str_errors.length > 0) {
       setResponseAsValidationError(res, str_errors);
       return;
     }

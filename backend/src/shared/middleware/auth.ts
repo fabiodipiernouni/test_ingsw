@@ -41,7 +41,7 @@ export const authenticateToken = async (
 ) => {
   try {
     const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    const token = authHeader?.split(' ')[1]; // Bearer TOKEN
 
     if (!token) {
       return unauthorizedResponse(res, 'Access token required');

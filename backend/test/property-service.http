@@ -78,7 +78,7 @@ Content-Disposition: form-data; name="metadata"
 POST {{base_url}}/api/property/{{property_id}}/images
 
 ### Upload Multiple Immagini (2)
-POST http://localhost:3001/api/property/550e8400-e29b-41d4-a716-446655440000/images
+POST http://localhost:3002/api/properties/550e8400-e29b-41d4-a716-446655440000/images
 Authorization: Bearer {{jwt_token}}
 Content-Type: multipart/form-data; boundary=boundary
 

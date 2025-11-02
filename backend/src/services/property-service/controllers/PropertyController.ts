@@ -6,6 +6,7 @@ import logger from '@shared/utils/logger';
 import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequestEndpoint/CreatePropertyRequest';
 import { GetPropertiesCardsRequest } from '@property/dto/GetPropertiesCardsRequest';
 import { GetGeoPropertiesCardsRequest } from '@property/dto/GetGeoPropertiesCardsRequest';
+import { AddPropertyImageRequest } from '@property/dto/addPropertyImageEndpoint/AddPropertyImageRequest';
 
 export class PropertyController {
   /**
@@ -14,45 +15,36 @@ export class PropertyController {
    */
   async createProperty(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
-      // Verifica che l'utente sia autenticato
-      if (!req?.user?.id) {
-        setResponseAsError(res, 'UNAUTHORIZED', 'User authentication required', 401);
-        return;
-      }
-
-      // Verifica che l'utente sia un agente
-      if (req.user.role !== 'agent') {
-        setResponseAsError(res, 'FORBIDDEN', 'Only agents can create properties', 403);
-        return;
-      }
-
+      // authenticateToken middleware garantisce che req.user sia sempre presente
       const propertyData: CreatePropertyRequest = req.body;
-      
-      logger.info(`Property creation request from agent ${req.user.id}`, { 
+
+      logger.info(`Property creation request from agent ${req.user!.id}`, {
         title: propertyData.title,
-        agentId: req.user.id 
+        agentId: req.user!.id
       });
 
       // Crea la proprietà tramite il service
-      const result = await propertyService.createProperty(propertyData, req.user.id);
+      const result = await propertyService.createProperty(propertyData, req.user!.id);
 
       setResponseAsSuccess(
-        res, 
-        result.data, 
+        res,
+        result.data,
         result.message,
         201
       );
 
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Error in createProperty controller:', error);
 
-      if (error.name === 'ValidationError') {
-        setResponseAsValidationError(res, error.details?.errors || [error.message]);
+      const err = error as Error & { name?: string; details?: { errors?: string[] }; message: string };
+
+      if (err.name === 'ValidationError') {
+        setResponseAsValidationError(res, err.details?.errors || [err.message]);
         return;
       }
 
-      if (error.name === 'BadRequestError') {
-        setResponseAsError(res, 'BAD_REQUEST', error.message, 400);
+      if (err.name === 'BadRequestError') {
+        setResponseAsError(res, 'BAD_REQUEST', err.message, 400);
         return;
       }
 
@@ -71,9 +63,9 @@ export class PropertyController {
       }
 
       const properties = await propertyService.getPropertiesCardsByIdList({ ids, sortBy, sortOrder });
-
       setResponseAsSuccess(res, properties);
-    } catch (error: any) {
+
+    } catch (error) {
       logger.error('Error in getPropertiesByIdList controller:', error);
       setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get properties by ID list', 500);
     }
@@ -93,14 +85,15 @@ export class PropertyController {
       }
 
       const property = await propertyService.getPropertyById(propertyId);
-
       setResponseAsSuccess(res, property);
 
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Error in getPropertyById controller:', error);
 
-      if (error.name === 'NotFoundError') {
-        setResponseAsNotFound(res, error.message);
+      const err = error as Error & { name?: string; message: string };
+
+      if (err.name === 'NotFoundError') {
+        setResponseAsNotFound(res, err.message);
         return;
       }
 
@@ -122,8 +115,8 @@ export class PropertyController {
       });
 
       setResponseAsSuccess(res, result);
-    } catch (error: any) {
-      logger.error('Error in getPropertiesCardsPost PropertyController:', error);
+    } catch (error) {
+      logger.error('Error in getGeoPropertiesCardsPost PropertyController:', error);
       setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get properties (geo)', 500);
     }
   }
@@ -158,47 +151,14 @@ export class PropertyController {
       });
 
       setResponseAsSuccess(res, result);
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Error in getPropertiesCardsPost PropertyController:', error);
       setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get properties', 500);
     }
   }
 
   /**
-   * Registra visualizzazione proprietà
-   * POST /properties/:propertyId/view
-   *
-  async recordPropertyView(req: Request, res: Response, _next: NextFunction): Promise<void> {
-    try {
-      const { propertyId } = req.params;
-      const { source = 'web' } = req.body;
-
-      if (!propertyId) {
-        setResponseAsError(res, 'BAD_REQUEST', 'Property ID is required', 400);
-        return;
-      }
-
-      // TODO: Implementare la logica per registrare la visualizzazione
-      // Per ora restituiamo solo un successo
-      
-      logger.info('Property view recorded', { propertyId, source });
-      
-      setResponseAsSuccess(res, { message: 'View recorded' });
-
-    } catch (error: any) {
-      logger.error('Error in recordPropertyView controller:', error);
-
-      if (error.name === 'NotFoundError') {
-        setResponseAsNotFound(res, error.message);
-        return;
-      }
-
-      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to record view', 500);
-    }
-  }*/
-
-  /**
-   * Aggiunge immagini a una proprietà
+   * Upload immagini per una proprietà
    * POST /properties/:propertyId/images
    *
    * Nota: Tutti i controlli di validazione sono gestiti dai middleware.
@@ -206,17 +166,20 @@ export class PropertyController {
    */
   async addPropertyImagePost(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
     try {
-      // Ottieni i dati validati dai middleware
-      const propertyId = (req as any).validatedPropertyId;
-      const files = req.files as Express.Multer.File[];
-      const metadata = req.body.metadata;
+      // authenticateToken middleware garantisce che req.user sia sempre presente
+      const propertyImageRequest = req.body as AddPropertyImageRequest;
+      const propertyId = req.params.propertyId;
       const userId = req.user!.id;
 
-      logger.info(`Adding ${files.length} images to property ${propertyId}`, {
+      logger.info(`Adding ${propertyImageRequest.propertyImages.length} images to property ${propertyId}`, {
         userId,
         propertyId,
-        fileCount: files.length
+        fileCount: propertyImageRequest.propertyImages.length
       });
+
+      // Estrai i file caricati da req.files
+      const files = propertyImageRequest.propertyImages.map(img => img.file);
+      const metadata = propertyImageRequest.propertyImages.map(img => img.metadata);
 
       // Chiama il service che gestirà l'upload e il salvataggio
       const result = await propertyService.addPropertyImages(
@@ -233,22 +196,23 @@ export class PropertyController {
         201
       );
 
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Error in addPropertyImagePost controller:', error);
 
+      const err = error as Error & { name?: string; details?: { errors?: string[] }; message: string };
 
-      if (error.name === 'NotFoundError') {
-        setResponseAsNotFound(res, error.message);
+      if (err.name === 'NotFoundError') {
+        setResponseAsNotFound(res, err.message);
         return;
       }
 
-      if (error.name === 'ValidationError') {
-        setResponseAsValidationError(res, error.details?.errors || [error.message]);
+      if (err.name === 'ValidationError') {
+        setResponseAsValidationError(res, err.details?.errors || [err.message]);
         return;
       }
 
-      if (error.message?.includes('permission')) {
-        setResponseAsError(res, 'FORBIDDEN', error.message, 403);
+      if (err.message?.includes('permission')) {
+        setResponseAsError(res, 'FORBIDDEN', err.message, 403);
         return;
       }
 
@@ -258,3 +222,4 @@ export class PropertyController {
 }
 
 export const propertyController = new PropertyController();
+

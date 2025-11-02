@@ -1,5 +1,5 @@
-import { IsBoolean, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsBoolean, IsInt, IsOptional, IsString, Max, MaxLength, Min } from "class-validator";
+import { Type } from "class-transformer";
 
 // PropertyImageInput.ts
 export interface PropertyImageMetadataInterface {
@@ -9,26 +9,26 @@ export interface PropertyImageMetadataInterface {
   altText?: string;
 }
 
-// nell'implementazione ci sono i controlli di validazione di 'class-validator' / 'class-transformer';
+// nell"implementazione ci sono i controlli di validazione di "class-validator" / "class-transformer";
 
 export class PropertyImageMetadata implements PropertyImageMetadataInterface {
-  @IsBoolean({ message: 'isPrimary must be a boolean' })
+  @IsBoolean({ message: "isPrimary must be a boolean" })
   isPrimary: boolean;
 
   @Type(() => Number)
-  @IsInt({ message: 'order must be an integer' })
-  @Min(0, { message: 'order must be at least 0' })
-  @Max(99, { message: 'order must not exceed 99' })
+  @IsInt({ message: "order must be an integer" })
+  @Min(0, { message: "order must be at least 0" })
+  @Max(99, { message: "order must not exceed 99" })
   order: number;
 
   @IsOptional()
-  @IsString({ message: 'caption must be a string' })
-  @MaxLength(500, { message: 'caption must not exceed 500 characters' })
+  @IsString({ message: "caption must be a string" })
+  @MaxLength(500, { message: "caption must not exceed 500 characters" })
   caption?: string;
 
   @IsOptional()
-  @IsString({ message: 'altText must be a string' })
-  @MaxLength(255, { message: 'altText must not exceed 255 characters' })
+  @IsString({ message: "altText must be a string" })
+  @MaxLength(255, { message: "altText must not exceed 255 characters" })
   altText?: string;
 
   constructor(

@@ -44,8 +44,6 @@ export const requireAgencyAdmin = async (
       return;
     }
 
-    // Aggiunge l'agenzia al request per uso nei controller
-    req.userAgency = user.agency;
     next();
   } catch (error) {
     logger.error('Error in requireAgencyAdmin middleware:', error);
@@ -94,8 +92,6 @@ export const requireAgencyOwner = async (
       return;
     }
 
-    // Aggiunge l'agenzia al request per uso nei controller
-    req.userAgency = user.agency;
     next();
   } catch (error) {
     logger.error('Error in requireAgencyOwner middleware:', error);

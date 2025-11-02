@@ -1,112 +1,284 @@
-# Guida Postman - Upload Immagini Proprietà
+# Come Testare l'Upload di Immagini con Postman
 
-## Come testare l'API di Upload Immagini con Postman
+## 🚀 Setup Iniziale
 
-### 1. Configurazione Base
+### 1. Ottieni un Token JWT
+Prima di tutto devi autenticarti e ottenere un token JWT.
 
-**URL Endpoint:**
+**Endpoint Login:**
 ```
-POST http://localhost:3001/api/property/{propertyId}/images
+POST http://localhost:3001/api/auth/login
 ```
 
-Sostituisci `{propertyId}` con un UUID valido di una proprietà esistente.
+**Body (JSON):**
+```json
+{
+  "email": "agent@example.com",
+  "password": "your_password"
+}
+```
 
----
+**Risposta:**
+```json
+{
+  "success": true,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": { ... }
+  }
+}
+```
 
-### 2. Headers
+**Copia il token** dalla risposta.
 
-Nella tab **Headers**:
+### 2. Ottieni un Property ID
+Devi avere l'ID di una proprietà che appartiene al tuo account agente.
 
-| Key | Value |
-|-----|-------|
-| Authorization | `Bearer YOUR_JWT_TOKEN` |
+**Endpoint:**
+```
+GET http://localhost:3002/api/properties/cards
+Authorization: Bearer YOUR_TOKEN
+```
 
-> ⚠️ **Importante**: NON aggiungere manualmente `Content-Type: multipart/form-data`. Postman lo aggiunge automaticamente con il boundary corretto quando usi form-data.
+Copia l'`id` di una proprietà dalla risposta.
 
----
+## 📸 Upload Immagini - Passo per Passo
 
-### 3. Body Configuration
+### Step 1: Crea una Nuova Request in Postman
 
-1. Nella tab **Body**, seleziona **form-data** (NON raw!)
+1. Clicca su **"New"** → **"HTTP Request"**
+2. Metodo: **POST**
+3. URL: `http://localhost:3002/api/properties/YOUR_PROPERTY_ID/images`
+   - Sostituisci `YOUR_PROPERTY_ID` con l'ID copiato
 
-2. Aggiungi i seguenti campi:
+### Step 2: Imposta l'Header di Autenticazione
 
-#### Campo 1: images (File 1)
-- **Key**: `images` 
-- **Type**: File (seleziona "File" dal dropdown a destra)
-- **Value**: Click su "Select Files" e scegli la prima immagine
+1. Vai al tab **"Headers"**
+2. Aggiungi:
+   - Key: `Authorization`
+   - Value: `Bearer YOUR_JWT_TOKEN`
+   - ✅ Assicurati che sia spuntato
 
-#### Campo 2: images (File 2) - Opzionale
-- **Key**: `images`
-- **Type**: File
-- **Value**: Click su "Select Files" e scegli la seconda immagine
+### Step 3: Configura il Body (Form-Data)
 
-> 📝 Puoi aggiungere fino a 10 immagini, tutte con la stessa key `images`
+1. Vai al tab **"Body"**
+2. Seleziona **"form-data"**
 
-#### Campo 3: metadata (JSON)
-- **Key**: `metadata`
-- **Type**: Text (mantieni come Text, NON File)
-- **Value**: Incolla il seguente JSON:
+### Step 4: Aggiungi le Immagini
+
+**Per ogni immagine:**
+1. Clicca su "Add new field"
+2. Key: `images` (scrivi esattamente così)
+3. Hover sul campo Key → seleziona **"File"** dal dropdown a destra
+4. Value: Clicca su **"Select Files"** e scegli l'immagine dal tuo PC
+5. Ripeti per aggiungere più immagini (max 10)
+
+**Screenshot concettuale:**
+```
+┌──────────┬──────┬────────────────────┐
+│ KEY      │ TYPE │ VALUE              │
+├──────────┼──────┼────────────────────┤
+│ images   │ File │ [soggiorno.jpg]    │
+│ images   │ File │ [cucina.jpg]       │
+│ images   │ File │ [bagno.jpg]        │
+└──────────┴──────┴────────────────────┘
+```
+
+### Step 5: Aggiungi i Metadata
+
+1. Aggiungi un nuovo campo
+2. Key: `metadata` (esattamente così)
+3. Type: **"Text"** (default)
+4. Value: Incolla questo JSON array:
 
 ```json
 [
   {
     "isPrimary": true,
     "order": 0,
-    "caption": "Soggiorno luminoso con vista",
+    "caption": "Soggiorno luminoso con vista panoramica",
     "altText": "Vista del soggiorno principale"
   },
   {
     "isPrimary": false,
     "order": 1,
-    "caption": "Cucina moderna",
-    "altText": "Cucina completamente attrezzata"
+    "caption": "Cucina moderna completamente attrezzata",
+    "altText": "Cucina con elettrodomestici"
+  },
+  {
+    "isPrimary": false,
+    "order": 2,
+    "caption": "Bagno principale con vasca",
+    "altText": "Bagno con vasca idromassaggio"
   }
 ]
 ```
 
-> ⚠️ **Importante**: Il numero di oggetti nell'array metadata DEVE corrispondere esattamente al numero di file caricati!
+**⚠️ IMPORTANTE:**
+- Il numero di oggetti nell'array metadata **DEVE** essere uguale al numero di file caricati
+- Solo **UNA** immagine può avere `"isPrimary": true`
+- Ogni `order` deve essere **univoco**
 
----
+### Step 6: Invia la Request
 
-### 4. Validazioni da Rispettare
+Clicca su **"Send"**
 
-#### File Immagini:
-- ✅ Formati supportati: JPEG, PNG, WebP
-- ✅ Dimensione max: 10MB per file
-- ✅ Risoluzione max: 10000x10000 pixel
-- ✅ Max 10 file in totale
+## ✅ Risposta di Successo (201 Created)
 
-#### Metadata:
-- ✅ **isPrimary**: Solo UNA immagine può avere `isPrimary: true`
-- ✅ **order**: Deve essere univoco, min 0, max 99
-- ✅ **caption**: Max 500 caratteri (opzionale)
-- ✅ **altText**: Max 255 caratteri (opzionale)
-
----
-
-### 5. Esempi di Metadata
-
-#### Esempio 1: Singola Immagine
 ```json
+{
+  "success": true,
+  "message": "Successfully uploaded 3 image(s)",
+  "data": {
+    "images": [
+      {
+        "id": "123e4567-e89b-12d3-a456-426614174000",
+        "fileName": "123e4567-e89b-12d3-a456-426614174000.jpg",
+        "contentType": "image/jpeg",
+        "fileSize": 245678,
+        "width": 1920,
+        "height": 1080,
+        "caption": "Soggiorno luminoso con vista panoramica",
+        "altText": "Vista del soggiorno principale",
+        "isPrimary": true,
+        "order": 0,
+        "urls": {
+          "original": "https://s3.amazonaws.com/.../original.jpg",
+          "small": "https://s3.amazonaws.com/.../small_300x300.jpg",
+          "medium": "https://s3.amazonaws.com/.../medium_800x800.jpg",
+          "large": "https://s3.amazonaws.com/.../large_1200x1200.jpg"
+        },
+        "uploadDate": "2025-11-02T10:30:00.000Z"
+      },
+      // ... altre immagini
+    ]
+  },
+  "timestamp": "2025-11-02T10:30:00.000Z"
+}
+```
+
+## ❌ Errori Comuni e Soluzioni
+
+### 1. 401 Unauthorized
+**Errore:**
+```json
+{
+  "success": false,
+  "error": "UNAUTHORIZED",
+  "message": "No token provided"
+}
+```
+
+**Soluzione:**
+- Verifica di aver inserito il token nell'header Authorization
+- Formato: `Bearer YOUR_TOKEN` (con lo spazio dopo "Bearer")
+
+### 2. 403 Forbidden
+**Errore:**
+```json
+{
+  "success": false,
+  "error": "FORBIDDEN",
+  "message": "You do not have permission to add images to this property"
+}
+```
+
+**Soluzione:**
+- La proprietà non appartiene al tuo account
+- Usa una proprietà creata dal tuo agente
+
+### 3. Metadata Count Mismatch
+**Errore:**
+```json
+{
+  "success": false,
+  "error": "VALIDATION_ERROR",
+  "message": "Metadata count mismatch",
+  "details": ["Metadata count (2) must match files count (3)"]
+}
+```
+
+**Soluzione:**
+- Assicurati che il numero di oggetti nell'array metadata corrisponda al numero di file
+
+### 4. Multiple Primary Images
+**Errore:**
+```json
+{
+  "success": false,
+  "error": "VALIDATION_ERROR",
+  "details": ["Only one image can be marked as primary"]
+}
+```
+
+**Soluzione:**
+- Solo una immagine deve avere `"isPrimary": true`
+- Tutte le altre devono avere `"isPrimary": false`
+
+### 5. Duplicate Orders
+**Errore:**
+```json
+{
+  "success": false,
+  "error": "VALIDATION_ERROR",
+  "details": ["Each image must have a unique order value"]
+}
+```
+
+**Soluzione:**
+- Ogni immagine deve avere un valore `order` diverso
+- Usa: 0, 1, 2, 3, ... (progressivo)
+
+### 6. Invalid File Type
+**Errore:**
+```json
+{
+  "success": false,
+  "error": "VALIDATION_ERROR",
+  "details": ["Invalid file type. Only JPEG, PNG, and WebP are allowed."]
+}
+```
+
+**Soluzione:**
+- Usa solo file con estensioni: `.jpg`, `.jpeg`, `.png`, `.webp`
+
+### 7. File Too Large
+**Errore:**
+```json
+{
+  "success": false,
+  "error": "FILE_TOO_LARGE",
+  "message": "File too large. Maximum size is 10MB"
+}
+```
+
+**Soluzione:**
+- Riduci la dimensione del file sotto i 10 MB
+- Usa strumenti di compressione immagini online
+
+## 📝 Esempi Pratici
+
+### Esempio 1: Upload Singola Immagine (Primary)
+```json
+// metadata
 [
   {
     "isPrimary": true,
     "order": 0,
-    "caption": "Foto principale",
-    "altText": "Vista frontale dell'immobile"
+    "caption": "Vista principale dell'immobile"
   }
 ]
 ```
 
-#### Esempio 2: Multiple Immagini (3 foto)
+### Esempio 2: Upload 3 Immagini con Metadata Completi
 ```json
+// metadata
 [
   {
     "isPrimary": true,
     "order": 0,
-    "caption": "Ingresso principale",
-    "altText": "Vista dell'ingresso con porta blindata"
+    "caption": "Facciata esterna dell'edificio",
+    "altText": "Vista frontale del palazzo"
   },
   {
     "isPrimary": false,
@@ -117,14 +289,15 @@ Nella tab **Headers**:
   {
     "isPrimary": false,
     "order": 2,
-    "caption": "Camera da letto",
-    "altText": "Camera matrimoniale con balcone"
+    "caption": "Balcone panoramico",
+    "altText": "Balcone con vista città"
   }
 ]
 ```
 
-#### Esempio 3: Metadata Minimale (solo campi obbligatori)
+### Esempio 3: Upload con Metadata Minimali
 ```json
+// metadata
 [
   {
     "isPrimary": true,
@@ -137,172 +310,48 @@ Nella tab **Headers**:
 ]
 ```
 
----
+## 💡 Suggerimenti
 
-### 6. Response Attese
+### Best Practices
+1. **Ordina le immagini logicamente**: 
+   - 0: Facciata/Vista principale
+   - 1-3: Soggiorno, cucina, camere
+   - 4-5: Bagni
+   - 6+: Dettagli, esterni
 
-#### ✅ Success (201 Created)
-```json
-{
-  "success": true,
-  "message": "Successfully uploaded 2 image(s)",
-  "data": {
-    "images": [
-      {
-        "id": "550e8400-e29b-41d4-a716-446655440000",
-        "fileName": "image1.jpg",
-        "fileSize": 1234567,
-        "contentType": "image/jpeg",
-        "width": 1920,
-        "height": 1080,
-        "isPrimary": true,
-        "order": 0,
-        "caption": "Soggiorno luminoso con vista",
-        "alt": "Vista del soggiorno principale",
-        "uploadDate": "2025-10-29T10:30:00Z",
-        "urls": {
-          "original": "https://...",
-          "small": "https://...",
-          "medium": "https://...",
-          "large": "https://..."
-        }
-      }
-    ],
-    "warnings": []
-  },
-  "timestamp": "2025-10-29T10:30:00Z"
-}
-```
+2. **Usa caption descrittive** per migliorare la UX
 
-#### ❌ Error - File non valido (400)
-```json
-{
-  "success": false,
-  "error": "VALIDATION_ERROR",
-  "message": "Invalid image file",
-  "details": [
-    "File image1.jpg: Invalid image format. Allowed: jpeg, png, webp"
-  ]
-}
-```
+3. **Inserisci altText** per accessibilità
 
-#### ❌ Error - Metadata non valido (400)
-```json
-{
-  "success": false,
-  "error": "VALIDATION_ERROR",
-  "message": "Validation failed",
-  "details": [
-    "Only one image can be marked as primary",
-    "metadata[1].order: Each image must have a unique order value"
-  ]
-}
-```
+4. **Prima immagine sempre primary** - sarà la foto di copertina
 
-#### ❌ Error - Non autenticato (401)
-```json
-{
-  "success": false,
-  "error": "UNAUTHORIZED",
-  "message": "No token provided"
-}
-```
+### Ottimizzazione File
+- Risoluzione consigliata: 1920x1080 o 1600x1200
+- Formato consigliato: JPEG (miglior rapporto qualità/dimensione)
+- Usa qualità 85-90% per JPEG
 
-#### ❌ Error - Proprietà non trovata (404)
-```json
-{
-  "success": false,
-  "error": "NOT_FOUND",
-  "message": "Property not found"
-}
-```
+## 🔧 Troubleshooting
+
+### Il campo "images" non viene riconosciuto?
+- Assicurati di aver selezionato **"File"** come tipo nel dropdown accanto al campo
+- Scrivi esattamente `images` (minuscolo, plurale)
+
+### Il JSON nel campo metadata dà errore?
+- Verifica che sia un JSON valido (usa jsonlint.com)
+- Non dimenticare le virgole tra gli oggetti
+- Usa le virgolette doppie `"` non singole `'`
+
+### Postman dice "Network Error"?
+- Verifica che il server sia avviato (`npm run dev`)
+- Controlla che l'URL sia corretto (porta 3002 per property-service)
+
+## 📚 Risorse Aggiuntive
+
+- **Documentazione API completa**: `docs/UPLOAD_IMAGES_API_SUMMARY.md`
+- **Swagger UI**: http://localhost:3002/api-docs (quando il server è avviato)
+- **Test con WebStorm**: `test/property-service.http`
 
 ---
 
-### 7. Checklist Pre-Test
-
-Prima di inviare la richiesta, verifica:
-
-- [ ] Hai un JWT token valido nell'header Authorization
-- [ ] Il propertyId nell'URL è un UUID valido di una proprietà esistente
-- [ ] Hai selezionato "form-data" nella tab Body
-- [ ] Tutti i campi `images` hanno Type = File
-- [ ] Il campo `metadata` ha Type = Text
-- [ ] Il numero di oggetti nel metadata JSON corrisponde al numero di file
-- [ ] Solo un oggetto ha `isPrimary: true`
-- [ ] Tutti gli `order` sono univoci
-- [ ] Le immagini sono in formato JPEG, PNG o WebP
-- [ ] Ogni immagine è sotto i 10MB
-
----
-
-### 8. Troubleshooting Comuni
-
-#### Errore: "metadata must be an array"
-- ✅ Soluzione: Assicurati che il metadata sia un array JSON `[...]` e non un oggetto `{...}`
-
-#### Errore: "Number of metadata entries must match number of files"
-- ✅ Soluzione: Conta i file caricati e assicurati di avere lo stesso numero di oggetti nel metadata
-
-#### Errore: "Only one image can be marked as primary"
-- ✅ Soluzione: Imposta `isPrimary: true` solo per UN elemento del metadata
-
-#### Errore: "Each image must have a unique order value"
-- ✅ Soluzione: Assegna valori `order` diversi (es: 0, 1, 2, 3...)
-
-#### Errore: "Invalid image format"
-- ✅ Soluzione: Usa solo file JPEG (.jpg, .jpeg), PNG (.png) o WebP (.webp)
-
-#### Postman non invia i file
-- ✅ Soluzione: Assicurati di aver selezionato "File" dal dropdown del Type, non "Text"
-
----
-
-### 9. Testare Scenari Specifici
-
-#### Test 1: Upload Singola Immagine Principale
-- File: 1 immagine
-- Metadata: `[{"isPrimary": true, "order": 0}]`
-
-#### Test 2: Upload Multiplo con Caption
-- File: 3 immagini
-- Metadata: Array con 3 oggetti, ciascuno con caption e altText
-
-#### Test 3: Upload Massimo (10 immagini)
-- File: 10 immagini
-- Metadata: Array con 10 oggetti, order da 0 a 9
-
-#### Test 4: Errore - Troppi File
-- File: 11 immagini (dovrebbe fallire)
-
-#### Test 5: Errore - Metadata Mancante
-- File: 2 immagini
-- Metadata: Array con solo 1 oggetto (dovrebbe fallire)
-
----
-
-### 10. Video Tutorial (Steps)
-
-1. Apri Postman
-2. Crea una nuova richiesta POST
-3. Inserisci l'URL con il propertyId
-4. Vai su Headers → Aggiungi Authorization Bearer
-5. Vai su Body → Seleziona form-data
-6. Aggiungi campo `images` (File) → Seleziona immagine
-7. Ripeti per altre immagini (stesso nome `images`)
-8. Aggiungi campo `metadata` (Text) → Incolla JSON array
-9. Click Send
-10. Verifica la risposta
-
----
-
-## Note Importanti
-
-⚠️ **Autenticazione**: Devi prima fare login e ottenere un JWT token valido
-
-⚠️ **Permessi**: L'utente deve essere un agente della stessa agenzia della proprietà
-
-⚠️ **Ambiente**: Assicurati che il backend sia in esecuzione su `http://localhost:3001`
-
-⚠️ **S3**: Le immagini vengono caricate su AWS S3, quindi assicurati che le credenziali AWS siano configurate correttamente nel backend
+**Buon testing! 🎉**
 

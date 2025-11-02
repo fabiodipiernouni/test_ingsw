@@ -1,5 +1,4 @@
 import { Address } from '@shared/models/Address';
-
 import { GeoJSONPoint } from '@shared/types/geojson.types';
 import {
   IsString,
@@ -12,8 +11,7 @@ import {
   ValidateNested,
   MaxLength,
   Min,
-  Max,
-  IsObject
+  Max
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import {
@@ -76,8 +74,7 @@ export class CreatePropertyRequest implements CreatePropertyRequestInterface {
   status: PropertyStatus;
 
   @ValidateNested()
-  @Type(() => Object)
-  @IsObject({ message: 'Address must be a valid object' })
+  @Type(() => Address)
   address: Address;
 
   @Type(() => Number)
@@ -134,7 +131,6 @@ export class CreatePropertyRequest implements CreatePropertyRequestInterface {
   features?: string[];
 
   @ValidateNested()
-  @Type(() => Object)
-  @IsObject({ message: 'Location must be a valid GeoJSON Point object' })
+  @Type(() => GeoJSONPoint)
   location: GeoJSONPoint;
 }

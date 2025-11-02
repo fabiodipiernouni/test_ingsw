@@ -14,6 +14,7 @@ import { PropertyStatus } from '@shared/types/property.types';
 import { GeoSearchPropertiesFilters } from '@property/dto/GeoSearchPropertiesFilters';
 import { GeoPropertyCardDto } from '@property/dto/GeoPropertyCardDto';
 import { Mappers } from '@property/utils/mappers';
+import { PropertyImageMetadata } from '@property/dto/addPropertyImageEndpoint/PropertyImageMetadata';
 
 // Custom error classes for better error handling
 class ValidationError extends Error {
@@ -520,11 +521,16 @@ export class PropertyService {
 
   /**
    * Add images to a property - gestisce upload S3 e salvataggio DB
+   * @param propertyId - ID della proprietà
+   * @param files - File caricati tramite multer
+   * @param metadata - Array di metadata validati per ogni immagine
+   * @param userId - ID dell'utente che sta caricando le immagini
+   * @returns Promise con le immagini create ed eventuali warning
    */
   async addPropertyImages(
     propertyId: string,
     files: Express.Multer.File[],
-    metadata: any[],
+    metadata: PropertyImageMetadata[],
     userId: string
   ): Promise<{ images: PropertyImage[], warnings?: any[] }> {
     try {
@@ -576,7 +582,7 @@ export class PropertyService {
         );
       }
 
-      // Import imageService dynamically to avoid circular dependencies
+      // import dinamico per evitare dipendenza circolare
       const { imageService } = await import('@shared/services/ImageService');
 
       // Process each file

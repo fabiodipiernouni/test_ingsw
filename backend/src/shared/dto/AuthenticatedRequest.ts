@@ -1,8 +1,14 @@
 import { Request } from 'express';
 import { UserModel } from '@shared/models/UserModel';
-import { Agency } from '@shared/database/models';
 
 export interface AuthenticatedRequest extends Request {
   user?: UserModel;
-  userAgency?: Agency;
+}
+
+/**
+ * Type guard per verificare che req.user sia presente
+ * Usare questo per garantire che l'utente sia autenticato
+ */
+export function isAuthenticated(req: AuthenticatedRequest): req is AuthenticatedRequest & { user: UserModel } {
+  return req.user !== undefined;
 }

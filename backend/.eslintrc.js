@@ -23,7 +23,7 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],
     'no-console': 'warn',
     '@typescript-eslint/semi': ['error', 'always'],
-    '@typescript-eslint/quotes': ['error', 'single'],
+    '@typescript-eslint/quotes': 'off',
     '@typescript-eslint/indent': 'off',
     '@typescript-eslint/comma-dangle': ['error', 'never']
   },

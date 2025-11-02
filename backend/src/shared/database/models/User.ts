@@ -17,8 +17,8 @@ import { Property } from './Property';
 import { SavedSearch } from './SavedSearch';
 import { Notification } from './Notification';
 import { OAuthProvider } from '@shared/types/auth.types';
-import { NOTIFICATION_TYPES, NotificationType } from '@shared/types/notification.types';
 import { USER_ROLES, UserRole } from '@shared/types/user.types';
+import { NotificationType } from '@shared/types/notification.types';
 
 @Table({
   tableName: 'users',
