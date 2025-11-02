@@ -117,6 +117,7 @@ export class PropertyController {
         geoFilters: getGeoPropertiesCardsRequest.geoFilters,
         status: getGeoPropertiesCardsRequest.status,
         agencyId: getGeoPropertiesCardsRequest.agencyId,
+        agentId: getGeoPropertiesCardsRequest.agentId,
         sortBy: getGeoPropertiesCardsRequest.sortBy,
         sortOrder: getGeoPropertiesCardsRequest.sortOrder
       });
@@ -142,6 +143,7 @@ export class PropertyController {
     const filters = getPropertiesCardsRequest.filters || {};
     const status = getPropertiesCardsRequest.status;
     const agencyId = getPropertiesCardsRequest.agencyId;
+    const agentId = getPropertiesCardsRequest.agentId;
     const geoFilters = getPropertiesCardsRequest.geoFilters;
 
     try {
@@ -153,6 +155,7 @@ export class PropertyController {
         geoFilters,
         status,
         agencyId,
+        agentId,
         sortBy,
         sortOrder
       });

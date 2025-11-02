@@ -71,6 +71,7 @@ export class SearchService {
         listingType: searchData.filters.filters?.listingType,
         status: searchData.filters.status,
         agencyId: searchData.filters.agencyId,
+        agentId: searchData.filters.agentId,
         priceMin: searchData.filters.filters?.priceMin,
         priceMax: searchData.filters.filters?.priceMax,
         rooms: searchData.filters.filters?.rooms,

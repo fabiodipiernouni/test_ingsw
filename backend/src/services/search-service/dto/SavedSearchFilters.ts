@@ -22,8 +22,12 @@ export class SavedSearchFilters {
   status?: PropertyStatus;
 
   @IsOptional()
-  @IsUUID('4', { message: 'L\'ID dell\'agenzia deve essere un UUID valido' })
+  @IsUUID('all', { message: 'L\'ID dell\'agenzia deve essere un UUID valido' })
   agencyId?: string;
+
+  @IsOptional()
+  @IsUUID('all', { message: 'L\'ID dell\'agente deve essere un UUID valido' })
+  agentId?: string;
 
   @IsString({ message: 'Il campo di ordinamento deve essere una stringa' })
   sortBy: string;

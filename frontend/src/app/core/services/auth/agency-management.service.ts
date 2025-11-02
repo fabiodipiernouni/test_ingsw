@@ -16,7 +16,7 @@ export class AgencyManagementService {
   private readonly API_URL = environment.apiUrlAuth;
 
   /**
-   * Ottiene tutti gli agenti dell'agenzia con paginazione
+   * Ottiene tutti gli agenti dell'Agenzia con paginazione
    */
   getAgents(request: GetAgentsRequest): Observable<ApiResponse<PagedResult<UserResponse>>> {
     let params = new HttpParams();
@@ -33,7 +33,7 @@ export class AgencyManagementService {
   }
 
   /**
-   * Ottiene tutti gli admin dell'agenzia con paginazione
+   * Ottiene tutti gli admin dell'Agenzia con paginazione
    */
   getAdmins(request: GetAdminsRequest): Observable<ApiResponse<PagedResult<UserResponse>>> {
     let params = new HttpParams();

@@ -68,6 +68,24 @@ export class Header {
     this.isMobileMenuOpen.set(false);
   }
 
+  onMyProperties(): void {
+    const user = this.currentUser();
+    if (!user) return;
+    
+    const filters = JSON.stringify({ agentId: user.id });
+    this.router.navigate(['/search'], { queryParams: { filters } });
+    this.isMobileMenuOpen.set(false);
+  }
+
+  onAgencyProperties(): void {
+    const user = this.currentUser();
+    if (!user?.agency?.id) return;
+    
+    const filters = JSON.stringify({ agencyId: user.agency.id });
+    this.router.navigate(['/search'], { queryParams: { filters } });
+    this.isMobileMenuOpen.set(false);
+  }
+
   toggleMobileMenu(): void {
     this.isMobileMenuOpen.update(current => !current);
   }
@@ -84,6 +102,14 @@ export class Header {
 
   canUploadProperty(): boolean {
     return this.isAgent();
+  }
+
+  canUploadProperties(): boolean {
+    return this.isAgent();
+  }
+
+  canViewAgencyProperties(): boolean {
+    return this.isOwner() || this.isAdmin();
   }
 
   canManageAgency(): boolean {

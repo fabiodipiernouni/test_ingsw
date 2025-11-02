@@ -18,32 +18,12 @@
           <mat-icon>dashboard</mat-icon>
           Dashboard
         </a>
-
         <a mat-button routerLink="/saved-searches" routerLinkActive="active">
           <mat-icon>bookmark</mat-icon>
           Ricerche Salvate
         </a>
-
-        @if (canUploadProperty()) {
-          <a mat-button routerLink="/properties/upload" routerLinkActive="active">
-            <mat-icon>add_home</mat-icon>
-            Carica Immobile
-          </a>
-        }
-
-        @if (canManageAgency()) {
-          <a mat-button routerLink="/admin/manage-agency" routerLinkActive="active">
-            <mat-icon>business</mat-icon>
-            Gestisci Agenzia
-          </a>
-        }
-        @if (canSendPromotions()) {
-          <a mat-button routerLink="/send-promotional-message" routerLinkActive="active">
-            <mat-icon>campaign</mat-icon>
-            Invia Promozioni
-          </a>
-        }
       }
+
     </nav>
 
     <!-- User Actions -->
@@ -78,6 +58,38 @@
             <mat-icon>person</mat-icon>
             <span>Il Mio Profilo</span>
           </button>
+
+          @if (canUploadProperties()) {
+            <a mat-menu-item routerLink="/properties/upload">
+              <mat-icon>add_home</mat-icon>
+              <span>Carica Immobile</span>
+            </a>
+            <button mat-menu-item (click)="onMyProperties()">
+              <mat-icon>home_work</mat-icon>
+              <span>I Miei Immobili</span>
+            </button>
+          }
+
+          @if(canManageAgency()) {
+            <a mat-menu-item routerLink="/admin/manage-agency">
+              <mat-icon>business</mat-icon>
+              <span>Gestisci Agenzia</span>
+            </a>
+          }
+
+          @if (canViewAgencyProperties()) {
+            <button mat-menu-item (click)="onAgencyProperties()">
+              <mat-icon>home_work</mat-icon>
+              <span>Immobili dell'Agenzia</span>
+            </button>
+          }
+
+          @if(canSendPromotions()) {
+            <a mat-menu-item routerLink="/send-promotional-message">
+              <mat-icon>campaign</mat-icon>
+              <span>Messaggi Promozionali</span>
+            </a>
+          }
 
           <mat-divider></mat-divider>
 
@@ -176,6 +188,20 @@
                 <mat-icon>campaign</mat-icon>
                 <span>Invia Promozioni</span>
               </a>
+            }
+
+            @if (canUploadProperties()) {
+              <button mat-button (click)="onMyProperties()">
+                <mat-icon>home_work</mat-icon>
+                <span>I Miei Immobili</span>
+              </button>
+            }
+
+            @if (canViewAgencyProperties()) {
+              <button mat-button (click)="onAgencyProperties()">
+                <mat-icon>business</mat-icon>
+                <span>Immobili dell'Agenzia</span>
+              </button>
             }
 
             <a mat-button routerLink="/profile" (click)="toggleMobileMenu()">

@@ -4,7 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '@core/services/auth/auth.service';
 import { UserModel } from '@core-services/auth/models/UserModel';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -27,6 +27,7 @@ import { UserWarning } from '@features/auth/user-warning/user-warning';
 })
 export class Dashboard implements OnInit {
   private authService = inject(AuthService);
+  private router = inject(Router);
   currentUser: UserModel | null = null;
   private snackbar = inject(MatSnackBar);
 
@@ -79,6 +80,46 @@ export class Dashboard implements OnInit {
       case 'client': return 'Trova la casa dei tuoi sogni';
       default: return '';
     }
+  }
+
+  canUploadProperties(): boolean {
+    return this.isAgent();
+  }
+
+  canViewAgencyProperties(): boolean {
+    return this.isOwner() || this.isAdmin();
+  }
+
+  canCreateAdmins(): boolean {
+    return this.isOwner();
+  }
+
+  canCreateAgents(): boolean {
+    return this.isOwner() || this.isAdmin();
+  }
+
+  canManageAgency(): boolean {
+    return this.canCreateAdmins() || this.canCreateAgents();
+  }
+
+  canSendPromotions(): boolean {
+    return this.isAdmin() || this.isOwner();
+  }
+
+  goToMyProperties(): void {
+    const user = this.currentUser;
+    if (!user) return;
+    
+    const filters = JSON.stringify({ agentId: user.id });
+    this.router.navigate(['/search'], { queryParams: { filters } });
+  }
+
+  goToAgencyProperties(): void {
+    const user = this.currentUser;
+    if (!user?.agency?.id) return;
+    
+    const filters = JSON.stringify({ agencyId: user.agency.id });
+    this.router.navigate(['/search'], { queryParams: { filters } });
   }
 
   logout(): void {

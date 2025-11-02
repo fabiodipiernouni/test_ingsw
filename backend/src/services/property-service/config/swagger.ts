@@ -140,8 +140,13 @@ const options: swaggerJsdoc.Options = {
             agencyId: {
               type: 'string',
               format: 'uuid',
-              description: 'Filtra per agenzia specifica (solo per admin)'
-            }
+              description: 'Filtra per agenzia specifica'
+            },
+            agentId: {
+              type: 'string',
+              format: 'uuid',
+              description: 'Filtra per agente specifico'
+            },
           }
         },
 

@@ -7,6 +7,7 @@ export interface GetGeoPropertiesCardsRequest {
   geoFilters?: GeoSearchPropertiesFilters;
   status?: PropertyStatus;
   agencyId?: string;
+  agentId?: string;
   sortBy: string;
   sortOrder: 'ASC' | 'DESC';
 }

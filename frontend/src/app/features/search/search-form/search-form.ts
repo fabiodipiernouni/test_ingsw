@@ -26,6 +26,8 @@ import {GetPropertiesCardsRequest} from '@core/services/property/dto/GetProperti
 import {GeoSearchPropertiesFilters} from '@core/services/property/dto/GeoSearchPropertiesFilters';
 import {environment} from '@src/environments/environment';
 import { SavedSearchFilters } from '@src/app/core/services/search/dto/SavedSearchFilters';
+import { AuthService } from '@src/app/core/services/auth/auth.service';
+import { inject, computed } from '@angular/core';
 
 // Tipizzazione Google Maps per Autocomplete classico
 interface GoogleMapsWindow extends Window {
@@ -95,6 +97,18 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
   @Output() searchStarted = new EventEmitter<GetPropertiesCardsRequest>();
   @Output() mapSearchClicked = new EventEmitter<GetPropertiesCardsRequest>();
 
+  private authService = inject(AuthService);
+  
+  // Computed per verificare se mostrare il filtro agenzia
+  canFilterByAgency = computed(() => {
+    return this.authService.isAdmin() || this.authService.isOwner();
+  });
+
+  // Computed per verificare se mostrare il filtro "I miei immobili"
+  canFilterMyProperties = computed(() => {
+    return this.authService.isAgent();
+  });
+
   constructor(
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef
@@ -129,6 +143,8 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
       hasBalcony: [false],
       hasGarden: [false],
       hasParking: [false],
+      myAgencyOnly: [false], // Filtro per agenzia
+      myPropertiesOnly: [false], // Filtro per agente (solo i propri immobili)
       sortBy: ['createdAt'],
       sortOrder: ['DESC']
     });
@@ -302,7 +318,11 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
       filters: this.buildSearchFilter(),
       // Aggiungi geoFilters SOLO se c'è un place selezionato dall'autocomplete
       geoFilters: this.selectedPlace?.coordinates ? this.buildGeoSearchFilter() : undefined,
-      pagedRequest: this.buildPagedRequest()
+      pagedRequest: this.buildPagedRequest(),
+      // Aggiungi agencyId a livello di request se la checkbox è selezionata
+      agencyId: this.getAgencyIdIfNeeded(),
+      // Aggiungi agentId a livello di request se la checkbox è selezionata
+      agentId: this.getAgentIdIfNeeded()
     }
 
     console.log('🔍 [Search] Ricerca normale avviata:', {
@@ -408,6 +428,32 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /**
+   * Ottiene l'agencyId se la checkbox è selezionata e l'utente appartiene a un'agenzia
+   */
+  private getAgencyIdIfNeeded(): string | undefined {
+    const myAgencyOnly = this.searchForm.get('myAgencyOnly')?.value;
+    if (!myAgencyOnly) {
+      return undefined;
+    }
+
+    const user = this.authService.getCurrentUser();
+    return user?.agency?.id;
+  }
+
+  /**
+   * Ottiene l'agentId se la checkbox è selezionata e l'utente è un agente
+   */
+  private getAgentIdIfNeeded(): string | undefined {
+    const myPropertiesOnly = this.searchForm.get('myPropertiesOnly')?.value;
+    if (!myPropertiesOnly) {
+      return undefined;
+    }
+
+    const user = this.authService.getCurrentUser();
+    return user?.id;
+  }
+
+  /**
    * Reset del form e dello stato autocomplete
    */
   resetFilters(): void {
@@ -431,6 +477,8 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
       hasBalcony: false,
       hasGarden: false,
       hasParking: false,
+      myAgencyOnly: false,
+      myPropertiesOnly: false,
       sortBy: 'createdAt',
       sortOrder: 'DESC'
     });
@@ -487,6 +535,16 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
     }
     if (filters.hasParking) {
       formValues.hasParking = filters.hasParking;
+    }
+
+    // Imposta myAgencyOnly se c'è agencyId nei savedFilters (a livello di request) e corrisponde all'agenzia dell'utente corrente
+    if (savedFilters.agencyId && savedFilters.agencyId === this.authService.getCurrentUser()?.agency?.id) {
+      formValues.myAgencyOnly = true;
+    }
+
+    // Imposta myPropertiesOnly se c'è agentId nei savedFilters (a livello di request) e corrisponde all'utente corrente
+    if (savedFilters.agentId && savedFilters.agentId === this.authService.getCurrentUser()?.id) {
+      formValues.myPropertiesOnly = true;
     }
 
     // Se ci sono geoFilters con coordinate, imposta anche selectedPlace
@@ -547,7 +605,9 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
     const mapSearchPayload: GetPropertiesCardsRequest = {
       filters: this.buildSearchFilter(),
       geoFilters: this.selectedPlace?.coordinates ? this.buildGeoSearchFilter() : undefined,
-      pagedRequest: this.buildPagedRequest()
+      pagedRequest: this.buildPagedRequest(),
+      agencyId: this.getAgencyIdIfNeeded(),
+      agentId: this.getAgentIdIfNeeded()
     };
 
     console.log('📤 Emissione evento mapSearchClicked con payload:', mapSearchPayload);

@@ -46,7 +46,7 @@ export class Onboarding implements OnInit {
   }
 
   canManageAgency(): boolean {
-    return this.isAdmin() || this.isOwner();
+    return this.canCreateAdmins() || this.canCreateAgents();
   }
 
   canSendPromotions(): boolean {
@@ -55,6 +55,30 @@ export class Onboarding implements OnInit {
 
   canUploadProperty(): boolean {
     return this.isAgent();
+  }
+
+  canUploadProperties(): boolean {
+    return this.isAgent();
+  }
+
+  canViewAgencyProperties(): boolean {
+    return this.isOwner() || this.isAdmin();
+  }
+
+  goToMyProperties(): void {
+    const user = this.currentUser;
+    if (!user) return;
+    
+    const filters = JSON.stringify({ agentId: user.id });
+    this.router.navigate(['/search'], { queryParams: { filters } });
+  }
+
+  goToAgencyProperties(): void {
+    const user = this.currentUser;
+    if (!user?.agency?.id) return;
+    
+    const filters = JSON.stringify({ agencyId: user.agency.id });
+    this.router.navigate(['/search'], { queryParams: { filters } });
   }
 
   goToDashboard(): void {

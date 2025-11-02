@@ -9,4 +9,5 @@ export interface GetPropertiesCardsRequest {
   pagedRequest?: PagedRequest;
   status?: PropertyStatus;
   agencyId?: string;
+  agentId?: string;
 }

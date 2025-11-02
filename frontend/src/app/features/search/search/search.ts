@@ -76,43 +76,47 @@ export class Search implements AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     // Controlla se ci sono parametri URL per eseguire una ricerca automatica
     // Questo ha priorità sul ripristino dello stato della mappa
-    const hasUrlParams = this.route.snapshot.queryParamMap.keys.length > 0;
-    
-    if (hasUrlParams) {
-      // Leggi i filtri dall'URL
-      const filtersParam = this.route.snapshot.queryParamMap.get('filters');
-      this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true }); // Rimuovi i parametri dall'URL
+
+    this.route.queryParamMap.subscribe(params => {
+      const hasUrlParams = params.keys.length > 0;
       
-      if (filtersParam) {
-        try {
-          const filters = JSON.parse(filtersParam) as SavedSearchFilters;
+      if (hasUrlParams) {
+        // Leggi i filtri dall'URL
+        const filtersParam = params.get('filters');
+        this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true }); // Rimuovi i parametri dall'URL
+        
+        if (filtersParam) {
+          try {
+            const filters = JSON.parse(filtersParam) as SavedSearchFilters;
 
-          // Imposta i filtri nel form
-          this.searchFormComponent?.setFiltersFromUrl(filters);
-         
-          const searchFormData: GetPropertiesCardsRequest = {
-            filters: filters.filters,
-            geoFilters: filters.geoFilters,
-            status: filters.status,
-            agencyId: filters.agencyId,
-            pagedRequest: {
-              page: 1,
-              limit: 20,
-              sortBy: filters.sortBy || 'createdAt',
-              sortOrder: filters.sortOrder || 'DESC'
+            // Imposta i filtri nel form
+            this.searchFormComponent?.setFiltersFromUrl(filters);
+          
+            const searchFormData: GetPropertiesCardsRequest = {
+              filters: filters.filters,
+              geoFilters: filters.geoFilters,
+              status: filters.status,
+              agencyId: filters.agencyId,
+              agentId: filters.agentId,
+              pagedRequest: {
+                page: 1,
+                limit: 20,
+                sortBy: filters.sortBy || 'createdAt',
+                sortOrder: filters.sortOrder || 'DESC'
+              }
+            };
+            if (searchFormData.geoFilters) {
+              this.onMapSearchClicked(searchFormData);
+            } else {
+              this.onSearchStarted(searchFormData);
             }
-          };
-          if (searchFormData.geoFilters) {
-            this.onMapSearchClicked(searchFormData);
-          } else {
-            this.onSearchStarted(searchFormData);
-          }
 
-        } catch (error) {
-          console.error('Errore:', error);
+          } catch (error) {
+            console.error('Errore:', error);
+          }
         }
       }
-    }
+    });
   }
 
   ngOnDestroy(): void {
@@ -201,6 +205,7 @@ export class Search implements AfterViewInit, OnDestroy {
         filters: searchFormData.filters || {},
         status: searchFormData.status,
         agencyId: searchFormData.agencyId,
+        agentId: searchFormData.agentId,
         geoFilters: searchFormData.geoFilters,
         sortBy: searchFormData.pagedRequest?.sortBy || 'createdAt',
         sortOrder: searchFormData.pagedRequest?.sortOrder || 'DESC'
@@ -245,6 +250,7 @@ export class Search implements AfterViewInit, OnDestroy {
             filters: searchFormData.filters || {},
             status: searchFormData.status,
             agencyId: searchFormData.agencyId,
+            agentId: searchFormData.agentId,
             geoFilters: {
               radiusSearch: {
                 center: {
@@ -381,6 +387,7 @@ export class Search implements AfterViewInit, OnDestroy {
         filters: this.currentFilters().filters || {},
         status: this.currentFilters().status,
         agencyId: this.currentFilters().agencyId,
+        agentId: this.currentFilters().agentId,
         pagedRequest: this.currentFilters().pagedRequest
       };
       
@@ -449,6 +456,7 @@ export class Search implements AfterViewInit, OnDestroy {
       filters: this.currentFilters().filters || {},
       status: this.currentFilters().status,
       agencyId: this.currentFilters().agencyId,
+      agentId: this.currentFilters().agentId,
       geoFilters: {
         radiusSearch
       },
@@ -570,6 +578,7 @@ export class Search implements AfterViewInit, OnDestroy {
       geoFilters: geoFilters,
       status: currentFilters.status,
       agencyId: currentFilters.agencyId,
+      agentId: currentFilters.agentId,
       sortBy: currentFilters.pagedRequest?.sortBy,
       sortOrder: currentFilters.pagedRequest?.sortOrder
     };
