@@ -60,7 +60,8 @@ export class EmailService {
     title: string,
     message: string,
     actionUrl?: string,
-    imageUrl?: string
+    imageUrl?: string,
+    agencyName?: string
   ): Promise<boolean> {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
     
@@ -76,12 +77,12 @@ export class EmailService {
       }
     }
     
-    const html = this.generateNotificationEmailTemplate(title, message, fullActionUrl, imageUrl);
+    const html = this.generateNotificationEmailTemplate(title, message, fullActionUrl, imageUrl, agencyName);
     
     return this.sendEmail({
       to,
       subject: `${title} - DietiEstates25`,
-      text: `${title}\n\n${message}${fullActionUrl ? `\n\nLink: ${fullActionUrl}` : ''}`,
+      text: `${title}\n\n${message}${fullActionUrl ? `\n\nLink: ${fullActionUrl}` : ''}${agencyName ? `\n\nDa: ${agencyName}` : ''}`,
       html,
     });
   }
@@ -90,7 +91,8 @@ export class EmailService {
     title: string,
     message: string,
     actionUrl?: string,
-    imageUrl?: string
+    imageUrl?: string,
+    agencyName?: string
   ): string {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
     
@@ -216,6 +218,11 @@ export class EmailService {
             <div class="message">
               ${message}
             </div>
+            ${agencyName ? `
+            <div style="font-size: 13px; color: #999; font-style: italic; margin-bottom: 20px;">
+              Da: ${agencyName}
+            </div>
+            ` : ''}
             ${imageUrl ? `
             <div class="image-container">
               <img src="${imageUrl}" alt="Immagine notifica" class="notification-image" />

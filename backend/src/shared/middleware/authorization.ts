@@ -7,7 +7,6 @@ import { setResponseAsError, setResponseAsForbidden, unauthorizedResponse } from
 
 /**
  * Middleware per verificare che l'utente sia admin dell'agenzia
- * e possa creare agenti per la sua agenzia
  */
 export const requireAgencyAdmin = async (
   req: AuthenticatedRequest,
@@ -55,7 +54,6 @@ export const requireAgencyAdmin = async (
 
 /**
  * Middleware per verificare che l'utente sia il owner dell'agenzia
- * e possa creare admin per la sua agenzia
  */
 export const requireAgencyOwner = async (
   req: AuthenticatedRequest,

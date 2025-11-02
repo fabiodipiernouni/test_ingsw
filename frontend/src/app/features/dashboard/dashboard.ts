@@ -78,23 +78,15 @@ export class Dashboard implements OnInit {
   }
 
   isOwner(): boolean {
-    return this.currentUser?.role === 'owner';
+    return this.authService.isOwner();
   }
 
   isAdmin(): boolean {
-    return this.currentUser?.role === 'admin';
+    return this.authService.isAdmin();
   }
 
   isAgent(): boolean {
-    return this.currentUser?.role === 'agent';
-  }
-
-  canCreateAdmins(): boolean {
-    return this.isOwner();
-  }
-
-  canCreateAgents(): boolean {
-    return this.isOwner() || this.isAdmin();
+    return this.authService.isAgent();
   }
 
   logout(): void {

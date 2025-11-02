@@ -11,7 +11,7 @@
     <div class="dashboard-grid">
 
     <!-- Card per Creazione Admin (solo per owner) -->
-    @if (canCreateAdmins()) {
+    @if (isOwner()) {
     <mat-card class="action-card">
         <mat-card-header>
         <mat-icon mat-card-avatar style="color: #ff9800">admin_panel_settings</mat-icon>
@@ -27,7 +27,7 @@
     }
 
     <!-- Card per Creazione Agenti (per owner e admin) -->
-    @if (canCreateAgents()) {
+    @if (isAdmin() || isOwner()) {
     <mat-card class="action-card">
         <mat-card-header>
         <mat-icon mat-card-avatar style="color: #4caf50">person_add</mat-icon>
@@ -37,6 +37,22 @@
         <mat-card-actions>
         <button mat-raised-button style="background-color: #4caf50; color: white;" routerLink="/create-agent">
             Crea Agente
+        </button>
+        </mat-card-actions>
+    </mat-card>
+    }
+
+    <!-- Card per Messaggi Promozionali (per owner e admin) -->
+    @if (isAdmin() || isOwner()) {
+    <mat-card class="action-card">
+        <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #9c27b0">campaign</mat-icon>
+        <mat-card-title>Messaggi Promozionali</mat-card-title>
+        <mat-card-subtitle>Invia notifiche promozionali agli utenti</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-actions>
+        <button mat-raised-button style="background-color: #9c27b0; color: white;" routerLink="/send-promotional-message">
+            Invia Messaggio
         </button>
         </mat-card-actions>
     </mat-card>

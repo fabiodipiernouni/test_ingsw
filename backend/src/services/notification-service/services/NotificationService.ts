@@ -1,10 +1,13 @@
 import { Notification } from '@shared/database/models/Notification';
+import { User } from '@shared/database/models/User';
+import { Agency } from '@shared/database/models/Agency';
 import { PagedResult } from '@shared/dto/pagedResult';
 import { NotificationDto } from '@notification/dto/NotificationResponse';
 import { NotificationCountDto } from '@notification/dto/NotificationCountResponse';
+import { SendPromotionalMessageDto } from '@notification/dto/SendPromotionalMessageDto';
 import logger from '@shared/utils/logger';
 import { GetNotificationsRequest } from '../dto/GetNotificationsRequest';
-import { Op } from 'sequelize';
+import { Op, Sequelize } from 'sequelize';
 
 class NotFoundError extends Error {
   constructor(message: string) {
@@ -15,6 +18,16 @@ class NotFoundError extends Error {
 
 export class NotificationService {
     private convertNotificationToDto(notification: Notification): NotificationDto {
+        // Recupera l'agenzia del creatore se presente
+        let agency: { id: string; name: string } | undefined;
+        
+        if (notification.creator && notification.creator.agency) {
+            agency = {
+                id: notification.creator.agency.id,
+                name: notification.creator.agency.name
+            };
+        }
+
         return {
             id: notification.id,
             userId: notification.userId,
@@ -25,6 +38,7 @@ export class NotificationService {
             isSent: notification.isSent,
             actionUrl: notification.actionUrl,
             imageUrl: notification.imageUrl,
+            agency: agency,
             readAt: notification.readAt?.toISOString(),
             sentAt: notification.sentAt?.toISOString(),
             createdAt: notification.createdAt.toISOString(),
@@ -65,7 +79,23 @@ export class NotificationService {
                 where: whereClause,
                 order: [[sortBy, sortOrder]],
                 limit,
-                offset
+                offset,
+                include: [
+                    {
+                        model: User,
+                        as: 'creator',
+                        attributes: ['id', 'agencyId'],
+                        required: false,
+                        include: [
+                            {
+                                model: Agency,
+                                as: 'agency',
+                                attributes: ['id', 'name'],
+                                required: false
+                            }
+                        ]
+                    }
+                ]
             });
 
             // Map to DTOs
@@ -176,6 +206,57 @@ export class NotificationService {
             return dto;
         } catch (error) {
             logger.error('Error in getUnreadNotificationsCount NotificationService:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Invia un messaggio promozionale a tutti gli utenti che hanno attivato il consenso
+     */
+    async sendPromotionalMessageToAll(dto: SendPromotionalMessageDto, createdBy: string): Promise<{ sentCount: number }> {
+        try {
+            // Trova tutti gli utenti che hanno abilitato le notifiche promozionali
+            // Usa Sequelize.literal per query Oracle JSON_TABLE
+            const eligibleUsers = await User.findAll({
+                where: {
+                    isActive: true,
+                    [Op.and]: Sequelize.literal(`
+                        EXISTS (
+                            SELECT 1 FROM JSON_TABLE(
+                                enabled_notification_types,
+                                '$[*]' COLUMNS (notification_type VARCHAR2(100) PATH '$')
+                            ) jt
+                            WHERE jt.notification_type = 'promotional_message'
+                        )
+                    `)
+                },
+                attributes: ['id']
+            });
+
+            logger.info(`Sending promotional message to ${eligibleUsers.length} users`, { createdBy });
+
+            // Crea una notifica per ogni utente
+            const notifications = eligibleUsers.map(user => ({
+                userId: user.id,
+                type: 'promotional_message' as const,
+                title: dto.title,
+                message: dto.message,
+                actionUrl: dto.actionUrl,
+                imageUrl: dto.imageUrl,
+                createdBy: createdBy,
+                sentAt: null as any // Sarà impostato quando l'email sarà inviata
+            }));
+
+            // Bulk insert solo se ci sono utenti eligibili
+            if (notifications.length > 0) {
+                await Notification.bulkCreate(notifications);
+            }
+
+            logger.info(`Successfully sent promotional message to ${eligibleUsers.length} users`);
+
+            return { sentCount: eligibleUsers.length };
+        } catch (error) {
+            logger.error('Error in sendPromotionalMessageToAll NotificationService:', error);
             throw error;
         }
     }

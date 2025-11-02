@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -32,7 +32,7 @@ import { NotificationMenu } from '@shared/components/notification-menu/notificat
   templateUrl: './header.html',
   styleUrl: './header.scss'
 })
-export class Header implements OnInit {
+export class Header {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
@@ -40,10 +40,6 @@ export class Header implements OnInit {
   currentUser = this.authService.currentUser;
   isAuthenticated = this.authService.isAuthenticated;
   isMobileMenuOpen = signal<boolean>(false);
-
-  ngOnInit(): void {
-    // Il polling delle notifiche viene gestito automaticamente dal NotificationService
-  }
 
   onLogin(): void {
     this.router.navigate(['/login']);
@@ -80,5 +76,13 @@ export class Header implements OnInit {
 
   isAgent(): boolean {
     return this.authService.isAgent();
+  }
+
+  isAdmin(): boolean {
+    return this.authService.isAdmin();
+  }
+
+  isOwner(): boolean {
+    return this.authService.isOwner();
   }
 }

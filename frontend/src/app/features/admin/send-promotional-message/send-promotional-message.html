@@ -1,0 +1,155 @@
+<div class="send-promotional-message-container">
+  <mat-card class="message-card">
+    <mat-card-header>
+      <button mat-icon-button (click)="goBack()" class="back-button">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <mat-card-title>
+        <mat-icon class="header-icon">campaign</mat-icon>
+        Invia Messaggio Promozionale
+      </mat-card-title>
+      <mat-card-subtitle>
+        Il messaggio verrà inviato a tutti gli utenti che hanno attivato il consenso per le notifiche promozionali
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="messageForm" (ngSubmit)="onSubmit()">
+        
+        <!-- Titolo -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Titolo del messaggio</mat-label>
+          <input matInput 
+                 formControlName="title" 
+                 placeholder="Es: Offerta Speciale Estate 2025"
+                 maxlength="200">
+          <mat-icon matPrefix>title</mat-icon>
+          <mat-hint align="end">{{ getRemainingChars('title', 200) }}</mat-hint>
+          @if (messageForm.get('title')?.invalid && messageForm.get('title')?.touched) {
+            <mat-error>{{ getErrorMessage('title') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Messaggio -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Messaggio</mat-label>
+          <textarea matInput 
+                    formControlName="message" 
+                    placeholder="Scrivi il contenuto del tuo messaggio promozionale..."
+                    rows="6"
+                    maxlength="4000"></textarea>
+          <mat-icon matPrefix>message</mat-icon>
+          <mat-hint align="end">{{ getRemainingChars('message', 4000) }}</mat-hint>
+          @if (messageForm.get('message')?.invalid && messageForm.get('message')?.touched) {
+            <mat-error>{{ getErrorMessage('message') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Action URL (opzionale) -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Link di azione (opzionale)</mat-label>
+          <input matInput 
+                 formControlName="actionUrl" 
+                 placeholder="Es: /properties/upload o https://example.com/promo"
+                 maxlength="2000">
+          <mat-icon matPrefix>link</mat-icon>
+          <mat-hint>URL interno o esterno per un'azione specifica</mat-hint>
+          @if (messageForm.get('actionUrl')?.invalid && messageForm.get('actionUrl')?.touched) {
+            <mat-error>{{ getErrorMessage('actionUrl') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Image URL (opzionale) -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>URL immagine (opzionale)</mat-label>
+          <input matInput 
+                 formControlName="imageUrl" 
+                 placeholder="Es: https://example.com/promo-image.jpg"
+                 maxlength="2000">
+          <mat-icon matPrefix>image</mat-icon>
+          @if (imageLoading()) {
+            <mat-spinner matSuffix diameter="20"></mat-spinner>
+          }
+          @if (imageLoadError()) {
+            <mat-hint class="error-hint">
+              <mat-icon class="error-icon">error</mat-icon>
+              Impossibile caricare l'immagine. Verifica l'URL.
+            </mat-hint>
+          } @else {
+            <mat-hint>Link a un'immagine da mostrare nella notifica</mat-hint>
+          }
+          @if (messageForm.get('imageUrl')?.invalid && messageForm.get('imageUrl')?.touched) {
+            <mat-error>{{ getErrorMessage('imageUrl') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Preview Box -->
+        @if (messageForm.get('title')?.value || messageForm.get('message')?.value) {
+          <div class="preview-box">
+            <h3>
+              <mat-icon>preview</mat-icon>
+              Anteprima
+            </h3>
+            <div class="preview-content">
+              <div class="preview-title">{{ messageForm.get('title')?.value || 'Titolo del messaggio' }}</div>
+              <div class="preview-message">{{ messageForm.get('message')?.value || 'Contenuto del messaggio...' }}</div>
+              @if (messageForm.get('imageUrl')?.value) {
+                <div class="preview-image">
+                  @if (imageLoadError()) {
+                    <div class="image-error">
+                      <mat-icon>broken_image</mat-icon>
+                      <span>Impossibile caricare l'immagine</span>
+                    </div>
+                  } @else {
+                    <img [src]="messageForm.get('imageUrl')?.value" 
+                         alt="Preview image"
+                         (error)="onImageError()"
+                         (load)="onImageLoad()">
+                  }
+                </div>
+              }
+              @if (messageForm.get('actionUrl')?.value) {
+                <div class="preview-action">
+                  <mat-icon>link</mat-icon>
+                  <span>{{ messageForm.get('actionUrl')?.value }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Warning Box -->
+        <div class="warning-box">
+          <mat-icon>warning</mat-icon>
+          <div>
+            <strong>Attenzione:</strong>
+            <p>Il messaggio sarà inviato a tutti gli utenti che hanno abilitato le notifiche promozionali. Assicurati che il contenuto sia corretto prima di inviare.</p>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <mat-card-actions class="form-actions">
+          <button mat-stroked-button 
+                  type="button" 
+                  (click)="goBack()"
+                  [disabled]="isSubmitting()">
+            <mat-icon>close</mat-icon>
+            Annulla
+          </button>
+          
+          <button mat-raised-button 
+                  color="primary" 
+                  type="submit"
+                  [disabled]="messageForm.invalid || isSubmitting()">
+            @if (isSubmitting()) {
+              <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+              <mat-icon>send</mat-icon>
+            }
+            {{ isSubmitting() ? 'Invio in corso...' : 'Invia Messaggio' }}
+          </button>
+        </mat-card-actions>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

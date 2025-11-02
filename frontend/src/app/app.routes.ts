@@ -73,6 +73,12 @@ export const routes: Routes = [
     title: 'Crea Agente - DietiEstates25'
   },
   {
+    path: 'send-promotional-message',
+    loadComponent: () => import('./features/admin/send-promotional-message/send-promotional-message').then(m => m.SendPromotionalMessage),
+    canActivate: [authGuard, adminOrOwnerGuard],
+    title: 'Invia Messaggio Promozionale - DietiEstates25'
+  },
+  {
     path: 'profile',
     loadComponent: () => import('./features/profile/profile').then(m => m.Profile),
     canActivate: [authGuard],

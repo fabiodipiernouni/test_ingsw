@@ -208,6 +208,8 @@ export const requireRole = (roles: string | string[]) => {
   };
 };
 
+// TODO: i seguenti middleware sono duplicati, usare quelli di authorization.ts
+
 /**
  * Agent authorization middleware
  */

@@ -81,7 +81,7 @@ export class Search implements AfterViewInit, OnDestroy {
     if (hasUrlParams) {
       // Leggi i filtri dall'URL
       const filtersParam = this.route.snapshot.queryParamMap.get('filters');
-      // this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true }); // Rimuovi i parametri dall'URL
+      this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true }); // Rimuovi i parametri dall'URL
       
       if (filtersParam) {
         try {

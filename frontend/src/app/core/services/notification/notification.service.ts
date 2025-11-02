@@ -7,6 +7,7 @@ import { PagedResult } from '@service-shared/dto/pagedResult';
 import { NotificationCountResponse } from '@core-services/notification/dto/NotificationCountResponse';
 import { NotificationDto } from '@core-services/notification/dto/NotificationDto';
 import { GetNotificationsRequest } from '@core-services/notification/dto/GetNotificationsRequest';
+import { SendPromotionalMessageDto, SendPromotionalMessageResponse } from '@core-services/notification/dto/SendPromotionalMessageDto';
 
 @Injectable({
   providedIn: 'root'
@@ -149,6 +150,17 @@ export class NotificationService {
     return this.http.get<ApiResponse<PagedResult<NotificationDto>>>(
       `${this.API_URL}/notifications`,
       { params }
+    );
+  }
+
+  /**
+   * Invia un messaggio promozionale a tutti gli utenti con consenso
+   * Solo per admin e owner
+   */
+  sendPromotionalMessage(dto: SendPromotionalMessageDto): Observable<ApiResponse<SendPromotionalMessageResponse>> {
+    return this.http.post<ApiResponse<SendPromotionalMessageResponse>>(
+      `${this.API_URL}/promotional-message`,
+      dto
     );
   }
 }

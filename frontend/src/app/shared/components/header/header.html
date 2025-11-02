@@ -30,6 +30,13 @@
             Carica Immobile
           </a>
         }
+
+        @if (isAdmin() || isOwner()) {
+          <a mat-button routerLink="/send-promotional-message" routerLinkActive="active">
+            <mat-icon>campaign</mat-icon>
+            Invia Promozioni
+          </a>
+        }
       }
     </nav>
 
@@ -66,22 +73,12 @@
             <span>Il Mio Profilo</span>
           </button>
 
-          @if (isAgent()) {
-            <button mat-menu-item (click)="onUploadProperty()">
-              <mat-icon>add_home</mat-icon>
-              <span>Carica Immobile</span>
-            </button>
-
+          @if(isAgent() || isAdmin() || isOwner()) {
             <button mat-menu-item routerLink="/dashboard">
               <mat-icon>dashboard</mat-icon>
               <span>Dashboard</span>
             </button>
           }
-
-          <button mat-menu-item routerLink="/saved-searches">
-            <mat-icon>bookmark</mat-icon>
-            <span>Ricerche Salvate</span>
-          </button>
 
           <mat-divider></mat-divider>
 
@@ -154,15 +151,24 @@
               <span>Ricerche Salvate</span>
             </a>
 
+            @if (isAgent() || isAdmin() || isOwner()) {
+              <a mat-button routerLink="/dashboard" (click)="toggleMobileMenu()">
+                <mat-icon>dashboard</mat-icon>
+                <span>Dashboard</span>
+              </a>
+            }
+
             @if (isAgent()) {
               <a mat-button routerLink="/properties/upload" (click)="toggleMobileMenu()">
                 <mat-icon>add_home</mat-icon>
                 <span>Carica Immobile</span>
               </a>
+            }
 
-              <a mat-button routerLink="/dashboard" (click)="toggleMobileMenu()">
-                <mat-icon>dashboard</mat-icon>
-                <span>Dashboard</span>
+            @if (isAdmin() || isOwner()) {
+              <a mat-button routerLink="/send-promotional-message" (click)="toggleMobileMenu()">
+                <mat-icon>campaign</mat-icon>
+                <span>Invia Promozioni</span>
               </a>
             }
 

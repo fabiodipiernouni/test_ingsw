@@ -82,6 +82,9 @@
               </div>
               <div class="notification-message">{{ notification.message }}</div>
               <div class="notification-date">{{ formatDate(notification.createdAt) }}</div>
+              @if (notification.agency) {
+                <div class="notification-agency">Da: {{ notification.agency.name }}</div>
+              }
             </div>
             
             <div class="notification-actions" (click)="$event.stopPropagation()">

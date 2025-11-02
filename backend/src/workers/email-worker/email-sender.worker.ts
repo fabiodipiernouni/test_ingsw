@@ -1,6 +1,7 @@
 import * as cron from 'node-cron';
 import { Notification } from '@shared/database/models/Notification';
 import { User } from '@shared/database/models/User';
+import { Agency } from '@shared/database/models/Agency';
 import { emailService } from './services/EmailService';
 import { emailWorkerConfig, emailWorkerOptions } from './config/worker.config';
 import logger from '@shared/utils/logger';
@@ -78,6 +79,20 @@ export class EmailSenderWorker {
             as: 'user',
             attributes: ['id', 'email', 'firstName', 'lastName'],
           },
+          {
+            model: User,
+            as: 'creator',
+            attributes: ['id', 'agencyId'],
+            required: false,
+            include: [
+              {
+                model: Agency,
+                as: 'agency',
+                attributes: ['id', 'name'],
+                required: false
+              }
+            ]
+          }
         ],
         order: [['createdAt', 'ASC']], // Invia prima le più vecchie
         limit: batchSize, // Limita il numero di notifiche da processare
@@ -116,12 +131,17 @@ export class EmailSenderWorker {
           }
 
           // Invia l'email
+          const agencyName = notification.creator?.agency?.name;
+          logger.info(
+            `Sending email for notification ${notification.id} to ${user.email}`
+          );
           const emailSent = await emailService.sendNotificationEmail(
             user.email,
             notification.title,
             notification.message,
             notification.actionUrl,
-            notification.imageUrl
+            notification.imageUrl,
+            agencyName
           );
 
           if (emailSent) {
