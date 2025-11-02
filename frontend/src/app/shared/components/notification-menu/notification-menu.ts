@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -50,12 +50,43 @@ export class NotificationMenu {
   
   // Limite di notifiche per pagina
   readonly PAGE_LIMIT = 10;
+  
+  // Traccia se il menu è aperto
+  isMenuOpen = signal<boolean>(false);
+
+  constructor() {
+    // Effetto per aggiornare le notifiche quando cambia unreadCount
+    effect(() => {
+      const currentUnreadCount = this.unreadCount();
+      const localUnreadCount = this.notifications().filter(n => !n.isRead).length;
+      
+      // Se il menu è aperto e il conteggio è diverso, aggiorna le notifiche
+      if (this.isMenuOpen() && currentUnreadCount !== localUnreadCount) {
+        this.loadNotifications();
+      }
+    });
+  }
 
   onNotificationClick(): void {
+    // Segna il menu come aperto
+    this.isMenuOpen.set(true);
+    
     // Carica le notifiche quando si apre il menu
     if (this.notifications().length === 0) {
       this.loadNotifications();
     }
+  }
+  
+  onMenuClosed(): void {
+    // Segna il menu come chiuso
+    this.isMenuOpen.set(false);
+  }
+
+  /**
+   * Forza il refresh delle notifiche
+   */
+  refreshNotifications(): void {
+    this.loadNotifications(true);
   }
 
   /**
@@ -90,6 +121,14 @@ export class NotificationMenu {
           this.hasMore.set(
             response.data.currentPage < response.data.totalPages
           );
+          
+          // Aggiorna unreadCount se diverso dal conteggio locale
+          const localUnreadCount = this.notifications().filter(n => !n.isRead).length;
+          const currentUnreadCount = this.unreadCount();
+          
+          if (localUnreadCount !== currentUnreadCount) {
+            this.notificationService.unreadCount.set(localUnreadCount);
+          }
         }
         this.isLoading.set(false);
       },
@@ -165,6 +204,25 @@ export class NotificationMenu {
       },
       error: (error) => {
         console.error('Error marking notification as unread:', error);
+      }
+    });
+  }
+
+  /**
+   * Elimina una notifica
+   */
+  deleteNotification(notification: NotificationDto, event: Event): void {
+    event.stopPropagation();
+    
+    this.notificationService.deleteNotification(notification.id).subscribe({
+      next: () => {
+        // Rimuovi la notifica dalla lista locale
+        this.notifications.set(
+          this.notifications().filter(n => n.id !== notification.id)
+        );
+      },
+      error: (error) => {
+        console.error('Error deleting notification:', error);
       }
     });
   }

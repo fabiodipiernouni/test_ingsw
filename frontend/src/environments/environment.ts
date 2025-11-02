@@ -11,5 +11,6 @@ export const environment = {
     maxRadiusKm: 150,
     minRadiusKm: 1
   },
-  defaultPageSize: 20
+  defaultPageSize: 20,
+  notificationPollingIntervalMs: 5 * 60 * 1000
 };

@@ -18,9 +18,6 @@ export class NotificationService {
   // Signal per il conteggio delle notifiche non lette
   unreadCount = signal<number>(0);
   
-  // Polling interval in millisecondi (5 minuti = 300000ms)
-  private readonly POLLING_INTERVAL = 5 * 60 * 1000; // 5 minuti
-  
   constructor() {
     // Avvia il polling automatico quando il service viene inizializzato
     this.startPolling();
@@ -53,8 +50,7 @@ export class NotificationService {
    * Avvia il polling automatico del conteggio
    */
   private startPolling(): void {
-    // Polling ogni 5 minuti, partendo subito con la prima chiamata
-    interval(this.POLLING_INTERVAL)
+    interval(environment.notificationPollingIntervalMs)
       .pipe(
         startWith(0), // Esegui immediatamente la prima chiamata
         switchMap(() => this.getUnreadCount())
