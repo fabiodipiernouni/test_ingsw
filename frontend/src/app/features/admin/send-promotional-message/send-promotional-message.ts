@@ -9,8 +9,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
 import { NotificationService } from '@core/services/notification/notification.service';
 import { SendPromotionalMessageDto } from '@core-services/notification/dto/SendPromotionalMessageDto';
+import { ConfirmDialogComponent, ConfirmDialogData } from '@shared/components/confirm-dialog/confirm-dialog';
 
 @Component({
   selector: 'app-send-promotional-message',
@@ -34,6 +36,7 @@ export class SendPromotionalMessage {
   private notificationService = inject(NotificationService);
   private router = inject(Router);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
   messageForm: FormGroup;
   isSubmitting = signal(false);
@@ -74,6 +77,31 @@ export class SendPromotionalMessage {
       return;
     }
 
+    // Apri il dialog di conferma
+    const dialogData: ConfirmDialogData = {
+      title: 'Conferma invio messaggio promozionale',
+      message: 'Sei sicuro di voler inviare questo messaggio promozionale a tutti gli utenti attivi?',
+      confirmText: 'Invia',
+      cancelText: 'Annulla',
+      confirmIcon: 'send',
+      cancelIcon: 'close',
+      confirmColor: 'primary',
+      width: '500px'
+    };
+
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: dialogData,
+      width: dialogData.width
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.sendMessage();
+      }
+    });
+  }
+
+  private sendMessage(): void {
     this.isSubmitting.set(true);
 
     const dto: SendPromotionalMessageDto = {

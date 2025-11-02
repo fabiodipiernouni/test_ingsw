@@ -6,6 +6,7 @@ import {
   AdminAddUserToGroupCommand,
   AdminCreateUserCommand,
   AdminSetUserPasswordCommand,
+  AdminDeleteUserCommand,
   ChangePasswordCommand,
   ForgotPasswordCommand,
   ConfirmForgotPasswordCommand,
@@ -43,6 +44,9 @@ import { Contacts } from '@shared/models/Contacts';
 import { OAuthProvider } from '@shared/types/auth.types';
 import { UpdateNotificationPreferencesDto } from '@auth/dto/UpdateNotificationPreferencesDto';
 import { NotificationPreferencesResponse } from '../dto/NotificationPreferencesResponse';
+import { PagedResult } from '@shared/dto/pagedResult';
+import { GetAgentsRequest } from '@auth/dto/GetAgentsRequest';
+import { GetAdminsRequest } from '@auth/dto/GetAdminsRequest';
 
 // Cognito Client
 const cognitoClient = new CognitoIdentityProviderClient({
@@ -1184,6 +1188,287 @@ export class AuthService {
       enabledTypes
     });
 
+  }
+
+  /**
+   * Ottiene tutti gli agenti dell'agenzia dell'utente autenticato con paginazione
+   */
+  async getAgentsByUserAgency(
+    userId: string,
+    getAgentsRequest: GetAgentsRequest
+  ): Promise<PagedResult<UserResponse>> {
+    // Trova l'utente e la sua agenzia
+    const user = await User.findByPk(userId, {
+      include: [{
+        model: Agency,
+        as: 'agency'
+      }]
+    });
+
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    if (!user.agencyId) {
+      throw new ForbiddenError('User is not associated with an agency');
+    }
+
+    // Verifica che l'utente sia admin o owner
+    if (!['admin', 'owner'].includes(user.role)) {
+      throw new ForbiddenError('Only admins and owners can view agents');
+    }
+
+    // Estrai parametri di paginazione dal DTO
+    const page = getAgentsRequest.pagedRequest?.page || 1;
+    const limit = getAgentsRequest.pagedRequest?.limit || 20;
+    const sortBy = getAgentsRequest.pagedRequest?.sortBy || 'createdAt';
+    const sortOrder = getAgentsRequest.pagedRequest?.sortOrder || 'DESC';
+    
+    const offset = (page - 1) * limit;
+
+    // Conta il totale degli agenti
+    const totalCount = await User.count({
+      where: {
+        agencyId: user.agencyId,
+        role: 'agent'
+      }
+    });
+
+    // Trova gli agenti con paginazione
+    const agents = await User.findAll({
+      where: {
+        agencyId: user.agencyId,
+        role: 'agent'
+      },
+      attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'isActive', 'isVerified', 'passwordChangeRequired', 'createdAt', 'updatedAt'],
+      order: [[sortBy, sortOrder]],
+      limit,
+      offset
+    });
+
+    logger.info(`Retrieved ${agents.length} agents for agency ${user.agencyId} (page ${page})`);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return {
+      data: agents.map(agent => ({
+        id: agent.id,
+        firstName: agent.firstName,
+        lastName: agent.lastName,
+        email: agent.email,
+        phone: agent.phone,
+        role: agent.role,
+        isActive: agent.isActive,
+        isVerified: agent.isVerified,
+        passwordChangeRequired: agent.passwordChangeRequired,
+        createdAt: agent.createdAt,
+        updatedAt: agent.updatedAt
+      })),
+      totalCount,
+      currentPage: page,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1
+    };
+  }
+
+  /**
+   * Ottiene tutti gli admin dell'agenzia dell'utente autenticato con paginazione (solo per owner)
+   */
+  async getAdminsByUserAgency(
+    userId: string,
+    getAdminsRequest: GetAdminsRequest
+  ): Promise<PagedResult<UserResponse>> {
+    // Trova l'utente e la sua agenzia
+    const user = await User.findByPk(userId, {
+      include: [{
+        model: Agency,
+        as: 'agency'
+      }]
+    });
+
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    if (!user.agencyId) {
+      throw new ForbiddenError('User is not associated with an agency');
+    }
+
+    // Verifica che l'utente sia owner
+    if (user.role !== 'owner') {
+      throw new ForbiddenError('Only owners can view admins');
+    }
+
+    // Estrai parametri di paginazione dal DTO
+    const page = getAdminsRequest.pagedRequest?.page || 1;
+    const limit = getAdminsRequest.pagedRequest?.limit || 20;
+    const sortBy = getAdminsRequest.pagedRequest?.sortBy || 'createdAt';
+    const sortOrder = getAdminsRequest.pagedRequest?.sortOrder || 'DESC';
+    
+    const offset = (page - 1) * limit;
+
+    // Conta il totale degli admin
+    const totalCount = await User.count({
+      where: {
+        agencyId: user.agencyId,
+        role: 'admin'
+      }
+    });
+
+    // Trova gli admin con paginazione
+    const admins = await User.findAll({
+      where: {
+        agencyId: user.agencyId,
+        role: 'admin'
+      },
+      attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'isActive', 'isVerified', 'passwordChangeRequired', 'createdAt', 'updatedAt'],
+      order: [[sortBy, sortOrder]],
+      limit,
+      offset
+    });
+
+    logger.info(`Retrieved ${admins.length} admins for agency ${user.agencyId} (page ${page})`);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return {
+      data: admins.map(admin => ({
+        id: admin.id,
+        firstName: admin.firstName,
+        lastName: admin.lastName,
+        email: admin.email,
+        phone: admin.phone,
+        role: admin.role,
+        isActive: admin.isActive,
+        isVerified: admin.isVerified,
+        passwordChangeRequired: admin.passwordChangeRequired,
+        createdAt: admin.createdAt,
+        updatedAt: admin.updatedAt
+      })),
+      totalCount,
+      currentPage: page,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1
+    };
+  }
+
+  /**
+   * Elimina un agente (solo per admin/owner della stessa agenzia)
+   */
+  async deleteAgent(userId: string, agentId: string): Promise<void> {
+    // Trova l'utente che sta facendo la richiesta
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    if (!user.agencyId) {
+      throw new ForbiddenError('User is not associated with an agency');
+    }
+
+    // Verifica che l'utente sia admin o owner
+    if (!['admin', 'owner'].includes(user.role)) {
+      throw new ForbiddenError('Only admins and owners can delete agents');
+    }
+
+    // Trova l'agente da eliminare
+    const agent = await User.findByPk(agentId);
+
+    if (!agent) {
+      throw new NotFoundError('Agent not found');
+    }
+
+    // Verifica che l'agente appartenga alla stessa agenzia
+    if (agent.agencyId !== user.agencyId) {
+      throw new ForbiddenError('Cannot delete an agent from another agency');
+    }
+
+    // Verifica che sia effettivamente un agente
+    if (agent.role !== 'agent') {
+      throw new ForbiddenError('User is not an agent');
+    }
+
+    // Elimina l'agente da Cognito
+    try {
+      const deleteUserCommand = new AdminDeleteUserCommand({
+        UserPoolId: config.cognito.userPoolId,
+        Username: agent.email
+      });
+      await cognitoClient.send(deleteUserCommand);
+      logger.info(`Agent ${agentId} deleted from Cognito`);
+    } catch (error: any) {
+      logger.error('Error deleting agent from Cognito:', error);
+      throw new Error(`Failed to delete agent from Cognito`);
+    }
+
+    // Elimina l'agente dal database
+    await agent.destroy();
+
+    logger.info(`Agent ${agentId} deleted by user ${userId}`);
+  }
+
+  /**
+   * Elimina un admin (solo per owner della stessa agenzia)
+   */
+  async deleteAdmin(userId: string, adminId: string): Promise<void> {
+    // Trova l'utente che sta facendo la richiesta
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    if (!user.agencyId) {
+      throw new ForbiddenError('User is not associated with an agency');
+    }
+
+    // Verifica che l'utente sia owner
+    if (user.role !== 'owner') {
+      throw new ForbiddenError('Only owners can delete admins');
+    }
+
+    // Trova l'admin da eliminare
+    const admin = await User.findByPk(adminId);
+
+    if (!admin) {
+      throw new NotFoundError('Admin not found');
+    }
+
+    // Verifica che l'admin appartenga alla stessa agenzia
+    if (admin.agencyId !== user.agencyId) {
+      throw new ForbiddenError('Cannot delete an admin from another agency');
+    }
+
+    // Verifica che sia effettivamente un admin
+    if (admin.role !== 'admin') {
+      throw new ForbiddenError('User is not an admin');
+    }
+
+    // Non permettere all'owner di eliminare se stesso
+    if (admin.id === userId) {
+      throw new ForbiddenError('Cannot delete yourself');
+    }
+
+    // Elimina l'admin da Cognito
+    try {
+      const deleteUserCommand = new AdminDeleteUserCommand({
+        UserPoolId: config.cognito.userPoolId,
+        Username: admin.email
+      });
+      await cognitoClient.send(deleteUserCommand);
+      logger.info(`Admin ${adminId} deleted from Cognito`);
+    } catch (error: any) {
+      logger.error('Error deleting admin from Cognito:', error);
+      throw new Error(`Failed to delete admin from Cognito`);
+    }
+
+    // Elimina l'admin dal database
+    await admin.destroy();
+
+    logger.info(`Admin ${adminId} deleted by user ${userId}`);
   }
 }
 

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -29,20 +29,12 @@ export class Onboarding implements OnInit {
   private router = inject(Router);
   currentUser: UserModel | null = null;
 
+  isOwner = computed(() => this.authService.isOwner());
+  isAdmin = computed(() => this.authService.isAdmin());
+  isAgent = computed(() => this.authService.isAgent());
+
   ngOnInit() {
     this.currentUser = this.authService.getCurrentUser();
-  }
-
-  isOwner(): boolean {
-    return this.currentUser?.role === 'owner';
-  }
-
-  isAdmin(): boolean {
-    return this.currentUser?.role === 'admin';
-  }
-
-  isAgent(): boolean {
-    return this.currentUser?.role === 'agent';
   }
 
   canCreateAdmins(): boolean {
@@ -51,6 +43,18 @@ export class Onboarding implements OnInit {
 
   canCreateAgents(): boolean {
     return this.isOwner() || this.isAdmin();
+  }
+
+  canManageAgency(): boolean {
+    return this.isAdmin() || this.isOwner();
+  }
+
+  canSendPromotions(): boolean {
+    return this.isAdmin() || this.isOwner();
+  }
+
+  canUploadProperty(): boolean {
+    return this.isAgent();
   }
 
   goToDashboard(): void {

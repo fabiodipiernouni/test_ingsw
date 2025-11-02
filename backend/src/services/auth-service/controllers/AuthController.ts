@@ -9,6 +9,8 @@ import { RegisterDto } from '@auth/dto/RegisterDto';
 import { LoginDto } from '@auth/dto/LoginDto';
 import { CreateAgentDto } from '@auth/dto/CreateAgentDto';
 import { CreateAdminDto } from '@auth/dto/CreateAdminDto';
+import { GetAgentsRequest } from '@auth/dto/GetAgentsRequest';
+import { GetAdminsRequest } from '@auth/dto/GetAdminsRequest';
 import config from '@shared/config';
 import { ConfirmForgotPasswordDto } from '@auth/dto/ConfirmForgotPasswordDto';
 import { ConfirmEmailDto } from '@auth/dto/ConfirmEmailDto';
@@ -728,6 +730,180 @@ export class AuthController {
       }
 
       setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to update notification preferences', 500);
+    }
+  }
+
+  /**
+   * GET /auth/agents
+   * Ottiene tutti gli agenti dell'agenzia dell'utente autenticato con paginazione
+   */
+  async getAgents(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        setResponseAsError(res, 'UNAUTHORIZED', 'User not authenticated', 401);
+        return;
+      }
+
+      // Costruisci GetAgentsRequest dai query params
+      const getAgentsRequest: GetAgentsRequest = {
+        pagedRequest: {
+          page: req.query.page ? parseInt(req.query.page as string) : 1,
+          limit: Math.min(req.query.limit ? parseInt(req.query.limit as string) : 20, 100),
+          sortBy: (req.query.sortBy as string) || 'createdAt',
+          sortOrder: (req.query.sortOrder as 'ASC' | 'DESC') || 'DESC'
+        }
+      };
+
+      logger.info('Get agents request', { userId, getAgentsRequest });
+
+      const result = await authService.getAgentsByUserAgency(userId, getAgentsRequest);
+
+      setResponseAsSuccess(res, result, 'Agents retrieved successfully', 200);
+
+    } catch (error: any) {
+      logger.error('Error in getAgents controller:', error);
+
+      if (error.name === 'NotFoundError') {
+        setResponseAsNotFound(res, error.message);
+        return;
+      }
+
+      if (error.name === 'ForbiddenError') {
+        setResponseAsError(res, 'FORBIDDEN', error.message, 403);
+        return;
+      }
+
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to retrieve agents', 500);
+    }
+  }
+
+  /**
+   * GET /auth/admins
+   * Ottiene tutti gli admin dell'agenzia dell'utente autenticato con paginazione (solo per owner)
+   */
+  async getAdmins(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        setResponseAsError(res, 'UNAUTHORIZED', 'User not authenticated', 401);
+        return;
+      }
+
+      // Costruisci GetAdminsRequest dai query params
+      const getAdminsRequest: GetAdminsRequest = {
+        pagedRequest: {
+          page: req.query.page ? parseInt(req.query.page as string) : 1,
+          limit: Math.min(req.query.limit ? parseInt(req.query.limit as string) : 20, 100),
+          sortBy: (req.query.sortBy as string) || 'createdAt',
+          sortOrder: (req.query.sortOrder as 'ASC' | 'DESC') || 'DESC'
+        }
+      };
+
+      logger.info('Get admins request', { userId, getAdminsRequest });
+
+      const result = await authService.getAdminsByUserAgency(userId, getAdminsRequest);
+
+      setResponseAsSuccess(res, result, 'Admins retrieved successfully', 200);
+
+    } catch (error: any) {
+      logger.error('Error in getAdmins controller:', error);
+
+      if (error.name === 'NotFoundError') {
+        setResponseAsNotFound(res, error.message);
+        return;
+      }
+
+      if (error.name === 'ForbiddenError') {
+        setResponseAsError(res, 'FORBIDDEN', error.message, 403);
+        return;
+      }
+
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to retrieve admins', 500);
+    }
+  }
+
+  /**
+   * DELETE /auth/agents/:id
+   * Elimina un agente (solo per admin/owner)
+   */
+  async deleteAgent(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user?.id;
+      const agentId = req.params.id;
+
+      if (!userId) {
+        setResponseAsError(res, 'UNAUTHORIZED', 'User not authenticated', 401);
+        return;
+      }
+
+      if (!agentId) {
+        setResponseAsError(res, 'BAD_REQUEST', 'Agent ID is required', 400);
+        return;
+      }
+
+      logger.info('Delete agent request', { userId, agentId });
+
+      await authService.deleteAgent(userId, agentId);
+
+      setResponseAsSuccess(res, null, 'Agent deleted successfully', 200);
+
+    } catch (error: any) {
+      logger.error('Error in deleteAgent controller:', error);
+
+      if (error.name === 'NotFoundError') {
+        setResponseAsNotFound(res, error.message);
+        return;
+      }
+
+      if (error.name === 'ForbiddenError') {
+        setResponseAsError(res, 'FORBIDDEN', error.message, 403);
+        return;
+      }
+
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to delete agent', 500);
+    }
+  }
+
+  /**
+   * DELETE /auth/admins/:id
+   * Elimina un admin (solo per owner)
+   */
+  async deleteAdmin(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user?.id;
+      const adminId = req.params.id;
+
+      if (!userId) {
+        setResponseAsError(res, 'UNAUTHORIZED', 'User not authenticated', 401);
+        return;
+      }
+
+      if (!adminId) {
+        setResponseAsError(res, 'BAD_REQUEST', 'Admin ID is required', 400);
+        return;
+      }
+
+      logger.info('Delete admin request', { userId, adminId });
+
+      await authService.deleteAdmin(userId, adminId);
+
+      setResponseAsSuccess(res, null, 'Admin deleted successfully', 200);
+
+    } catch (error: any) {
+      logger.error('Error in deleteAdmin controller:', error);
+
+      if (error.name === 'NotFoundError') {
+        setResponseAsNotFound(res, error.message);
+        return;
+      }
+
+      if (error.name === 'ForbiddenError') {
+        setResponseAsError(res, 'FORBIDDEN', error.message, 403);
+        return;
+      }
+
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to delete admin', 500);
     }
   }
 

@@ -40,9 +40,10 @@ export class CreateAgent {
   authConfig: AuthLayoutConfig = {
     title: 'Crea Nuovo Agente',
     subtitle: 'Inserisci i dati del nuovo agente immobiliare',
-    footerText: 'Torna alla',
-    footerLinkText: 'Dashboard',
-    footerLinkRoute: '/dashboard'
+    footerText: 'Vai alla',
+    footerLinkText: 'Gestione Agenzia',
+    footerLinkRoute: '/admin/manage-agency',
+    footerLinkQueryParams: { view: 'agents' }
   };
 
   agentForm: FormGroup = this.fb.group({

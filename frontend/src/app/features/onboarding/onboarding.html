@@ -11,26 +11,32 @@
 
     <div class="features-grid">
 
-    <!-- Gestione Admin (solo per owner) -->
-    @if (canCreateAdmins()) {
+    <!-- Gestione Agenzia (per owner e admin) -->
+    @if (canManageAgency()) {
     <mat-card class="feature-card">
         <mat-card-header>
-        <mat-icon mat-card-avatar style="color: #ff9800">admin_panel_settings</mat-icon>
-        <mat-card-title>Gestione Amministratori</mat-card-title>
-        <mat-card-subtitle>Crea e gestisci amministratori</mat-card-subtitle>
+        <mat-icon mat-card-avatar style="color: #ff9800">groups</mat-icon>
+        <mat-card-title>Gestione Agenzia</mat-card-title>
+        <mat-card-subtitle>Gestisci il team della tua agenzia</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-        <p>Come proprietario, hai il controllo completo sulla piattaforma e puoi creare account amministratori.</p>
+        <p>Visualizza e gestisci tutti i membri del team della tua agenzia immobiliare.</p>
         <ul>
-            <li>Crea nuovi amministratori</li>
+            <li>Visualizza amministratori e agenti</li>
+            <li>Crea nuovi membri del team</li>
+            <li>Rimuovi membri dall'agenzia</li>
             <li>Gestisci permessi e accessi</li>
-            <li>Monitora l'attività degli admin</li>
         </ul>
         </mat-card-content>
         <mat-card-actions>
-        <button mat-raised-button style="background-color: #ff9800; color: white;" routerLink="/create-admin">
-            Crea Amministratore
+        <button mat-raised-button style="background-color: #ff9800; color: white;" routerLink="/admin/manage-agency">
+            Gestisci Agenzia
         </button>
+        @if (canCreateAdmins()) {
+        <button mat-button style="color: #ff9800;" routerLink="/create-admin">
+            Crea Admin
+        </button>
+        }
         </mat-card-actions>
     </mat-card>
     }
@@ -40,20 +46,46 @@
     <mat-card class="feature-card">
         <mat-card-header>
         <mat-icon mat-card-avatar style="color: #4caf50">person_add</mat-icon>
-        <mat-card-title>Gestione Agenti</mat-card-title>
-        <mat-card-subtitle>Crea e gestisci agenti immobiliari</mat-card-subtitle>
+        <mat-card-title>Crea Agenti</mat-card-title>
+        <mat-card-subtitle>Aggiungi nuovi agenti al team</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-        <p>Aggiungi nuovi agenti immobiliari al tuo team per gestire le proprietà.</p>
+        <p>Crea nuovi account per gli agenti immobiliari della tua agenzia.</p>
         <ul>
-            <li>Crea account per agenti</li>
+            <li>Registra nuovi agenti</li>
             <li>Assegna licenze e permessi</li>
+            <li>Configura accessi alla piattaforma</li>
             <li>Monitora le performance</li>
         </ul>
         </mat-card-content>
         <mat-card-actions>
         <button mat-raised-button style="background-color: #4caf50; color: white;" routerLink="/create-agent">
             Crea Agente
+        </button>
+        </mat-card-actions>
+    </mat-card>
+    }
+
+    <!-- Messaggi Promozionali (per owner e admin) -->
+    @if (canSendPromotions()) {
+    <mat-card class="feature-card">
+        <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #2196f3">campaign</mat-icon>
+        <mat-card-title>Messaggi Promozionali</mat-card-title>
+        <mat-card-subtitle>Comunica con i clienti</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+        <p>Invia messaggi promozionali a tutti gli utenti attivi della piattaforma.</p>
+        <ul>
+            <li>Crea messaggi personalizzati</li>
+            <li>Aggiungi immagini e link</li>
+            <li>Raggiungi tutti i clienti attivi</li>
+            <li>Monitora l'invio in tempo reale</li>
+        </ul>
+        </mat-card-content>
+        <mat-card-actions>
+        <button mat-raised-button style="background-color: #2196f3; color: white;" routerLink="/admin/send-promotional-message">
+            Invia Messaggio
         </button>
         </mat-card-actions>
     </mat-card>
@@ -104,7 +136,7 @@
     </mat-card>
 
     <!-- Funzionalità Agente (solo per agenti) -->
-    @if (isAgent()) {
+    @if (canUploadProperty()) {
     <mat-card class="feature-card">
         <mat-card-header>
         <mat-icon mat-card-avatar style="color: #4caf50">home_work</mat-icon>

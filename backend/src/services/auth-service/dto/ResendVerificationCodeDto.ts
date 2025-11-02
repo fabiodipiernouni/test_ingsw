@@ -1,8 +1,9 @@
 import { IsEmail } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Trim, ToLowerCase } from '@shared/decorators';
 
 export class ResendVerificationCodeDto {
-  @Transform(({ value }) => value?.trim().toLowerCase())
+  @Trim()
+  @ToLowerCase()
   @IsEmail({}, { message: 'The email is not valid' })
   email: string;
 }

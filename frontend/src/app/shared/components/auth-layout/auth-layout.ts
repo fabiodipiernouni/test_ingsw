@@ -10,6 +10,7 @@ export interface AuthLayoutConfig {
   footerText?: string;
   footerLinkText?: string;
   footerLinkRoute?: string;
+  footerLinkQueryParams?: { [key: string]: string };
 }
 
 @Component({

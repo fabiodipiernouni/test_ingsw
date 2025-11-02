@@ -61,6 +61,12 @@ export const routes: Routes = [
   },
   // Admin management routes
   {
+    path: 'admin/manage-agency',
+    loadComponent: () => import('./features/admin/manage-agency/manage-agency').then(m => m.ManageAgency),
+    canActivate: [authGuard, adminOrOwnerGuard],
+    title: 'Gestisci Agenzia - DietiEstates25'
+  },
+  {
     path: 'create-admin',
     loadComponent: () => import('./features/admin/create-admin/create-admin').then(m => m.CreateAdmin),
     canActivate: [authGuard, ownerGuard],

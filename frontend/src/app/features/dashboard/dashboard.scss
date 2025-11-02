@@ -26,37 +26,12 @@
     margin-bottom: 30px;
 }
 
-.action-card, .stats-card {
+.action-card {
     height: fit-content;
 }
 
 .action-card mat-card-header {
     padding-bottom: 16px;
-}
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 15px;
-    text-align: center;
-}
-
-.stat-item {
-    display: flex;
-    flex-direction: column;
-    padding: 10px;
-}
-
-.stat-number {
-    font-size: 2em;
-    font-weight: bold;
-    color: #1976d2;
-}
-
-.stat-label {
-    font-size: 0.9em;
-    color: #666;
-    margin-top: 5px;
 }
 
 .account-card {

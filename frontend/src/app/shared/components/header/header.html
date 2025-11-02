@@ -24,14 +24,20 @@
           Ricerche Salvate
         </a>
 
-        @if (isAgent()) {
+        @if (canUploadProperty()) {
           <a mat-button routerLink="/properties/upload" routerLinkActive="active">
             <mat-icon>add_home</mat-icon>
             Carica Immobile
           </a>
         }
 
-        @if (isAdmin() || isOwner()) {
+        @if (canManageAgency()) {
+          <a mat-button routerLink="/admin/manage-agency" routerLinkActive="active">
+            <mat-icon>business</mat-icon>
+            Gestisci Agenzia
+          </a>
+        }
+        @if (canSendPromotions()) {
           <a mat-button routerLink="/send-promotional-message" routerLinkActive="active">
             <mat-icon>campaign</mat-icon>
             Invia Promozioni
@@ -72,13 +78,6 @@
             <mat-icon>person</mat-icon>
             <span>Il Mio Profilo</span>
           </button>
-
-          @if(isAgent() || isAdmin() || isOwner()) {
-            <button mat-menu-item routerLink="/dashboard">
-              <mat-icon>dashboard</mat-icon>
-              <span>Dashboard</span>
-            </button>
-          }
 
           <mat-divider></mat-divider>
 
@@ -151,21 +150,28 @@
               <span>Ricerche Salvate</span>
             </a>
 
-            @if (isAgent() || isAdmin() || isOwner()) {
+            @if (canViewDashboard()) {
               <a mat-button routerLink="/dashboard" (click)="toggleMobileMenu()">
                 <mat-icon>dashboard</mat-icon>
                 <span>Dashboard</span>
               </a>
             }
 
-            @if (isAgent()) {
+            @if (canUploadProperty()) {
               <a mat-button routerLink="/properties/upload" (click)="toggleMobileMenu()">
                 <mat-icon>add_home</mat-icon>
                 <span>Carica Immobile</span>
               </a>
             }
 
-            @if (isAdmin() || isOwner()) {
+            @if (canManageAgency()) {
+              <a mat-button routerLink="/admin/manage-agency" (click)="toggleMobileMenu()">
+                <mat-icon>business</mat-icon>
+                <span>Gestisci Agenzia</span>
+              </a>
+            }
+
+            @if (canSendPromotions()) {
               <a mat-button routerLink="/send-promotional-message" (click)="toggleMobileMenu()">
                 <mat-icon>campaign</mat-icon>
                 <span>Invia Promozioni</span>

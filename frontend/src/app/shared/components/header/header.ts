@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -41,6 +41,10 @@ export class Header {
   isAuthenticated = this.authService.isAuthenticated;
   isMobileMenuOpen = signal<boolean>(false);
 
+  isOwner = computed(() => this.authService.isOwner());
+  isAdmin = computed(() => this.authService.isAdmin());
+  isAgent = computed(() => this.authService.isAgent());
+
   onLogin(): void {
     this.router.navigate(['/login']);
   }
@@ -74,15 +78,19 @@ export class Header {
     return `${user.firstName} ${user.lastName}`;
   }
 
-  isAgent(): boolean {
-    return this.authService.isAgent();
+  canViewDashboard(): boolean {
+    return this.isAgent() || this.isAdmin() || this.isOwner();
   }
 
-  isAdmin(): boolean {
-    return this.authService.isAdmin();
+  canUploadProperty(): boolean {
+    return this.isAgent();
   }
 
-  isOwner(): boolean {
-    return this.authService.isOwner();
+  canManageAgency(): boolean {
+    return this.isAdmin() || this.isOwner();
+  }
+
+  canSendPromotions(): boolean {
+    return this.isAdmin() || this.isOwner();
   }
 }

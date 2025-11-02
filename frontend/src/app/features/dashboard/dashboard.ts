@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -29,6 +29,10 @@ export class Dashboard implements OnInit {
   private authService = inject(AuthService);
   currentUser: UserModel | null = null;
   private snackbar = inject(MatSnackBar);
+
+  isOwner = computed(() => this.authService.isOwner());
+  isAdmin = computed(() => this.authService.isAdmin());
+  isAgent = computed(() => this.authService.isAgent());
 
   ngOnInit() {
     this.currentUser = this.authService.getCurrentUser();
@@ -75,18 +79,6 @@ export class Dashboard implements OnInit {
       case 'client': return 'Trova la casa dei tuoi sogni';
       default: return '';
     }
-  }
-
-  isOwner(): boolean {
-    return this.authService.isOwner();
-  }
-
-  isAdmin(): boolean {
-    return this.authService.isAdmin();
-  }
-
-  isAgent(): boolean {
-    return this.authService.isAgent();
   }
 
   logout(): void {
