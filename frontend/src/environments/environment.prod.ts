@@ -7,8 +7,8 @@ export const environment = {
   apiUrlNotifications: 'http://localhost:3005/api',
   googleMapsApiKey: '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',
   geoSearchValues: {
-    defaultRadiusKm: 100,
-    maxRadiusKm: 500,
+    defaultRadiusKm: 50,
+    maxRadiusKm: 150,
     minRadiusKm: 1
   },
   defaultPageSize: 20

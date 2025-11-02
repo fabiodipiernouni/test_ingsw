@@ -16,6 +16,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RadiusSearch } from '@service-shared/dto/RadiusSearch';
 import { ListingType } from '@core/services/property/models/types';
 import { GeoPropertyCardDto } from '@core/services/property/dto/GeoPropertyCardDto';
+import { environment } from '@src/environments/environment';
 
 declare const google: any;
 
@@ -52,10 +53,39 @@ export class SearchMap implements AfterViewInit, OnDestroy {
   private markers: MarkerData[] = [];
   private searchDebounceTimer: any;
   private isMapInitialized = false;
+  private isOpeningInfoWindow = false; // Flag per ignorare boundsChanged durante apertura InfoWindow
 
   isLoading = signal<boolean>(false);
 
+  /**
+   * Mappa dei livelli di zoom fissi in base al raggio (in km)
+   * Ogni entry definisce il raggio massimo per quel livello di zoom
+   * NOTA: Zoom minimo consentito è 18 (1km)
+   */
+  private readonly ZOOM_LEVELS: ReadonlyMap<number, number> = new Map([
+    [18, 1],      // 1km - quartiere (ZOOM MINIMO CONSENTITO)
+    [17, 2],      // 2km
+    [16, 3],      // 3km
+    [15, 5],      // 5km - città piccola
+    [14, 8],      // 8km
+    [13, 10],     // 10km - città media
+    [12, 15],     // 15km
+    [11, 25],     // 25km - area metropolitana
+    [10, 50],     // 50km - provincia
+    [9, 75],      // 75km
+    [8, 100],     // 100km - regione piccola
+    [7, 150],     // 150km
+    [6, 200],     // 200km - regione
+    [5, 300],     // 300km - più regioni
+    [4, 500],     // 500km - mezza Italia
+    [3, 1000],    // 1000km - Italia intera
+  ]);
+
+  private readonly MIN_ZOOM = 18; // 1km - limite minimo
+  private readonly MAX_ZOOM = 3;  // 1000km - limite massimo
+
   constructor() {
+
     // Effect per sincronizzare il centro della mappa
     effect(() => {
       const mapCenter = this.center();
@@ -83,6 +113,9 @@ export class SearchMap implements AfterViewInit, OnDestroy {
     } else {
       console.error('❌ Impossibile inizializzare mappa: centro non fornito');
     }
+
+    // Registra la funzione globale per gestire i click dall'InfoWindow
+    this.setupGlobalPropertySelector();
   }
 
   ngOnDestroy(): void {
@@ -90,6 +123,29 @@ export class SearchMap implements AfterViewInit, OnDestroy {
       clearTimeout(this.searchDebounceTimer);
     }
     this.clearMarkers();
+    
+    // Pulisci la funzione globale
+    (window as any).selectProperty = undefined;
+  }
+
+  /**
+   * Configura una funzione globale che permette all'HTML dell'InfoWindow
+   * di comunicare con il componente Angular
+   */
+  private setupGlobalPropertySelector(): void {
+    (window as any).selectProperty = (propertyId: string) => {
+      console.log('🏠 Click su proprietà dalla mappa:', propertyId);
+      
+      // Trova la proprietà corrispondente
+      const property = this.properties().find(p => p.id === propertyId);
+      
+      if (property) {
+        // Emetti l'evento propertySelected
+        this.propertySelected.emit(property);
+      } else {
+        console.error('❌ Proprietà non trovata:', propertyId);
+      }
+    };
   }
 
   private async initializeMap(): Promise<void> {
@@ -123,6 +179,8 @@ export class SearchMap implements AfterViewInit, OnDestroy {
     this.map = new google.maps.Map(this.mapContainer.nativeElement, {
       center: mapCenter,
       zoom: this.calculateInitialZoom(),
+      minZoom: this.MAX_ZOOM,  // Zoom minimo (più lontano - 1000km)
+      maxZoom: this.MIN_ZOOM,  // Zoom massimo (più vicino - 1km)
       mapId: '7da3bb3ee01b95aec6b80944', // Map ID creato nella Google Cloud Console
       mapTypeControl: true,
       streetViewControl: false,
@@ -146,21 +204,48 @@ export class SearchMap implements AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * Calcola il livello di zoom appropriato in base al raggio
+   * Usa la mappa ZOOM_LEVELS per trovare lo zoom più adatto
+   */
   private calculateInitialZoom(): number {
     const radiusKm = this.radius();
-    if (!radiusKm) return 10; // Default zoom
     
-    // Calcola zoom in base al raggio
-    if (radiusKm <= 5) return 13;
-    if (radiusKm <= 10) return 12;
-    if (radiusKm <= 25) return 11;
-    if (radiusKm <= 50) return 10;
-    if (radiusKm <= 100) return 9;
-    if (radiusKm <= 200) return 8;
-    return 7;
+    if (!radiusKm)
+      return this.getZoomForRadius(environment.geoSearchValues.defaultRadiusKm);
+    
+    return this.getZoomForRadius(radiusKm);
+  }
+
+  /**
+   * Calcola il raggio massimo per un dato livello di zoom.
+   * Arrotonda lo zoom per assicurarsi che sia sempre un intero nella HashMap.
+   */
+  private getRadiusForZoom(zoom: number): number {
+    const roundedZoom = Math.round(zoom);
+    return this.ZOOM_LEVELS.get(roundedZoom) || environment.geoSearchValues.defaultRadiusKm; // Default 100km se non trovato
+  }
+
+  /**
+   * Calcola lo zoom appropriato per un dato raggio in km.
+   * Restituisce il livello di zoom più vicino che può contenere il raggio.
+   */
+  private getZoomForRadius(radiusKm: number): number {
+    for (const [zoom, maxRadius] of this.ZOOM_LEVELS) {
+      if (radiusKm <= maxRadius) {
+        return zoom;
+      }
+    }
+    return this.MAX_ZOOM; // Se il raggio è troppo grande, usa lo zoom minimo
   }
 
   private onBoundsChanged(): void {
+    // Ignora il cambio di bounds se stiamo aprendo un'InfoWindow
+    if (this.isOpeningInfoWindow) {
+      console.log('🗺️ Bounds changed ignorato (apertura InfoWindow)');
+      return;
+    }
+    
     // Debounce di 500ms per evitare troppe chiamate durante lo scroll/zoom
     if (this.searchDebounceTimer) {
       clearTimeout(this.searchDebounceTimer);
@@ -178,68 +263,24 @@ export class SearchMap implements AfterViewInit, OnDestroy {
     if (!bounds) return;
 
     const center = bounds.getCenter();
-    const ne = bounds.getNorthEast();
-    const sw = bounds.getSouthWest();
+    const currentZoom = this.map.getZoom();
+    
+    // Ottieni il raggio direttamente dalla HashMap in base allo zoom corrente
+    const radiusInKm = this.getRadiusForZoom(currentZoom);
 
-    let radiusInKm: number;
-
-    // Verifica che la libreria geometry sia disponibile
-    if (google.maps.geometry?.spherical) {
-      // Calcola il raggio come metà della diagonale del bounding box visibile
-      // Questo rappresenta meglio l'area effettivamente visualizzata
-      const diagonalMeters = google.maps.geometry.spherical.computeDistanceBetween(ne, sw);
-      radiusInKm = Math.round((diagonalMeters / 2) / 1000);
-    } else {
-      // Fallback: calcola usando la formula di Haversine
-      const lat1 = ne.lat();
-      const lng1 = ne.lng();
-      const lat2 = sw.lat();
-      const lng2 = sw.lng();
-
-      const diagonal = this.calculateDistance(lat1, lng1, lat2, lng2);
-      radiusInKm = Math.round(diagonal / 2);
-    }
-
-    if(radiusInKm > 300) return; // evita ricerche troppo ampie
-
-    // Limita solo il minimo a 1km, nessun limite massimo per permettere ricerche su tutta Italia
-    const clampedRadius = Math.max(1, radiusInKm);
+    // if(radiusInKm > environment.geoSearchValues.maxRadiusKm) return; // evita ricerche troppo ampie
 
     const radiusSearch: RadiusSearch = {
       center: {
         type: 'Point',
         coordinates: [center.lng(), center.lat()]
       },
-      radius: clampedRadius
+      radius: radiusInKm
     };
 
-    console.log('📍 Bounds changed - Centro:', center.lat().toFixed(4), center.lng().toFixed(4), 'Raggio:', clampedRadius, 'km');
+    console.log('📍 Bounds changed - Centro:', center.lat().toFixed(4), center.lng().toFixed(4), 'Zoom:', currentZoom, 'Raggio:', radiusInKm, 'km');
 
     this.boundsChanged.emit(radiusSearch);
-  }
-
-  /**
-   * Calcola la distanza tra due punti geografici usando la formula di Haversine
-   * @returns distanza in km
-   */
-  private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-    const R = 6371; // Raggio della Terra in km
-    const dLat = this.toRadians(lat2 - lat1);
-    const dLng = this.toRadians(lng2 - lng1);
-
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) *
-      Math.sin(dLng / 2) * Math.sin(dLng / 2);
-
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c;
-
-    return Math.round(distance);
-  }
-
-  private toRadians(degrees: number): number {
-    return degrees * (Math.PI / 180);
   }
 
   private updateMarkers(): void {
@@ -301,7 +342,18 @@ export class SearchMap implements AfterViewInit, OnDestroy {
       content: this.getInfoWindowContent(property)
     });
 
+    // Listener per la chiusura dell'InfoWindow
+    infoWindow.addListener('closeclick', () => {
+      this.isOpeningInfoWindow = false;
+      console.log('🗺️ InfoWindow chiusa - riabilito boundsChanged e aggiorno ricerca');
+      // Emetti subito il boundsChanged per aggiornare la ricerca
+      this.emitBoundsChanged();
+    });
+
     marker.addListener('click', () => {
+      // Imposta flag per ignorare il boundsChanged durante l'apertura
+      this.isOpeningInfoWindow = true;
+      
       // Chiudi tutte le altre info windows
       this.markers.forEach(m => {
         if (m.marker.infoWindow) {
@@ -311,6 +363,12 @@ export class SearchMap implements AfterViewInit, OnDestroy {
 
       // Apri l'info window di questo marker
       infoWindow.open(this.map, marker);
+      
+      // Riabilita il boundsChanged dopo un breve delay per permettere l'animazione del pan
+      setTimeout(() => {
+        this.isOpeningInfoWindow = false;
+        console.log('🗺️ Animazione pan completata - boundsChanged riabilitato');
+      }, 300);
     });
 
     marker.infoWindow = infoWindow;
@@ -345,9 +403,21 @@ export class SearchMap implements AfterViewInit, OnDestroy {
     // Info window al click
     const infoWindow = new google.maps.InfoWindow({
       content: this.getInfoWindowContent(property)
+      // Rimosso disableAutoPan: true per permettere il centramento
+    });
+
+    // Listener per la chiusura dell'InfoWindow
+    infoWindow.addListener('closeclick', () => {
+      this.isOpeningInfoWindow = false;
+      console.log('🗺️ InfoWindow chiusa - riabilito boundsChanged e aggiorno ricerca');
+      // Emetti subito il boundsChanged per aggiornare la ricerca
+      this.emitBoundsChanged();
     });
 
     marker.addListener('click', () => {
+      // Imposta flag per ignorare il boundsChanged durante l'apertura
+      this.isOpeningInfoWindow = true;
+      
       // Chiudi tutte le altre info windows
       this.markers.forEach(m => {
         if (m.marker.infoWindow) {
@@ -357,6 +427,12 @@ export class SearchMap implements AfterViewInit, OnDestroy {
 
       // Apri l'info window di questo marker
       infoWindow.open(this.map, marker);
+      
+      // Riabilita il boundsChanged dopo un breve delay per permettere l'animazione del pan
+      setTimeout(() => {
+        this.isOpeningInfoWindow = false;
+        console.log('🗺️ Animazione pan completata - boundsChanged riabilitato');
+      }, 300);
     });
 
     marker.infoWindow = infoWindow;
@@ -427,44 +503,45 @@ export class SearchMap implements AfterViewInit, OnDestroy {
     const listingTypeLabel = type === 'SALE' ? 'Vendita' : 'Affitto';
 
     return `
-      <div style="max-width: 320px; font-family: Roboto, sans-serif;">
+      <div style="max-width: 280px; font-family: Roboto, sans-serif;">
         <img src="${imageUrl}"
              alt="${property.title}"
-             style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 12px; cursor: pointer;"
-             onclick="window.location.href='/properties/${property.id}'">
+             style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; cursor: pointer;"
+             onclick="window.selectProperty('${property.id}')">
 
-        <div style="margin-bottom: 12px;">
-          <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 600; color: #1a202c;">
+        <div style="margin-bottom: 8px;">
+          <h3 style="margin: 0 0 2px 0; font-size: 14px; font-weight: 600; color: #1a202c; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
             ${property.title}
           </h3>
-          <p style="margin: 0; font-size: 12px; color: #718096;">
+          <p style="margin: 0; font-size: 11px; color: #718096;">
             ${property.city}, ${property.province} • ${listingTypeLabel}
           </p>
         </div>
 
-        <div style="background: #f7fafc; padding: 12px; border-radius: 8px; margin-bottom: 12px;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <div style="background: #f7fafc; padding: 8px; border-radius: 6px; margin-bottom: 8px;">
+          <div style="display: flex; justify-content: space-between;">
             <div style="text-align: center; flex: 1;">
-              <div style="font-size: 11px; color: #718096; margin-bottom: 2px;">Prezzo</div>
-              <div style="font-size: 18px; font-weight: 700; color: #1976d2;">€${price}</div>
+              <div style="font-size: 10px; color: #718096; margin-bottom: 2px;">Prezzo</div>
+              <div style="font-size: 15px; font-weight: 700; color: #1976d2;">€${price}</div>
             </div>
             <div style="text-align: center; flex: 1; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;">
-              <div style="font-size: 11px; color: #718096; margin-bottom: 2px;">Stanze</div>
-              <div style="font-size: 16px; font-weight: 600; color: #2d3748;">${property.rooms || 'N/A'}</div>
+              <div style="font-size: 10px; color: #718096; margin-bottom: 2px;">Stanze</div>
+              <div style="font-size: 14px; font-weight: 600; color: #2d3748;">${property.rooms || 'N/A'}</div>
             </div>
             <div style="text-align: center; flex: 1;">
-              <div style="font-size: 11px; color: #718096; margin-bottom: 2px;">Superficie</div>
-              <div style="font-size: 16px; font-weight: 600; color: #2d3748;">${property.area || 'N/A'} m²</div>
+              <div style="font-size: 10px; color: #718096; margin-bottom: 2px;">Superficie</div>
+              <div style="font-size: 14px; font-weight: 600; color: #2d3748;">${property.area || 'N/A'} m²</div>
             </div>
           </div>
         </div>
 
-        <p style="margin: 0 0 12px 0; font-size: 13px; color: #4a5568; line-height: 1.5; max-height: 60px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
+        <p style="margin: 0 0 8px 0; font-size: 12px; color: #4a5568; line-height: 1.4; max-height: 50px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
           ${property.description || ''}
         </p>
 
-        <a href="/properties/${property.id}"
-           style="display: block; text-align: center; background: #1976d2; color: white; padding: 10px 16px; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 14px; transition: background 0.2s;"
+        <a href="javascript:void(0)"
+           onclick="window.selectProperty('${property.id}')"
+           style="display: block; text-align: center; background: #1976d2; color: white; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 13px; transition: background 0.2s; cursor: pointer;"
            onmouseover="this.style.background='#1565c0'"
            onmouseout="this.style.background='#1976d2'">
           Vedi Dettagli
@@ -490,4 +567,26 @@ export class SearchMap implements AfterViewInit, OnDestroy {
   public searchCurrentArea(): void {
     this.emitBoundsChanged();
   }
+
+  public getCurrentRadiusSearch(): RadiusSearch | null {
+    if (!this.map) return null;
+
+    const bounds = this.map.getBounds();
+    if (!bounds) return null;
+
+    const center = bounds.getCenter();
+    const currentZoom = this.map.getZoom();
+    
+    // Ottieni il raggio direttamente dalla HashMap in base allo zoom corrente
+    const radiusInKm = this.getRadiusForZoom(currentZoom);
+
+    return {
+      center: {
+        type: 'Point',
+        coordinates: [center.lng(), center.lat()]
+      },
+      radius: radiusInKm
+    };
+  }
+
 }

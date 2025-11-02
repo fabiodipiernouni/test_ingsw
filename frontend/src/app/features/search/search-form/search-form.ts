@@ -87,6 +87,11 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
   private selectedPlace: PlaceDetails | null = null;
   private autocomplete: any = null;
 
+  // Getter pubblico per permettere l'accesso al selectedPlace da componenti parent
+  get selectedPlaceDetails(): PlaceDetails | null {
+    return this.selectedPlace;
+  }
+
   @Output() searchStarted = new EventEmitter<GetPropertiesCardsRequest>();
   @Output() mapSearchClicked = new EventEmitter<GetPropertiesCardsRequest>();
 
@@ -579,83 +584,5 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
   onLocationInputChange(): void {
     this.formSubmitted = false;
     this.cdr.detectChanges();
-  }
-
-  /**
-   * Genera un nome descrittivo per la ricerca salvata
-   * Usa il nome dell'autocomplete se disponibile, altrimenti genera un nome dai filtri
-   */
-  generateSearchName(): string {
-    const formValue = this.searchForm.value;
-    const parts: string[] = [];
-    
-    // Property type
-    if (formValue.propertyType) {
-      const typeMap: { [key: string]: string } = {
-        'APARTMENT': 'Appartamento',
-        'HOUSE': 'Casa',
-        'VILLA': 'Villa',
-        'OFFICE': 'Ufficio',
-        'COMMERCIAL': 'Commerciale',
-        'GARAGE': 'Garage',
-        'LAND': 'Terreno'
-      };
-      parts.push(typeMap[formValue.propertyType] || formValue.propertyType);
-    }
-    
-    // Listing type
-    if (formValue.listingType) {
-      const listingMap: { [key: string]: string } = {
-        'SALE': 'in vendita',
-        'RENT': 'in affitto'
-      };
-      parts.push(listingMap[formValue.listingType] || formValue.listingType);
-    }
-    
-    // Location - USA IL NOME DELL'AUTOCOMPLETE SE DISPONIBILE
-    if (this.selectedPlace?.formattedAddress) {
-      if (parts.length > 0) {
-        parts.push('a');
-      }
-      parts.push(this.selectedPlace.formattedAddress);
-    } else if (formValue.location) {
-      if (parts.length > 0) {
-        parts.push('a');
-      }
-      parts.push(formValue.location);
-    }
-    
-    // Price range
-    if (formValue.priceMin > 0 || formValue.priceMax < 1000000) {
-      if (formValue.priceMin > 0 && formValue.priceMax < 1000000) {
-        parts.push(`€${formValue.priceMin.toLocaleString('it-IT')}-${formValue.priceMax.toLocaleString('it-IT')}`);
-      } else if (formValue.priceMin > 0) {
-        parts.push(`da €${formValue.priceMin.toLocaleString('it-IT')}`);
-      } else if (formValue.priceMax < 1000000) {
-        parts.push(`fino a €${formValue.priceMax.toLocaleString('it-IT')}`);
-      }
-    }
-    
-    // Rooms/Bedrooms
-    if (formValue.bedrooms) {
-      parts.push(`${formValue.bedrooms}+ camere`);
-    } 
-    if (formValue.rooms) {
-      parts.push(`${formValue.rooms}+ locali`);
-    }
-    
-    // Geo filters (radius)
-    if (this.selectedPlace?.coordinates) {
-      parts.push(`raggio ${environment.geoSearchValues.defaultRadiusKm}km`);
-    }
-    
-    // If no specific filters, generate a generic name with timestamp
-    if (parts.length === 0) {
-      const date = new Date();
-      return `Ricerca del ${date.toLocaleDateString('it-IT')} ${date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`;
-    }
-    
-    const name = parts.join(' ').trim();
-    return name ? name.charAt(0).toUpperCase() + name.slice(1) : name;
   }
 }
