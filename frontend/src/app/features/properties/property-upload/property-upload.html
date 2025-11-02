@@ -258,83 +258,43 @@
             <h3>Posizione dell'Immobile</h3>
             <p class="section-hint">
               <mat-icon>info</mat-icon>
-              Compila manualmente l'indirizzo oppure clicca sulla mappa per posizionare il marker
+              Cerca l'indirizzo utilizzando l'autocomplete oppure clicca sulla mappa per posizionare il marker
             </p>
 
             <div class="address-location-container">
-              <!-- Colonna Sinistra: Form Indirizzo -->
+              <!-- Colonna Sinistra: Autocomplete Indirizzo -->
               <div class="address-form-column">
                 <form [formGroup]="addressForm">
-                  <h4>Indirizzo Manuale</h4>
+                  <h4>Ricerca Indirizzo</h4>
 
                   <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Via/Indirizzo</mat-label>
+                    <mat-label>Indirizzo Completo</mat-label>
                     <input matInput
-                           formControlName="street"
-                           placeholder="Es: Via dei Mille 123"
-                           (input)="onAddressChange()"
-                           (blur)="onAddressChange()">
-                    <mat-error>{{ getErrorMessage(addressForm, 'street') }}</mat-error>
+                           #addressInput
+                           formControlName="fullAddress"
+                           placeholder="Cerca indirizzo (es: Via dei Mille 123, Napoli)"
+                           autocomplete="off">
+                    <mat-icon matSuffix>location_on</mat-icon>
+                    <mat-hint>Seleziona un indirizzo dall'autocomplete</mat-hint>
+                    <mat-error>{{ getErrorMessage(addressForm, 'fullAddress') }}</mat-error>
                   </mat-form-field>
-
-                  <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Città</mat-label>
-                    <input matInput
-                           formControlName="city"
-                           placeholder="Es: Napoli"
-                           (input)="onAddressChange()"
-                           (blur)="onAddressChange()">
-                    <mat-error>{{ getErrorMessage(addressForm, 'city') }}</mat-error>
-                  </mat-form-field>
-
-                  <div class="form-row">
-                    <mat-form-field appearance="outline">
-                      <mat-label>Provincia</mat-label>
-                      <input matInput
-                             formControlName="province"
-                             placeholder="Es: NA"
-                             (input)="onAddressChange()"
-                             (blur)="onAddressChange()">
-                      <mat-error>{{ getErrorMessage(addressForm, 'province') }}</mat-error>
-                    </mat-form-field>
-
-                    <mat-form-field appearance="outline">
-                      <mat-label>CAP</mat-label>
-                      <input matInput
-                             formControlName="zipCode"
-                             placeholder="80100"
-                             (input)="onAddressChange()"
-                             (blur)="onAddressChange()">
-                      <mat-error>{{ getErrorMessage(addressForm, 'zipCode') }}</mat-error>
-                    </mat-form-field>
-                  </div>
-
-                  <button mat-raised-button
-                          color="primary"
-                          type="button"
-                          (click)="geocodeAddress()"
-                          [disabled]="!addressForm.valid || isGeocoding()"
-                          class="geocode-btn">
-                    @if (isGeocoding()) {
-                      <mat-icon class="spin">refresh</mat-icon>
-                      Geocoding in corso...
-                    } @else {
-                      <mat-icon>place</mat-icon>
-                      Posiziona sulla Mappa
-                    }
-                  </button>
-
-                  @if (geocodingError()) {
-                    <div class="error-message">
-                      <mat-icon>error</mat-icon>
-                      {{ geocodingError() }}
-                    </div>
-                  }
 
                   @if (currentLocation()) {
                     <div class="location-info">
                       <mat-icon>check_circle</mat-icon>
-                      Coordinate: {{ currentLocation()!.lat.toFixed(6) }}, {{ currentLocation()!.lng.toFixed(6) }}
+                      <div class="location-details">
+                        <strong>Indirizzo selezionato:</strong>
+                        <p>{{ addressForm.get('street')?.value || '' }}</p>
+                        <p>{{ addressForm.get('city')?.value || '' }}, {{ addressForm.get('province')?.value || '' }} {{ addressForm.get('zipCode')?.value || '' }}</p>
+                        <small>Coordinate: {{ currentLocation()!.lat.toFixed(6) }}, {{ currentLocation()!.lng.toFixed(6) }}</small>
+                      </div>
+                    </div>
+                  }
+
+                  @if (addressSelectionError()) {
+                    <div class="error-message">
+                      <mat-icon>error</mat-icon>
+                      {{ addressSelectionError() }}
                     </div>
                   }
                 </form>

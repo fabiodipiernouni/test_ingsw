@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Debug in Chrome" type="JavascriptDebugType" uri="http://localhost:4200" useFirstLineBreakpoints="true">
+    <breakpoints>
+      <breakpoints-dialog>
+        <breakpoint-any>
+          <option name="timeStamp" value="1" />
+        </breakpoint-any>
+      </breakpoints-dialog>
+    </breakpoints>
+    <method v="2" />
+  </configuration>
+</component>

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { NotificationController } from '@notification/controllers/NotificationController';
 import { authenticateToken } from '@shared/middleware/auth';
+import {requireAdminOrOwner} from '@shared/middleware/authorization';
 
 const router = Router();
 const notificationController = new NotificationController();
@@ -486,5 +487,117 @@ router.post('/notifications/:notificationId/mark-as-unread', authenticateToken, 
  *               message: Failed to delete notification
  */
 router.delete('/notifications/:notificationId', authenticateToken, notificationController.deleteNotification.bind(notificationController));
+
+/**
+ * @swagger
+ * /promotional-message:
+ *   post:
+ *     summary: Invia messaggio promozionale a tutti gli utenti con consenso
+ *     description: Permette agli amministratori e owner di inviare messaggi promozionali a tutti gli utenti che hanno abilitato le notifiche promozionali. Richiede ruolo admin o owner.
+ *     tags:
+ *       - Notifications
+ *       - Admin
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - message
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 maxLength: 200
+ *                 description: Titolo del messaggio promozionale
+ *                 example: "Offerta Speciale Estate 2025"
+ *               message:
+ *                 type: string
+ *                 maxLength: 4000
+ *                 description: Corpo del messaggio promozionale
+ *                 example: "Approfitta del 20% di sconto su tutte le commissioni per le proprietà pubblicate questo mese!"
+ *               actionUrl:
+ *                 type: string
+ *                 maxLength: 2000
+ *                 description: URL opzionale per un'azione (link a una pagina specifica)
+ *                 example: "/properties/upload"
+ *               imageUrl:
+ *                 type: string
+ *                 maxLength: 2000
+ *                 description: URL opzionale per un'immagine associata al messaggio
+ *                 example: "https://example.com/promo-summer-2025.jpg"
+ *     responses:
+ *       200:
+ *         description: Messaggio promozionale inviato con successo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         sentCount:
+ *                           type: integer
+ *                           description: Numero di utenti a cui è stato inviato il messaggio
+ *                           example: 150
+ *                     message:
+ *                       type: string
+ *                       example: "Promotional message sent successfully to 150 users"
+ *             example:
+ *               status: success
+ *               data:
+ *                 sentCount: 150
+ *               message: Promotional message sent successfully to 150 users
+ *       400:
+ *         description: Dati di input non validi
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               code: VALIDATION_ERROR
+ *               message: Validation failed
+ *               errors:
+ *                 - "Title is required"
+ *                 - "Message is required"
+ *       401:
+ *         description: Utente non autenticato
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               code: UNAUTHORIZED
+ *               message: User not authenticated
+ *       403:
+ *         description: Permessi insufficienti (ruolo non autorizzato)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               code: FORBIDDEN
+ *               message: Insufficient permissions
+ *       500:
+ *         description: Errore interno del server
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               code: INTERNAL_SERVER_ERROR
+ *               message: Failed to send promotional message
+ */
+router.post('/promotional-message', authenticateToken, requireAdminOrOwner, notificationController.sendPromotionalMessage.bind(notificationController));
 
 export default router;

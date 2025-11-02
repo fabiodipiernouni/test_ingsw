@@ -32,20 +32,6 @@ export interface CognitoConfig {
   };
 }
 
-export interface EmailConfig {
-  host: string;
-  port: number;
-  user: string;
-  password: string;
-  from: string;
-}
-
-export interface RedisConfig {
-  host: string;
-  port: number;
-  password?: string;
-}
-
 export interface UploadConfig {
   dir: string;
   maxFileSize: number;
@@ -70,14 +56,8 @@ export interface AppConfig {
   port: number;
   database: DatabaseConfig;
   cognito: CognitoConfig;
-  email: EmailConfig;
-  redis: RedisConfig;
   upload: UploadConfig;
   s3: S3Config;
   serviceSecret: string;
   frontendUrl: string;
-  rateLimit: {
-    windowMs: number;
-    maxRequests: number;
-  };
 }

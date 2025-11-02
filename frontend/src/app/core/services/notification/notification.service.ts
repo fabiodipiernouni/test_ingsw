@@ -7,6 +7,7 @@ import { PagedResult } from '@service-shared/dto/pagedResult';
 import { NotificationCountResponse } from '@core-services/notification/dto/NotificationCountResponse';
 import { NotificationDto } from '@core-services/notification/dto/NotificationDto';
 import { GetNotificationsRequest } from '@core-services/notification/dto/GetNotificationsRequest';
+import { SendPromotionalMessageDto, SendPromotionalMessageResponse } from '@core-services/notification/dto/SendPromotionalMessageDto';
 
 @Injectable({
   providedIn: 'root'
@@ -17,9 +18,6 @@ export class NotificationService {
   
   // Signal per il conteggio delle notifiche non lette
   unreadCount = signal<number>(0);
-  
-  // Polling interval in millisecondi (5 minuti = 300000ms)
-  private readonly POLLING_INTERVAL = 5 * 60 * 1000; // 5 minuti
   
   constructor() {
     // Avvia il polling automatico quando il service viene inizializzato
@@ -53,8 +51,7 @@ export class NotificationService {
    * Avvia il polling automatico del conteggio
    */
   private startPolling(): void {
-    // Polling ogni 5 minuti, partendo subito con la prima chiamata
-    interval(this.POLLING_INTERVAL)
+    interval(environment.notificationPollingIntervalMs)
       .pipe(
         startWith(0), // Esegui immediatamente la prima chiamata
         switchMap(() => this.getUnreadCount())
@@ -153,6 +150,17 @@ export class NotificationService {
     return this.http.get<ApiResponse<PagedResult<NotificationDto>>>(
       `${this.API_URL}/notifications`,
       { params }
+    );
+  }
+
+  /**
+   * Invia un messaggio promozionale a tutti gli utenti con consenso
+   * Solo per admin e owner
+   */
+  sendPromotionalMessage(dto: SendPromotionalMessageDto): Observable<ApiResponse<SendPromotionalMessageResponse>> {
+    return this.http.post<ApiResponse<SendPromotionalMessageResponse>>(
+      `${this.API_URL}/promotional-message`,
+      dto
     );
   }
 }

@@ -6,7 +6,7 @@ export interface SavedSearchModel {
   name: string;
   filters: SavedSearchFilters;
   isNotificationEnabled: boolean;
-  lastSearchedAt?: Date;
+  lastSearchedAt: Date;
   createdAt: Date;
   updatedAt: Date;
 }

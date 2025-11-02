@@ -2,9 +2,13 @@ import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from '@shared/dto/AuthenticatedRequest';
 import { NotificationService } from '@notification/services/NotificationService';
 import { GetNotificationsRequest } from '@notification/dto/GetNotificationsRequest';
-import { setResponseAsSuccess, setResponseAsError } from '@shared/utils/helpers';
+import { SendPromotionalMessageDto } from '@notification/dto/SendPromotionalMessageDto';
+import { setResponseAsSuccess, setResponseAsError, setResponseAsValidationError } from '@shared/utils/helpers';
 import logger from '@shared/utils/logger';
 import { NotificationType } from '@shared/types/notification.types';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+import { formatValidationErrors } from '@shared/utils/helpers';
 
 const notificationService = new NotificationService();
 
@@ -184,6 +188,47 @@ export class NotificationController {
         } catch (error: any) {
             logger.error('Error in getUnreadNotificationsCount NotificationController:', error);
             setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to get unread notifications count', 500);
+        }
+    }
+
+    /**
+     * Send promotional message to all users with consent
+     * POST /promotional-message
+     */
+    async sendPromotionalMessage(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+        try {
+            const dto = plainToInstance(SendPromotionalMessageDto, req.body);
+
+            const errors = await validate(dto);
+            if (errors.length > 0) {
+                const strErrors = formatValidationErrors(errors);
+                setResponseAsValidationError(res, strErrors);
+                return;
+            }
+
+            logger.info('Admin/Owner sending promotional message', {
+                userId: req.user?.id,
+                userRole: req.user?.role,
+                title: dto.title
+            });
+
+            const createdBy = req.user?.id;
+            if (!createdBy) {
+                setResponseAsError(res, 'UNAUTHORIZED', 'User not authenticated', 401);
+                return;
+            }
+
+            const result = await notificationService.sendPromotionalMessageToAll(dto, createdBy);
+
+            setResponseAsSuccess(
+                res,
+                result,
+                `Promotional message sent successfully to ${result.sentCount} users`,
+                200
+            );
+        } catch (error: any) {
+            logger.error('Error in sendPromotionalMessage NotificationController:', error);
+            setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to send promotional message', 500);
         }
     }
 }

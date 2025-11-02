@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/AuthController';
 import { validate, authValidations } from '@shared/middleware/validation';
-import { authenticateToken, requireEmailVerified } from '@shared/middleware/auth';
-import { requireAgencyAdmin, requireAgencyOwner } from '../../../shared/middleware/authorization';
+import { authenticateToken } from '@shared/middleware/auth';
+import { requireAdminOrOwner, requireAgencyOwner } from '../../../shared/middleware/authorization';
 
 const router = Router();
 const authController = new AuthController();
@@ -583,7 +583,7 @@ router.get('/oauth/callback', authController.handleOAuthCallback);
  */
 router.post('/create-agent', 
   authenticateToken,
-  requireAgencyAdmin, 
+  requireAdminOrOwner, 
   authController.createAgent.bind(authController)
 );
 
@@ -939,6 +939,234 @@ router.put('/notification-preferences',
 router.get('/notification-preferences',
   authenticateToken,
   authController.getNotificationPreferences.bind(authController)
+);
+
+/**
+ * @swagger
+ * /agents:
+ *   get:
+ *     summary: Ottiene tutti gli agenti dell'agenzia
+ *     description: Recupera la lista paginata di tutti gli agenti dell'agenzia (solo per admin/owner)
+ *     tags:
+ *       - Agency Management
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *           minimum: 1
+ *         description: Numero di pagina
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *           minimum: 1
+ *           maximum: 100
+ *         description: Numero di risultati per pagina
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           default: createdAt
+ *         description: Campo per ordinamento
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [ASC, DESC]
+ *           default: DESC
+ *         description: Ordine di ordinamento
+ *     responses:
+ *       200:
+ *         description: Lista agenti recuperata con successo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/UserResponse'
+ *                     totalCount:
+ *                       type: integer
+ *                     currentPage:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                     hasNextPage:
+ *                       type: boolean
+ *                     hasPreviousPage:
+ *                       type: boolean
+ *       401:
+ *         description: Non autenticato
+ *       403:
+ *         description: Non autorizzato - solo admin/owner
+ *       500:
+ *         description: Errore interno del server
+ */
+router.get('/agents',
+  authenticateToken,
+  requireAdminOrOwner,
+  authController.getAgents.bind(authController)
+);
+
+/**
+ * @swagger
+ * /admins:
+ *   get:
+ *     summary: Ottiene tutti gli admin dell'agenzia
+ *     description: Recupera la lista paginata di tutti gli admin dell'agenzia (solo per owner)
+ *     tags:
+ *       - Agency Management
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *           minimum: 1
+ *         description: Numero di pagina
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *           minimum: 1
+ *           maximum: 100
+ *         description: Numero di risultati per pagina
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           default: createdAt
+ *         description: Campo per ordinamento
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [ASC, DESC]
+ *           default: DESC
+ *         description: Ordine di ordinamento
+ *     responses:
+ *       200:
+ *         description: Lista admin recuperata con successo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/UserResponse'
+ *                     totalCount:
+ *                       type: integer
+ *                     currentPage:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                     hasNextPage:
+ *                       type: boolean
+ *                     hasPreviousPage:
+ *                       type: boolean
+ *       401:
+ *         description: Non autenticato
+ *       403:
+ *         description: Non autorizzato - solo owner
+ *       500:
+ *         description: Errore interno del server
+ */
+router.get('/admins',
+  authenticateToken,
+  requireAgencyOwner,
+  authController.getAdmins.bind(authController)
+);
+
+/**
+ * @swagger
+ * /agents/{id}:
+ *   delete:
+ *     summary: Elimina un agente
+ *     description: Elimina un agente dall'agenzia (solo per admin/owner)
+ *     tags:
+ *       - Agency Management
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID dell'agente da eliminare
+ *     responses:
+ *       200:
+ *         description: Agente eliminato con successo
+ *       401:
+ *         description: Non autenticato
+ *       403:
+ *         description: Non autorizzato - solo admin/owner
+ *       404:
+ *         description: Agente non trovato
+ *       500:
+ *         description: Errore interno del server
+ */
+router.delete('/agents/:id',
+  authenticateToken,
+  requireAdminOrOwner,
+  authController.deleteAgent.bind(authController)
+);
+
+/**
+ * @swagger
+ * /admins/{id}:
+ *   delete:
+ *     summary: Elimina un admin
+ *     description: Elimina un admin dall'agenzia (solo per owner)
+ *     tags:
+ *       - Agency Management
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID dell'admin da eliminare
+ *     responses:
+ *       200:
+ *         description: Admin eliminato con successo
+ *       401:
+ *         description: Non autenticato
+ *       403:
+ *         description: Non autorizzato - solo owner
+ *       404:
+ *         description: Admin non trovato
+ *       500:
+ *         description: Errore interno del server
+ */
+router.delete('/admins/:id',
+  authenticateToken,
+  requireAgencyOwner,
+  authController.deleteAdmin.bind(authController)
 );
 
 export default router;

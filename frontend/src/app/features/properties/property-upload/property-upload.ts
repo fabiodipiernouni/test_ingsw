@@ -1,23 +1,43 @@
-import { Component, inject, signal, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, inject, signal, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
+import { MatStepperModule } from '@angular/material/stepper';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
-import { MatStepperModule } from '@angular/material/stepper';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { PropertyService } from '@core/services/property/property.service';
-import {PropertyModel} from '@features/properties/models/PropertyModel';
-import {Helper} from '@core/services/property/Utils/helper';
-import {Address} from '@service-shared/models/Address';
+import { PropertyModel } from '@features/properties/models/PropertyModel';
+import { CreatePropertyRequest } from '@core/services/property/dto/CreatePropertyRequest';
+import { ImageMetadataDto } from '@core/services/property/dto/ImageMetadataDto';
+import { forkJoin, of } from 'rxjs';
+import { switchMap, tap, catchError } from 'rxjs/operators';
+
+// Tipizzazione Google Maps
+interface GoogleMapsWindow extends Window {
+  google: {
+    maps: {
+      places: {
+        Autocomplete: any;
+        AutocompleteService: any;
+      };
+      event: any;
+      Geocoder: any;
+      Map: any;
+      marker: any;
+      importLibrary: (library: string) => Promise<any>;
+    };
+  };
+}
 
 declare const google: any;
+declare const window: GoogleMapsWindow;
 
 /**
  * Interfaccia per la preview delle immagini caricate
@@ -56,15 +76,18 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
   private readonly snackBar = inject(MatSnackBar);
 
   @ViewChild('mapContainer', { static: false }) mapContainer!: ElementRef;
+  @ViewChild('addressInput', { static: false }) addressInput!: ElementRef<HTMLInputElement>;
 
   isLoading = signal(false);
-  isGeocoding = signal(false);
   uploadedImages = signal<ImagePreview[]>([]);
   currentLocation = signal<{ lat: number; lng: number } | null>(null);
   geocodingError = signal<string | null>(null);
+  addressSelectionError = signal<string | null>(null);
+  lastValidAddress = signal<string>(''); // Ultimo indirizzo valido selezionato
 
   private map: any;
   private marker: any;
+  private autocomplete: any = null;
 
   // Step 1: Basic Information
   basicInfoForm: FormGroup = this.fb.group({
@@ -90,11 +113,12 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
 
   // Step 3: Address
   addressForm: FormGroup = this.fb.group({
-    street: ['', Validators.required],
-    city: ['', Validators.required],
-    province: ['', Validators.required],
-    zipCode: ['', [Validators.required, Validators.pattern(/^\d{5}$/)]],
-    country: ['Italia', Validators.required]
+    fullAddress: ['', Validators.required],  // Campo per l'autocomplete
+    street: [''],  // Popolato automaticamente dall'autocomplete
+    city: [''],
+    province: [''],
+    zipCode: [''],
+    country: ['Italia']
   });
 
   propertyTypes = [
@@ -166,7 +190,10 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
    */
   ngAfterViewInit(): void {
     // Aspetta un tick per assicurarsi che il DOM sia completamente renderizzato
-    setTimeout(() => this.initMap(), 100);
+    setTimeout(() => {
+      this.initMap();
+      this.initializeAutocomplete();
+    }, 100);
   }
 
   /**
@@ -211,9 +238,9 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
         this.onMapClick(event.latLng);
       });
 
-      console.log('✅ Mappa inizializzata correttamente');
+      console.log('Mappa inizializzata correttamente');
     } catch (error) {
-      console.error('❌ Errore inizializzazione mappa:', error);
+      console.error('Errore inizializzazione mappa:', error);
       this.snackBar.open('Errore durante il caricamento della mappa', 'Chiudi', {
         duration: 5000,
         panelClass: ['error-snackbar']
@@ -350,24 +377,30 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
 
         // Componi via completa
         const fullStreet = streetNumber ? `${street} ${streetNumber}` : street;
+        const formattedAddress = result.results[0].formatted_address;
 
         // Popola il form
         this.addressForm.patchValue({
+          fullAddress: formattedAddress,
           street: fullStreet,
           city: city,
           province: province,
           zipCode: zipCode
         });
 
-        console.log('✅ Reverse geocoding completato:', { street: fullStreet, city, province, zipCode });
+        // Salva l'ultimo indirizzo valido
+        this.lastValidAddress.set(formattedAddress);
+        this.addressSelectionError.set(null);
+
+        console.log('Reverse geocoding completato:', { street: fullStreet, city, province, zipCode });
       } else {
-        console.warn('⚠️ Nessun indirizzo trovato per queste coordinate');
+        console.warn('Nessun indirizzo trovato per queste coordinate');
         this.snackBar.open('Impossibile determinare l\'indirizzo da queste coordinate', 'Chiudi', {
           duration: 3000
         });
       }
     } catch (error) {
-      console.error('❌ Errore reverse geocoding:', error);
+      console.error('Errore reverse geocoding:', error);
       this.snackBar.open('Errore durante il reverse geocoding', 'Chiudi', {
         duration: 3000
       });
@@ -375,105 +408,292 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
   }
 
   /**
-   * Geocoding: da indirizzo a coordinate (chiamato dal pulsante)
+   * Inizializza Google Places Autocomplete
    */
-  async geocodeAddress(): Promise<void> {
-    if (!this.addressForm.valid) return;
-
-    this.isGeocoding.set(true);
-    this.geocodingError.set(null);
-
-    const address: Address = this.addressForm.value as Address;
-
+  private async initializeAutocomplete(): Promise<void> {
     try {
-      const coords = await Helper.geocodeByAddress(address);
+      console.log('[Autocomplete] Inizio inizializzazione...');
 
-      if (coords) {
-        this.currentLocation.set(coords);
-        this.placeMarker(coords.lat, coords.lng);
-
-        // Feedback positivo
-        this.snackBar.open('📍 Indirizzo localizzato sulla mappa!', 'Chiudi', {
-          duration: 2000,
-          panelClass: ['success-snackbar']
-        });
-      } else {
-        // Messaggio di errore con suggerimenti
-        const suggestions = this.getSuggestions(address);
-        this.geocodingError.set(
-          `Impossibile trovare l'indirizzo specificato. ${suggestions}`
-        );
-
-        this.snackBar.open('Indirizzo non trovato. Prova a cliccare direttamente sulla mappa.', 'Chiudi', {
-          duration: 4000,
-          panelClass: ['error-snackbar']
-        });
+      // Verifica che Google Maps sia caricato
+      if (!window.google?.maps) {
+        console.warn('[Autocomplete] Google Maps non ancora caricato, riprovo...');
+        setTimeout(() => this.initializeAutocomplete(), 500);
+        return;
       }
+
+      console.log('[Autocomplete] Google Maps caricato');
+
+      // Carica esplicitamente la libreria Places
+      if (!window.google.maps.places) {
+        console.log('[Autocomplete] Caricamento libreria Places...');
+        try {
+          await (window.google.maps as any).importLibrary('places');
+          console.log('[Autocomplete] Libreria Places caricata con successo');
+        } catch (error) {
+          console.error('[Autocomplete] Errore caricamento libreria Places:', error);
+          throw error;
+        }
+      } else {
+        console.log('[Autocomplete] Libreria Places già caricata');
+      }
+
+      const inputElement = this.addressInput.nativeElement;
+      console.log('[Autocomplete] Input element trovato:', inputElement);
+
+      // Sopprimi temporaneamente i warning di deprecazione per l'Autocomplete
+      const originalWarn = console.warn;
+      console.warn = (...args: any[]) => {
+        const message = args[0]?.toString() || '';
+        if (!message.includes('PlaceAutocompleteElement') &&
+            !message.includes('March 1st, 2025')) {
+          originalWarn.apply(console, args);
+        }
+      };
+
+      console.log('[Autocomplete] Creazione istanza Autocomplete...');
+
+      // Crea l'autocomplete per indirizzi completi
+      this.autocomplete = new window.google.maps.places.Autocomplete(inputElement, {
+        componentRestrictions: { country: 'it' },
+        types: ['address'], // Solo indirizzi completi
+        fields: ['address_components', 'geometry', 'formatted_address', 'name']
+      });
+
+      console.log('[Autocomplete] Istanza creata con successo');
+
+      // Ripristina console.warn
+      console.warn = originalWarn;
+
+      // Listener per la selezione di un luogo
+      this.autocomplete.addListener('place_changed', () => {
+        console.log('[Autocomplete] Place changed event triggered');
+        const place = this.autocomplete.getPlace();
+        console.log('[Autocomplete] Place object:', place);
+
+        if (!place.geometry) {
+          console.log('[Autocomplete] Nessun dettaglio geografico');
+          this.addressSelectionError.set('Seleziona un indirizzo valido dall\'elenco');
+          this.currentLocation.set(null);
+          return;
+        }
+
+        // Estrai coordinate
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+
+        // Estrai componenti indirizzo
+        let street = '';
+        let city = '';
+        let province = '';
+        let zipCode = '';
+        let streetNumber = '';
+
+        place.address_components?.forEach((component: any) => {
+          const types = component.types;
+
+          if (types.includes('route')) {
+            street = component.long_name;
+          }
+          if (types.includes('street_number')) {
+            streetNumber = component.long_name;
+          }
+          if (types.includes('locality')) {
+            city = component.long_name;
+          }
+          if (types.includes('administrative_area_level_2')) {
+            province = component.short_name;
+          }
+          if (types.includes('postal_code')) {
+            zipCode = component.long_name;
+          }
+        });
+
+        // Componi via completa
+        const fullStreet = streetNumber ? `${street} ${streetNumber}` : street;
+
+        // Popola il form
+        this.addressForm.patchValue({
+          fullAddress: place.formatted_address || place.name,
+          street: fullStreet,
+          city: city,
+          province: province,
+          zipCode: zipCode
+        }, { emitEvent: false });
+
+        // Salva coordinate e indirizzo valido
+        this.currentLocation.set({ lat, lng });
+        this.lastValidAddress.set(place.formatted_address || place.name || '');
+        this.addressSelectionError.set(null);
+
+        // Posiziona il marker sulla mappa
+        this.placeMarker(lat, lng);
+
+        console.log('[Autocomplete] Indirizzo selezionato:', {
+          formatted: place.formatted_address,
+          coordinates: { lat, lng },
+          components: { street: fullStreet, city, province, zipCode }
+        });
+      });
+
+      // Listener per blur: gestisce input manuale e ripristina lo stato coerente
+      inputElement.addEventListener('blur', () => {
+        const currentValue = this.addressForm.get('fullAddress')?.value || '';
+        const lastValid = this.lastValidAddress();
+
+        // CASO 1: Input vuoto - reset completo
+        if (currentValue.length === 0) {
+          this.currentLocation.set(null);
+          this.lastValidAddress.set('');
+          if (this.marker) {
+            this.marker.map = null; // Rimuove il marker dalla mappa
+            this.marker = null;
+          }
+          // Reset campi indirizzo
+          this.addressForm.patchValue({
+            street: '',
+            city: '',
+            province: '',
+            zipCode: ''
+          }, { emitEvent: false });
+        }
+        // CASO 2: Input con valore invalido - ripristina l'ultimo valido
+        else if (currentValue !== lastValid) {
+          this.addressForm.patchValue({
+            fullAddress: lastValid
+          }, { emitEvent: false });
+
+          if (lastValid) {
+            this.snackBar.open('Devi selezionare un indirizzo dall\'elenco suggerito. Input ripristinato.', 'Chiudi', {
+              duration: 4000,
+              panelClass: ['warning-snackbar']
+            });
+          }
+        }
+      });
+
+      console.log('[Autocomplete] Google Places Autocomplete inizializzato con successo');
     } catch (error) {
-      console.error('Errore geocoding:', error);
-      this.geocodingError.set('Errore durante la localizzazione dell\'indirizzo');
-    } finally {
-      this.isGeocoding.set(false);
+      console.error('[Autocomplete] Errore inizializzazione autocomplete:', error);
+
+      if (error instanceof Error) {
+        console.error('[Autocomplete] Messaggio errore:', error.message);
+        console.error('[Autocomplete] Stack trace:', error.stack);
+      }
+
+      this.snackBar.open('Errore durante l\'inizializzazione dell\'autocomplete', 'Chiudi', {
+        duration: 5000,
+        panelClass: ['error-snackbar']
+      });
     }
-  }
-
-  /**
-   * Genera suggerimenti per migliorare il geocoding
-   */
-  private getSuggestions(address: Address): string {
-    const suggestions: string[] = [];
-
-    // Verifica se i campi critici sono compilati
-    if (!address.street || address.street.trim().length < 3) {
-      suggestions.push('Inserisci una via più specifica');
-    }
-
-    if (!address.city || address.city.trim().length < 2) {
-      suggestions.push('Verifica il nome della città');
-    }
-
-    if (suggestions.length > 0) {
-      return 'Suggerimenti: ' + suggestions.join(', ') + '.';
-    }
-
-    return 'Prova a cliccare direttamente sulla mappa per posizionare il marker.';
-  }
-
-  /**
-   * Chiamato quando l'utente compila manualmente i campi
-   * Resetta errori di geocoding quando l'utente modifica l'indirizzo
-   */
-  onAddressChange(): void {
-    // Resetta errori e messaggi quando l'utente modifica l'indirizzo
-    this.geocodingError.set(null);
   }
 
   onSubmit(): void {
+    // Verifica che ci sia un marker posizionato (location selezionata)
+    if (!this.currentLocation()) {
+      this.snackBar.open('Devi selezionare una posizione sulla mappa o dall\'autocomplete', 'Chiudi', {
+        duration: 4000,
+        panelClass: ['error-snackbar']
+      });
+      this.addressSelectionError.set('Posizione obbligatoria');
+      return;
+    }
+
     if (this.basicInfoForm.valid && this.detailsForm.valid && this.addressForm.valid) {
       this.isLoading.set(true);
 
-      const propertyData: Partial<PropertyModel> = {
-        ...this.basicInfoForm.value,
-        ...this.detailsForm.value,
-        address: this.addressForm.value,
-        images: [] // TODO: Handle image upload
+      const location = this.currentLocation()!;
+      const uploadedImages = this.uploadedImages();
+
+      // Costruisci CreatePropertyRequest secondo l'OpenAPI
+      const propertyData: CreatePropertyRequest = {
+        title: this.basicInfoForm.value.title,
+        description: this.basicInfoForm.value.description,
+        price: this.basicInfoForm.value.price,
+        propertyType: this.basicInfoForm.value.propertyType,
+        listingType: this.basicInfoForm.value.listingType,
+        bedrooms: this.detailsForm.value.bedrooms,
+        bathrooms: this.detailsForm.value.bathrooms,
+        area: this.detailsForm.value.area,
+        floor: this.detailsForm.value.floor || undefined,
+        energyClass: this.detailsForm.value.energyClass || undefined,
+        hasElevator: this.detailsForm.value.hasElevator || false,
+        hasBalcony: this.detailsForm.value.hasBalcony || false,
+        hasGarden: this.detailsForm.value.hasGarden || false,
+        hasParking: this.detailsForm.value.hasParking || false,
+        features: [],
+        address: {
+          street: this.addressForm.value.street,
+          city: this.addressForm.value.city,
+          province: this.addressForm.value.province,
+          zipCode: this.addressForm.value.zipCode,
+          country: this.addressForm.value.country || 'Italia'
+        },
+        location: {
+          type: 'Point',
+          coordinates: [location.lng, location.lat] // [longitude, latitude]
+        }
       };
 
-      this.propertyService.createProperty(propertyData).subscribe({
+      // Step 1: Crea la proprietà
+      this.propertyService.createProperty(propertyData).pipe(
+        switchMap(property => {
+          console.log('Proprietà creata con successo:', property.id);
+
+          // Step 2: Se ci sono immagini, caricale con metadata
+          if (uploadedImages.length > 0) {
+            const files = uploadedImages.map(img => img.file);
+
+            // Costruisci metadata per ogni immagine
+            const metadata: ImageMetadataDto[] = uploadedImages.map(img => ({
+              isPrimary: img.isPrimary,
+              order: img.order,
+              caption: undefined,
+              altText: undefined
+            }));
+
+            return this.propertyService.uploadImages(property.id, files, metadata).pipe(
+              tap(uploadedImageModels => {
+                console.log(`Upload completato: ${uploadedImageModels.length} immagine/i`);
+              }),
+              catchError(error => {
+                console.error('Errore durante l\'upload delle immagini:', error);
+                this.snackBar.open('Proprietà creata ma errore nel caricamento immagini', 'Chiudi', {
+                  duration: 4000,
+                  panelClass: ['warning-snackbar']
+                });
+                // Ritorna la proprietà comunque (è stata creata)
+                return of(null);
+              }),
+              // Ritorna sempre la proprietà originale
+              switchMap(() => of(property))
+            );
+          }
+          // Nessuna immagine da caricare
+          return of(property);
+        })
+      ).subscribe({
         next: (property) => {
           this.snackBar.open('Immobile caricato con successo!', 'Chiudi', {
             duration: 3000,
             panelClass: ['success-snackbar']
           });
+          this.isLoading.set(false);
+          // Step 3: Navigate to /properties/{id}
           this.router.navigate(['/properties', property.id]);
         },
-        error: () => {
-          this.snackBar.open('Errore durante il caricamento', 'Chiudi', {
+        error: (error) => {
+          console.error('Errore durante il caricamento:', error);
+          this.snackBar.open('Errore durante il caricamento della proprietà', 'Chiudi', {
             duration: 3000,
             panelClass: ['error-snackbar']
           });
           this.isLoading.set(false);
         }
+      });
+    } else {
+      this.snackBar.open('Compila tutti i campi obbligatori', 'Chiudi', {
+        duration: 3000,
+        panelClass: ['error-snackbar']
       });
     }
   }
@@ -496,12 +716,17 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
   }
 
   /**
-   * Cleanup degli Object URLs quando il componente viene distrutto
+   * Cleanup degli Object URLs e listeners quando il componente viene distrutto
    */
   ngOnDestroy(): void {
     // Revoca tutti gli Object URLs per liberare memoria
     this.uploadedImages().forEach(image => {
       URL.revokeObjectURL(image.previewUrl);
     });
+
+    // Cleanup listeners autocomplete
+    if (this.autocomplete) {
+      window.google?.maps?.event?.clearInstanceListeners(this.autocomplete);
+    }
   }
 }

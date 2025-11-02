@@ -1,0 +1,13 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Test Breakpoint" type="JavascriptDebugType" uri="http://localhost:4200/search">
+    <breakpoints>
+      <breakpoints-dialog>
+        <breakpoint-any>
+          <option name="timeStamp" value="1" />
+        </breakpoint-any>
+      </breakpoints-dialog>
+    </breakpoints>
+    <method v="2" />
+  </configuration>
+</component>
+

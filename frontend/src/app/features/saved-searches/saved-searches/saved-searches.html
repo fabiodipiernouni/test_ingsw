@@ -38,9 +38,7 @@
                 <mat-card-title>{{ search.name }}</mat-card-title>
                 <mat-card-subtitle>
                   Creata il {{ formatDate(search.createdAt) }}
-                  @if (search.lastSearchedAt) {
-                    • Ultima ricerca: {{ formatDate(search.lastSearchedAt) }}
-                  }
+                  • Ultima ricerca: {{ formatDate(search.lastSearchedAt) }}
                 </mat-card-subtitle>
               </div>
               <div class="search-actions">

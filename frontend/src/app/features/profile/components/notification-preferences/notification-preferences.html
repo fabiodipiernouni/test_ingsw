@@ -19,7 +19,7 @@
   <!-- Preferences Form -->
   @if (!isLoading()) {
     <form [formGroup]="notificationForm" (ngSubmit)="onSubmit()" class="preferences-form">
-      
+
       <!-- Notification Types List -->
       <div class="notification-types-list">
         @for (notifType of notificationTypes; track notifType.type) {
@@ -34,7 +34,7 @@
 
             <mat-card-content>
               <div class="toggle-container">
-                <mat-slide-toggle 
+                <mat-slide-toggle
                   [formControlName]="notifType.type"
                   color="primary">
                   {{ isEnabled(notifType.type) ? 'Abilitato' : 'Disabilitato' }}
@@ -47,17 +47,19 @@
 
       <!-- Action Buttons -->
       <div class="form-actions">
-        <button 
-          type="submit" 
-          mat-raised-button 
+        <button
+          type="submit"
+          mat-raised-button
           color="primary"
           [disabled]="!notificationForm.dirty || isSaving()">
           @if (isSaving()) {
             <mat-spinner diameter="20" style="display: inline-block; margin-right: 8px;"></mat-spinner>
             Salvataggio...
           } @else {
-            <mat-icon>save</mat-icon>
-            Salva Preferenze
+            <ng-container>
+              <mat-icon>save</mat-icon>
+              Salva Preferenze
+            </ng-container>
           }
         </button>
       </div>

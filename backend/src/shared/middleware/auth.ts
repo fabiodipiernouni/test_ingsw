@@ -80,7 +80,7 @@ export const authenticateToken = async (
           });
 
           if (!user) {
-            return unauthorizedResponse(res, 'User not found');
+            return setResponseAsError(res, 'USER_NOT_REGISTERED', 'User not registered', 401);
           }
 
           if (!user.isActive) {
@@ -207,6 +207,8 @@ export const requireRole = (roles: string | string[]) => {
     next();
   };
 };
+
+// TODO: i seguenti middleware sono duplicati, usare quelli di authorization.ts
 
 /**
  * Agent authorization middleware

@@ -22,8 +22,10 @@ export const authInterceptor: HttpInterceptorFn = (
 
   return next(req).pipe(
     catchError(error => {
-      // Handle token expiration
+      // Handle token expiration or user not found
       if (error.error?.error === 'TOKEN_EXPIRED' && !isAuthEndpoint(req.url)) {
+
+        // Handle token expiration
         console.warn('Received 401 Unauthorized response');
 
         const refreshToken = authService.getRefreshToken();
@@ -50,8 +52,11 @@ export const authInterceptor: HttpInterceptorFn = (
         } else {
           // No refresh token or already trying to refresh, logout user
           authService.logout();
-          return throwError(() => error);
         }
+      }
+
+      if (error.error?.error === 'USER_NOT_REGISTERED') {
+        authService.logout();
       }
 
       // For other errors, just pass through

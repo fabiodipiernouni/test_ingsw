@@ -7,11 +7,14 @@ import { ApiResponse } from '@service-shared/dto/ApiResponse';
 import {PagedResult} from '@service-shared/dto/pagedResult';
 import {PropertyCardDto} from '@core/services/property/dto/PropertyCardDto';
 import {PropertyModel} from '@features/properties/models/PropertyModel';
+import {PropertyImageModel} from '@core/services/property/models/PropertyImageModel';
 import {Helper} from '@core/services/property/Utils/helper';
 import {environment} from '@src/environments/environment';
 import {GetPropertiesCardsRequest} from '@core/services/property/dto/GetPropertiesCardsRequest';
 import {GeoPropertyCardDto} from '@core/services/property/dto/GeoPropertyCardDto';
 import {GetGeoPropertiesCardsRequest} from '@core/services/property/dto/GetGeoPropertiesCardsRequest';
+import {CreatePropertyRequest} from '@core/services/property/dto/CreatePropertyRequest';
+import {ImageMetadataDto} from '@core/services/property/dto/ImageMetadataDto';
 
 
 @Injectable({
@@ -129,7 +132,7 @@ export class PropertyService {
     );
   }
 
-  createProperty(propertyData: Partial<PropertyModel>): Observable<PropertyModel> {
+  createProperty(propertyData: CreatePropertyRequest): Observable<PropertyModel> {
     this.isLoading.set(true);
 
     // POST /properties
@@ -192,6 +195,61 @@ export class PropertyService {
       catchError((error) => {
         console.error(`Errore durante l'eliminazione della proprietà ${id}:`, error);
         this.isLoading.set(false);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Upload di immagini per una proprietà specifica
+   * POST /properties/:propertyId/images
+   */
+  uploadImages(propertyId: string, images: File[], metadata: ImageMetadataDto[]): Observable<PropertyImageModel[]> {
+    const formData = new FormData();
+
+    // Aggiungi tutti i file al FormData
+    images.forEach((file) => {
+      formData.append('images', file, file.name);
+    });
+
+    // Aggiungi i metadata come JSON stringificato
+    formData.append('metadata', JSON.stringify(metadata));
+
+    // POST /properties/{propertyId}/images
+    return this.http.post<ApiResponse<PropertyImageModel[]>>(
+      `${this.API_URL}/${propertyId}/images`,
+      formData
+    ).pipe(
+      map(response => {
+        if (response.success && response.data) {
+          return response.data;
+        }
+        throw new Error(response.message || 'Errore durante l\'upload delle immagini');
+      }),
+      catchError((error) => {
+        console.error(`Errore durante l'upload delle immagini per la proprietà ${propertyId}:`, error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Imposta un'immagine come primaria
+   * PATCH /properties/:propertyId/images/:imageId/primary
+   */
+  setPrimaryImage(propertyId: string, imageId: string): Observable<PropertyImageModel> {
+    return this.http.patch<ApiResponse<PropertyImageModel>>(
+      `${this.API_URL}/${propertyId}/images/${imageId}/primary`,
+      {}
+    ).pipe(
+      map(response => {
+        if (response.success && response.data) {
+          return response.data;
+        }
+        throw new Error(response.message || 'Errore durante l\'impostazione dell\'immagine primaria');
+      }),
+      catchError((error) => {
+        console.error(`Errore durante l'impostazione dell'immagine primaria:`, error);
         return throwError(() => error);
       })
     );

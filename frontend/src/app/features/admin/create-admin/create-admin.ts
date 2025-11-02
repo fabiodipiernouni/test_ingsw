@@ -37,9 +37,10 @@ export class CreateAdmin {
   authConfig: AuthLayoutConfig = {
     title: 'Crea Nuovo Amministratore',
     subtitle: 'Inserisci i dati del nuovo amministratore',
-    footerText: 'Torna alla',
-    footerLinkText: 'Dashboard',
-    footerLinkRoute: '/dashboard'
+    footerText: 'Vai alla',
+    footerLinkText: 'Gestione Agenzia',
+    footerLinkRoute: '/admin/manage-agency',
+    footerLinkQueryParams: { view: 'admins' }
   };
 
   adminForm: FormGroup = this.fb.group({

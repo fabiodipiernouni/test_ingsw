@@ -10,6 +10,10 @@ export interface NotificationDto {
   isSent: boolean;
   actionUrl?: string;
   imageUrl?: string;
+  agency?: {
+    id: string;
+    name: string;
+  };
   readAt?: string;
   sentAt?: string;
   createdAt: string;

@@ -206,6 +206,30 @@
           </div>
         </div>
 
+        <!-- Agency Filter (only for agents, admins, owners) -->
+        @if (canFilterByAgency() || canFilterMyProperties()) {
+          <div class="agency-filter-section">
+            <h4 class="section-title">
+              <mat-icon>business</mat-icon>
+              Filtri Agenzia
+            </h4>
+            <div class="agency-filter-grid">
+              @if (canFilterByAgency()) {
+              <mat-checkbox formControlName="myAgencyOnly">
+                <mat-icon>apartment</mat-icon>
+                Solo immobili della mia agenzia
+              </mat-checkbox>
+              }
+              @if (canFilterMyProperties()) {
+                <mat-checkbox formControlName="myPropertiesOnly">
+                  <mat-icon>person</mat-icon>
+                  Solo i miei immobili
+                </mat-checkbox>
+              }
+            </div>
+          </div>
+        }
+
         <!-- Action Buttons -->
         <div class="filter-actions">
           <button mat-button

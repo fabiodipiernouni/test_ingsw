@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -32,7 +32,7 @@ import { NotificationMenu } from '@shared/components/notification-menu/notificat
   templateUrl: './header.html',
   styleUrl: './header.scss'
 })
-export class Header implements OnInit {
+export class Header {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
@@ -41,9 +41,9 @@ export class Header implements OnInit {
   isAuthenticated = this.authService.isAuthenticated;
   isMobileMenuOpen = signal<boolean>(false);
 
-  ngOnInit(): void {
-    // Il polling delle notifiche viene gestito automaticamente dal NotificationService
-  }
+  isOwner = computed(() => this.authService.isOwner());
+  isAdmin = computed(() => this.authService.isAdmin());
+  isAgent = computed(() => this.authService.isAgent());
 
   onLogin(): void {
     this.router.navigate(['/login']);
@@ -68,6 +68,24 @@ export class Header implements OnInit {
     this.isMobileMenuOpen.set(false);
   }
 
+  onMyProperties(): void {
+    const user = this.currentUser();
+    if (!user) return;
+    
+    const filters = JSON.stringify({ agentId: user.id });
+    this.router.navigate(['/search'], { queryParams: { filters } });
+    this.isMobileMenuOpen.set(false);
+  }
+
+  onAgencyProperties(): void {
+    const user = this.currentUser();
+    if (!user?.agency?.id) return;
+    
+    const filters = JSON.stringify({ agencyId: user.agency.id });
+    this.router.navigate(['/search'], { queryParams: { filters } });
+    this.isMobileMenuOpen.set(false);
+  }
+
   toggleMobileMenu(): void {
     this.isMobileMenuOpen.update(current => !current);
   }
@@ -78,7 +96,27 @@ export class Header implements OnInit {
     return `${user.firstName} ${user.lastName}`;
   }
 
-  isAgent(): boolean {
-    return this.authService.isAgent();
+  canViewDashboard(): boolean {
+    return this.isAgent() || this.isAdmin() || this.isOwner();
+  }
+
+  canUploadProperty(): boolean {
+    return this.isAgent();
+  }
+
+  canUploadProperties(): boolean {
+    return this.isAgent();
+  }
+
+  canViewAgencyProperties(): boolean {
+    return this.isOwner() || this.isAdmin();
+  }
+
+  canManageAgency(): boolean {
+    return this.isAdmin() || this.isOwner();
+  }
+
+  canSendPromotions(): boolean {
+    return this.isAdmin() || this.isOwner();
   }
 }

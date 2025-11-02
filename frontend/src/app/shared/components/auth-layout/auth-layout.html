@@ -17,7 +17,9 @@
           <div class="footer-link">
             <span>{{ config().footerText }} </span>
             @if (config().footerLinkRoute && config().footerLinkText) {
-              <a [routerLink]="config().footerLinkRoute" class="link-button">
+              <a [routerLink]="config().footerLinkRoute" 
+                 [queryParams]="config().footerLinkQueryParams || {}"
+                 class="link-button">
                 {{ config().footerLinkText }}
               </a>
             }

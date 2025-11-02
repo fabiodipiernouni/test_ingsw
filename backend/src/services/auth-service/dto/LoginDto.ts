@@ -1,10 +1,13 @@
-import { IsEmail } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsEmail, IsString } from 'class-validator';
+import { Trim, ToLowerCase } from '@shared/decorators';
 
 export class LoginDto {
-  @Transform(({ value }) => value?.trim().toLowerCase())
+  @Trim()
+  @ToLowerCase()
   @IsEmail({}, { message: 'Email non valida' })
   email: string;
 
+  @Trim()
+  @IsString({ message: 'La password deve essere una stringa' })
   password: string;
 }

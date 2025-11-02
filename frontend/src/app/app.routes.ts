@@ -61,6 +61,12 @@ export const routes: Routes = [
   },
   // Admin management routes
   {
+    path: 'admin/manage-agency',
+    loadComponent: () => import('./features/admin/manage-agency/manage-agency').then(m => m.ManageAgency),
+    canActivate: [authGuard, adminOrOwnerGuard],
+    title: 'Gestisci Agenzia - DietiEstates25'
+  },
+  {
     path: 'create-admin',
     loadComponent: () => import('./features/admin/create-admin/create-admin').then(m => m.CreateAdmin),
     canActivate: [authGuard, ownerGuard],
@@ -71,6 +77,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/admin/create-agent/create-agent').then(m => m.CreateAgent),
     canActivate: [authGuard, adminOrOwnerGuard],
     title: 'Crea Agente - DietiEstates25'
+  },
+  {
+    path: 'send-promotional-message',
+    loadComponent: () => import('./features/admin/send-promotional-message/send-promotional-message').then(m => m.SendPromotionalMessage),
+    canActivate: [authGuard, adminOrOwnerGuard],
+    title: 'Invia Messaggio Promozionale - DietiEstates25'
   },
   {
     path: 'profile',

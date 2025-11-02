@@ -31,6 +31,13 @@ export class Notification extends Model {
   @BelongsTo(() => User)
   user!: User;
 
+  @ForeignKey(() => User)
+  @AllowNull(true)
+  @Column({ type: DataType.UUID, field: 'created_by' })
+  createdBy?: string;
+  @BelongsTo(() => User, { foreignKey: 'createdBy', as: 'creator' })
+  creator?: User;
+
   @AllowNull(false)
   @Column(DataType.ENUM(...NOTIFICATION_TYPES))
   type!: NotificationType;

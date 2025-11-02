@@ -1,0 +1,128 @@
+.confirm-dialog-container {
+  display: flex;
+  flex-direction: column;
+  min-width: 400px;
+  max-width: 600px;
+  width: 100%;
+  overflow: hidden;
+  padding: 24px;
+}
+
+.dialog-title {
+  margin: 0 0 20px 0 !important;
+  padding: 0 0 16px 0 !important;
+  font-size: 24px;
+  font-weight: 500;
+  color: #333;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.dialog-content {
+  padding: 20px 0 28px 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  
+  .dialog-message {
+    margin: 0;
+    padding: 8px 0;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #666;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0 0 0 !important;
+  margin: 0 !important;
+  gap: 16px;
+  border-top: 1px solid #e0e0e0;
+
+  button {
+    min-width: 120px;
+    height: 44px;
+    padding: 0 24px;
+    font-size: 15px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      line-height: 20px;
+      margin: 0;
+    }
+
+    span {
+      line-height: 1;
+      padding: 0 4px;
+    }
+  }
+
+  .cancel-button {
+    margin-right: auto;
+  }
+
+  .confirm-button {
+    margin-left: auto;
+  }
+}
+
+// Previene scroll in qualsiasi situazione
+::ng-deep .mat-mdc-dialog-container {
+  overflow: hidden !important;
+  
+  .mat-mdc-dialog-surface {
+    overflow: hidden !important;
+  }
+}
+
+// Responsive per mobile
+@media (max-width: 600px) {
+  .confirm-dialog-container {
+    min-width: 280px;
+    max-width: 100%;
+    padding: 20px;
+  }
+
+  .dialog-title {
+    font-size: 20px;
+    padding: 0 0 12px 0 !important;
+    margin: 0 0 16px 0 !important;
+  }
+
+  .dialog-content {
+    padding: 16px 0 24px 0 !important;
+    
+    .dialog-message {
+      font-size: 14px;
+      padding: 4px 0;
+    }
+  }
+
+  .dialog-actions {
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 0 0 0 !important;
+
+    button {
+      width: 100%;
+      min-width: unset;
+      height: 42px;
+      padding: 0 20px;
+    }
+
+    .cancel-button,
+    .confirm-button {
+      margin: 0;
+    }
+  }
+}

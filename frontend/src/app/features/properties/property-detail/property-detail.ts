@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
@@ -33,7 +33,7 @@ import { PropertyLocationMap } from './property-location-map/property-location-m
   templateUrl: './property-detail.html',
   styleUrl: './property-detail.scss'
 })
-export class PropertyDetail implements OnInit, OnDestroy {
+export class PropertyDetail implements OnInit, AfterViewInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly propertyService = inject(PropertyService);
@@ -44,6 +44,8 @@ export class PropertyDetail implements OnInit, OnDestroy {
   isLoading = signal<boolean>(true);
   selectedImageIndex = signal<number>(0);
   error = signal<string | null>(null);
+
+  private filtersParam: string | null = null;
 
   ngOnInit(): void {
     this.route.params.pipe(
@@ -62,6 +64,17 @@ export class PropertyDetail implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  ngAfterViewInit(): void { 
+    const hasUrlParams = this.route.snapshot.queryParamMap.keys.length > 0;
+      
+    if (hasUrlParams) {
+      // Leggi i filtri dall'URL
+      this.filtersParam = this.route.snapshot.queryParamMap.get('filters');
+      this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true }); // Rimuovi i parametri dall'URL
+    }
+    
   }
 
   private async loadProperty(id: string): Promise<void> {
@@ -91,7 +104,7 @@ export class PropertyDetail implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate(['/search']);
+    this.router.navigate(['/search'], { queryParams: { filters: this.filtersParam } });
   }
 
   selectImage(index: number): void {

@@ -192,7 +192,7 @@ export class SearchService {
       name: response.name,
       filters: response.filters,
       isNotificationEnabled: response.isNotificationEnabled,
-      lastSearchedAt: response.lastSearchedAt ? new Date(response.lastSearchedAt) : undefined,
+      lastSearchedAt: new Date(response.lastSearchedAt),
       createdAt: new Date(response.createdAt),
       updatedAt: new Date(response.updatedAt)
     };

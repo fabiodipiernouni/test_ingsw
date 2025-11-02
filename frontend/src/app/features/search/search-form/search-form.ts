@@ -26,6 +26,8 @@ import {GetPropertiesCardsRequest} from '@core/services/property/dto/GetProperti
 import {GeoSearchPropertiesFilters} from '@core/services/property/dto/GeoSearchPropertiesFilters';
 import {environment} from '@src/environments/environment';
 import { SavedSearchFilters } from '@src/app/core/services/search/dto/SavedSearchFilters';
+import { AuthService } from '@src/app/core/services/auth/auth.service';
+import { inject, computed } from '@angular/core';
 
 // Tipizzazione Google Maps per Autocomplete classico
 interface GoogleMapsWindow extends Window {
@@ -87,8 +89,25 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
   private selectedPlace: PlaceDetails | null = null;
   private autocomplete: any = null;
 
+  // Getter pubblico per permettere l'accesso al selectedPlace da componenti parent
+  get selectedPlaceDetails(): PlaceDetails | null {
+    return this.selectedPlace;
+  }
+
   @Output() searchStarted = new EventEmitter<GetPropertiesCardsRequest>();
   @Output() mapSearchClicked = new EventEmitter<GetPropertiesCardsRequest>();
+
+  private authService = inject(AuthService);
+  
+  // Computed per verificare se mostrare il filtro agenzia
+  canFilterByAgency = computed(() => {
+    return this.authService.isAdmin() || this.authService.isOwner();
+  });
+
+  // Computed per verificare se mostrare il filtro "I miei immobili"
+  canFilterMyProperties = computed(() => {
+    return this.authService.isAgent();
+  });
 
   constructor(
     private fb: FormBuilder,
@@ -124,6 +143,8 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
       hasBalcony: [false],
       hasGarden: [false],
       hasParking: [false],
+      myAgencyOnly: [false], // Filtro per agenzia
+      myPropertiesOnly: [false], // Filtro per agente (solo i propri immobili)
       sortBy: ['createdAt'],
       sortOrder: ['DESC']
     });
@@ -297,7 +318,11 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
       filters: this.buildSearchFilter(),
       // Aggiungi geoFilters SOLO se c'è un place selezionato dall'autocomplete
       geoFilters: this.selectedPlace?.coordinates ? this.buildGeoSearchFilter() : undefined,
-      pagedRequest: this.buildPagedRequest()
+      pagedRequest: this.buildPagedRequest(),
+      // Aggiungi agencyId a livello di request se la checkbox è selezionata
+      agencyId: this.getAgencyIdIfNeeded(),
+      // Aggiungi agentId a livello di request se la checkbox è selezionata
+      agentId: this.getAgentIdIfNeeded()
     }
 
     console.log('🔍 [Search] Ricerca normale avviata:', {
@@ -403,6 +428,32 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /**
+   * Ottiene l'agencyId se la checkbox è selezionata e l'utente appartiene a un'agenzia
+   */
+  private getAgencyIdIfNeeded(): string | undefined {
+    const myAgencyOnly = this.searchForm.get('myAgencyOnly')?.value;
+    if (!myAgencyOnly) {
+      return undefined;
+    }
+
+    const user = this.authService.getCurrentUser();
+    return user?.agency?.id;
+  }
+
+  /**
+   * Ottiene l'agentId se la checkbox è selezionata e l'utente è un agente
+   */
+  private getAgentIdIfNeeded(): string | undefined {
+    const myPropertiesOnly = this.searchForm.get('myPropertiesOnly')?.value;
+    if (!myPropertiesOnly) {
+      return undefined;
+    }
+
+    const user = this.authService.getCurrentUser();
+    return user?.id;
+  }
+
+  /**
    * Reset del form e dello stato autocomplete
    */
   resetFilters(): void {
@@ -426,6 +477,8 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
       hasBalcony: false,
       hasGarden: false,
       hasParking: false,
+      myAgencyOnly: false,
+      myPropertiesOnly: false,
       sortBy: 'createdAt',
       sortOrder: 'DESC'
     });
@@ -482,6 +535,16 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
     }
     if (filters.hasParking) {
       formValues.hasParking = filters.hasParking;
+    }
+
+    // Imposta myAgencyOnly se c'è agencyId nei savedFilters (a livello di request) e corrisponde all'agenzia dell'utente corrente
+    if (savedFilters.agencyId && savedFilters.agencyId === this.authService.getCurrentUser()?.agency?.id) {
+      formValues.myAgencyOnly = true;
+    }
+
+    // Imposta myPropertiesOnly se c'è agentId nei savedFilters (a livello di request) e corrisponde all'utente corrente
+    if (savedFilters.agentId && savedFilters.agentId === this.authService.getCurrentUser()?.id) {
+      formValues.myPropertiesOnly = true;
     }
 
     // Se ci sono geoFilters con coordinate, imposta anche selectedPlace
@@ -542,7 +605,9 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
     const mapSearchPayload: GetPropertiesCardsRequest = {
       filters: this.buildSearchFilter(),
       geoFilters: this.selectedPlace?.coordinates ? this.buildGeoSearchFilter() : undefined,
-      pagedRequest: this.buildPagedRequest()
+      pagedRequest: this.buildPagedRequest(),
+      agencyId: this.getAgencyIdIfNeeded(),
+      agentId: this.getAgentIdIfNeeded()
     };
 
     console.log('📤 Emissione evento mapSearchClicked con payload:', mapSearchPayload);
@@ -579,83 +644,5 @@ export class SearchForm implements OnInit, AfterViewInit, OnDestroy {
   onLocationInputChange(): void {
     this.formSubmitted = false;
     this.cdr.detectChanges();
-  }
-
-  /**
-   * Genera un nome descrittivo per la ricerca salvata
-   * Usa il nome dell'autocomplete se disponibile, altrimenti genera un nome dai filtri
-   */
-  generateSearchName(): string {
-    const formValue = this.searchForm.value;
-    const parts: string[] = [];
-    
-    // Property type
-    if (formValue.propertyType) {
-      const typeMap: { [key: string]: string } = {
-        'APARTMENT': 'Appartamento',
-        'HOUSE': 'Casa',
-        'VILLA': 'Villa',
-        'OFFICE': 'Ufficio',
-        'COMMERCIAL': 'Commerciale',
-        'GARAGE': 'Garage',
-        'LAND': 'Terreno'
-      };
-      parts.push(typeMap[formValue.propertyType] || formValue.propertyType);
-    }
-    
-    // Listing type
-    if (formValue.listingType) {
-      const listingMap: { [key: string]: string } = {
-        'SALE': 'in vendita',
-        'RENT': 'in affitto'
-      };
-      parts.push(listingMap[formValue.listingType] || formValue.listingType);
-    }
-    
-    // Location - USA IL NOME DELL'AUTOCOMPLETE SE DISPONIBILE
-    if (this.selectedPlace?.formattedAddress) {
-      if (parts.length > 0) {
-        parts.push('a');
-      }
-      parts.push(this.selectedPlace.formattedAddress);
-    } else if (formValue.location) {
-      if (parts.length > 0) {
-        parts.push('a');
-      }
-      parts.push(formValue.location);
-    }
-    
-    // Price range
-    if (formValue.priceMin > 0 || formValue.priceMax < 1000000) {
-      if (formValue.priceMin > 0 && formValue.priceMax < 1000000) {
-        parts.push(`€${formValue.priceMin.toLocaleString('it-IT')}-${formValue.priceMax.toLocaleString('it-IT')}`);
-      } else if (formValue.priceMin > 0) {
-        parts.push(`da €${formValue.priceMin.toLocaleString('it-IT')}`);
-      } else if (formValue.priceMax < 1000000) {
-        parts.push(`fino a €${formValue.priceMax.toLocaleString('it-IT')}`);
-      }
-    }
-    
-    // Rooms/Bedrooms
-    if (formValue.bedrooms) {
-      parts.push(`${formValue.bedrooms}+ camere`);
-    } 
-    if (formValue.rooms) {
-      parts.push(`${formValue.rooms}+ locali`);
-    }
-    
-    // Geo filters (radius)
-    if (this.selectedPlace?.coordinates) {
-      parts.push(`raggio ${environment.geoSearchValues.defaultRadiusKm}km`);
-    }
-    
-    // If no specific filters, generate a generic name with timestamp
-    if (parts.length === 0) {
-      const date = new Date();
-      return `Ricerca del ${date.toLocaleDateString('it-IT')} ${date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`;
-    }
-    
-    const name = parts.join(' ').trim();
-    return name ? name.charAt(0).toUpperCase() + name.slice(1) : name;
   }
 }

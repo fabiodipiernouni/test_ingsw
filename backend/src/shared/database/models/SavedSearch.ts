@@ -60,6 +60,10 @@ export class SavedSearch extends Model {
   @Column({ type: DataType.UUID, field: 'agency_id' })
   agencyId?: string;
 
+  @AllowNull(true)
+  @Column({ type: DataType.UUID, field: 'agent_id' })
+  agentId?: string;
+
   // Price filters
   @AllowNull(true)
   @Column({ type: DataType.DECIMAL(10, 2), field: 'price_min' })
@@ -131,9 +135,9 @@ export class SavedSearch extends Model {
   isNotificationEnabled!: boolean;
 
   // Last searched date
-  @AllowNull(true)
+  @AllowNull(false)
   @Column({ type: DataType.DATE, field: 'last_searched_at' })
-  lastSearchedAt?: Date;
+  lastSearchedAt!: Date;
 
   // Instance methods
   
@@ -185,6 +189,7 @@ export class SavedSearch extends Model {
     // Aggiungi status e agencyId solo se presenti
     if (this.status !== null && this.status !== undefined) filters.status = this.status;
     if (this.agencyId !== null && this.agencyId !== undefined) filters.agencyId = this.agencyId;
+    if (this.agentId !== null && this.agentId !== undefined) filters.agentId = this.agentId;
 
     return filters;
   }

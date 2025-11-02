@@ -31,13 +31,9 @@ export class SearchService {
       filters: savedSearch.getFiltersObject(),
       isNotificationEnabled: savedSearch.isNotificationEnabled,
       createdAt: savedSearch.createdAt.toISOString(),
-      updatedAt: savedSearch.updatedAt.toISOString()
+      updatedAt: savedSearch.updatedAt.toISOString(),
+      lastSearchedAt: savedSearch.lastSearchedAt.toISOString()
     };
-
-    // Aggiungi lastSearchedAt solo se presente
-    if (savedSearch.lastSearchedAt) {
-      response.lastSearchedAt = savedSearch.lastSearchedAt.toISOString();
-    }
 
     return response;
   }
@@ -75,6 +71,7 @@ export class SearchService {
         listingType: searchData.filters.filters?.listingType,
         status: searchData.filters.status,
         agencyId: searchData.filters.agencyId,
+        agentId: searchData.filters.agentId,
         priceMin: searchData.filters.filters?.priceMin,
         priceMax: searchData.filters.filters?.priceMax,
         rooms: searchData.filters.filters?.rooms,

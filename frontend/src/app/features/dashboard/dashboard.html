@@ -10,6 +10,22 @@
 
     <div class="dashboard-grid">
 
+    <!-- Card per Gestione Agenzia (per owner e admin) -->
+    @if (canManageAgency()) {
+    <mat-card class="action-card">
+        <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #2196f3">business</mat-icon>
+        <mat-card-title>Gestisci Agenzia</mat-card-title>
+        <mat-card-subtitle>Visualizza e gestisci gli utenti della tua agenzia</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-actions>
+        <button mat-raised-button style="background-color: #2196f3; color: white;" routerLink="/admin/manage-agency">
+            Gestisci
+        </button>
+        </mat-card-actions>
+    </mat-card>
+    }
+
     <!-- Card per Creazione Admin (solo per owner) -->
     @if (canCreateAdmins()) {
     <mat-card class="action-card">
@@ -37,6 +53,22 @@
         <mat-card-actions>
         <button mat-raised-button style="background-color: #4caf50; color: white;" routerLink="/create-agent">
             Crea Agente
+        </button>
+        </mat-card-actions>
+    </mat-card>
+    }
+
+    <!-- Card per Messaggi Promozionali (per owner e admin) -->
+    @if (canSendPromotions()) {
+    <mat-card class="action-card">
+        <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #9c27b0">campaign</mat-icon>
+        <mat-card-title>Messaggi Promozionali</mat-card-title>
+        <mat-card-subtitle>Invia notifiche promozionali agli utenti</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-actions>
+        <button mat-raised-button style="background-color: #9c27b0; color: white;" routerLink="/send-promotional-message">
+            Invia Messaggio
         </button>
         </mat-card-actions>
     </mat-card>
@@ -70,13 +102,45 @@
         </mat-card-actions>
     </mat-card>
 
+    <!-- Card per I Miei Immobili (solo per agenti) -->
+    @if (canUploadProperties()) {
+    <mat-card class="action-card">
+        <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #4caf50">home_work</mat-icon>
+        <mat-card-title>I Miei Immobili</mat-card-title>
+        <mat-card-subtitle>Visualizza e gestisci i tuoi immobili</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-actions>
+        <button mat-raised-button style="background-color: #4caf50; color: white;" (click)="goToMyProperties()">
+            Visualizza
+        </button>
+        </mat-card-actions>
+    </mat-card>
+    }
+
+    <!-- Card per Immobili dell'Agenzia (per owner, admin e agenti) -->
+    @if (canViewAgencyProperties()) {
+    <mat-card class="action-card">
+        <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #2196f3">business</mat-icon>
+        <mat-card-title>Immobili dell'Agenzia</mat-card-title>
+        <mat-card-subtitle>Visualizza tutti gli immobili dell'agenzia</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-actions>
+        <button mat-raised-button style="background-color: #2196f3; color: white;" (click)="goToAgencyProperties()">
+            Visualizza
+        </button>
+        </mat-card-actions>
+    </mat-card>
+    }
+
     <!-- Card per Agenti (solo per agenti) -->
     @if (isAgent()) {
     <mat-card class="action-card">
         <mat-card-header>
         <mat-icon mat-card-avatar>home</mat-icon>
-        <mat-card-title>I Miei Immobili</mat-card-title>
-        <mat-card-subtitle>Gestisci le tue proprietà</mat-card-subtitle>
+        <mat-card-title>Carica Immobile</mat-card-title>
+        <mat-card-subtitle>Aggiungi un nuovo immobile</mat-card-subtitle>
         </mat-card-header>
         <mat-card-actions>
         <button mat-raised-button color="primary" routerLink="/properties/upload">
@@ -86,31 +150,6 @@
     </mat-card>
     }
 
-    <!-- Statistiche Utente -->
-    <mat-card class="stats-card">
-        <mat-card-header>
-        <mat-icon mat-card-avatar>analytics</mat-icon>
-        <mat-card-title>Le Tue Statistiche</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-        <div class="stats-grid">
-            <div class="stat-item">
-            <span class="stat-number">0</span>
-            <span class="stat-label">Ricerche Salvate</span>
-            </div>
-            <div class="stat-item">
-            <span class="stat-number">0</span>
-            <span class="stat-label">Proprietà Preferite</span>
-            </div>
-            @if (isAgent()) {
-            <div class="stat-item">
-            <span class="stat-number">0</span>
-            <span class="stat-label">Immobili Pubblicati</span>
-            </div>
-            }
-        </div>
-        </mat-card-content>
-    </mat-card>
     </div>
 
     <!-- Informazioni Account -->

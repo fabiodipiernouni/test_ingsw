@@ -18,8 +18,12 @@ export class GetGeoPropertiesCardsRequest {
   status?: PropertyStatus;
 
   @IsOptional()
-  @IsUUID('4', { message: 'Agency ID must be a valid UUID' })
+  @IsUUID('all', { message: 'Agency ID must be a valid UUID' })
   agencyId?: string;
+
+  @IsOptional()
+  @IsUUID('all', { message: 'Agent ID must be a valid UUID' })
+  agentId?: string;
 
   @IsString()
   sortBy: string;

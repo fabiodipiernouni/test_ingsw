@@ -5,18 +5,33 @@
   matBadgeColor="warn"
   matBadgeSize="small"
   [matTooltip]="unreadCount() > 0 ? unreadCount() + ' notifiche non lette' : 'Nessuna notifica'"
-  (click)="onNotificationClick()">
+  (click)="onNotificationClick()"
+  #menuTrigger="matMenuTrigger">
   <mat-icon>notifications</mat-icon>
 </button>
 
-<mat-menu #notificationMenu="matMenu" class="notification-menu">
+<mat-menu 
+  #notificationMenu="matMenu" 
+  class="notification-menu"
+  xPosition="before"
+  yPosition="below"
+  (closed)="onMenuClosed()">
   <div class="notification-header" (click)="$event.stopPropagation()">
     <h3>Notifiche</h3>
-    @if (unreadCount() > 0) {
-      <button mat-button color="primary" (click)="onMarkAllAsRead()">
-        Segna tutte come lette
+    <div class="header-actions">
+      <button 
+        mat-icon-button 
+        matTooltip="Aggiorna notifiche"
+        [disabled]="isLoading()"
+        (click)="refreshNotifications()">
+        <mat-icon>refresh</mat-icon>
       </button>
-    }
+      @if (unreadCount() > 0) {
+        <button mat-button color="primary" (click)="onMarkAllAsRead()">
+          Segna tutte come lette
+        </button>
+      }
+    </div>
   </div>
   
   <mat-divider></mat-divider>
@@ -67,6 +82,9 @@
               </div>
               <div class="notification-message">{{ notification.message }}</div>
               <div class="notification-date">{{ formatDate(notification.createdAt) }}</div>
+              @if (notification.agency) {
+                <div class="notification-agency">Da: {{ notification.agency.name }}</div>
+              }
             </div>
             
             <div class="notification-actions" (click)="$event.stopPropagation()">
@@ -89,6 +107,14 @@
                   <mat-icon>mark_email_read</mat-icon>
                 </button>
               }
+              <button 
+                mat-icon-button 
+                matTooltip="Elimina notifica"
+                [matTooltipPosition]="'left'"
+                class="action-button delete-button"
+                (click)="deleteNotification(notification, $event)">
+                <mat-icon>delete</mat-icon>
+              </button>
             </div>
           </div>
         </button>
