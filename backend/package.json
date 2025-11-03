@@ -16,7 +16,7 @@
     "dev:notification": "cross-env SERVICE=notification nodemon --exec ts-node src/services/notification-service/index.ts",
     "dev:email-worker": "cross-env SERVICE=email-worker nodemon --exec ts-node src/workers/email-worker/index.ts",
     "dev:property-matcher-worker": "cross-env SERVICE=property-matcher-worker nodemon --exec ts-node src/workers/property-matcher-worker/index.ts",
-    "dev:all": "concurrently \"npm run dev:auth\" \"npm run dev:property\" \"npm run dev:search\" \"npm run dev:notification\"",
+    "dev:all": "concurrently \"npm run dev:auth\" \"npm run dev:property:debug\" \"npm run dev:search\" \"npm run dev:notification\"",
     "create:agency": "ts-node scripts/create-agency.ts",
     "scrape:immobiliare": "ts-node scripts/scraper-immobiliare.ts",
     "seed:properties": "ts-node scripts/seed-properties.ts",

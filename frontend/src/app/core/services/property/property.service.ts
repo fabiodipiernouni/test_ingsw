@@ -14,6 +14,7 @@ import {GetPropertiesCardsRequest} from '@core/services/property/dto/GetProperti
 import {GeoPropertyCardDto} from '@core/services/property/dto/GeoPropertyCardDto';
 import {GetGeoPropertiesCardsRequest} from '@core/services/property/dto/GetGeoPropertiesCardsRequest';
 import {CreatePropertyRequest} from '@core/services/property/dto/CreatePropertyRequest';
+import {UpdatePropertyRequest} from '@core/services/property/dto/UpdatePropertyRequest';
 import {ImageMetadataDto} from '@core/services/property/dto/ImageMetadataDto';
 
 
@@ -156,11 +157,11 @@ export class PropertyService {
     );
   }
 
-  updateProperty(id: string, updates: Partial<PropertyModel>): Observable<PropertyModel> {
+  updateProperty(id: string, updates: UpdatePropertyRequest): Observable<PropertyModel> {
     this.isLoading.set(true);
 
-    // PUT /properties/{id}
-    return this.http.put<ApiResponse<PropertyModel>>(`${this.API_URL}/${id}`, updates).pipe(
+    // PATCH /properties/{id}
+    return this.http.patch<ApiResponse<PropertyModel>>(`${this.API_URL}/${id}`, updates).pipe(
       map(response => {
         if (response.success && response.data) {
           return response.data;

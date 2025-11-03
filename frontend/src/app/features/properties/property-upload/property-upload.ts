@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, OnDestroy, inject, signal, ElementRef, ViewChild } from '@angular/core';
+import { Component, AfterViewInit, OnDestroy, inject, signal, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -13,10 +13,9 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { PropertyService } from '@core/services/property/property.service';
-import { PropertyModel } from '@features/properties/models/PropertyModel';
 import { CreatePropertyRequest } from '@core/services/property/dto/CreatePropertyRequest';
 import { ImageMetadataDto } from '@core/services/property/dto/ImageMetadataDto';
-import { forkJoin, of } from 'rxjs';
+import { of } from 'rxjs';
 import { switchMap, tap, catchError } from 'rxjs/operators';
 
 // Tipizzazione Google Maps
@@ -664,12 +663,41 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
                 // Ritorna la proprietà comunque (è stata creata)
                 return of(null);
               }),
-              // Ritorna sempre la proprietà originale
-              switchMap(() => of(property))
+              // Step 3: Imposta lo status ad 'active'
+              switchMap(() => this.propertyService.updateProperty(property.id, { status: 'active' }).pipe(
+                tap(() => {
+                  console.log('Status della proprietà aggiornato ad active');
+                }),
+                catchError(error => {
+                  console.error('Errore durante l\'aggiornamento dello status:', error);
+                  this.snackBar.open('Proprietà e immagini caricate, ma errore nell\'attivazione', 'Chiudi', {
+                    duration: 4000,
+                    panelClass: ['warning-snackbar']
+                  });
+                  // Ritorna la proprietà comunque
+                  return of(property);
+                }),
+                // Ritorna sempre la proprietà originale con id
+                switchMap(() => of(property))
+              ))
             );
           }
-          // Nessuna immagine da caricare
-          return of(property);
+
+          // Nessuna immagine da caricare, imposta comunque lo status ad 'active'
+          return this.propertyService.updateProperty(property.id, { status: 'active' }).pipe(
+            tap(() => {
+              console.log('Status della proprietà aggiornato ad active (senza immagini)');
+            }),
+            catchError(error => {
+              console.error('Errore durante l\'aggiornamento dello status:', error);
+              this.snackBar.open('Proprietà creata, ma errore nell\'attivazione', 'Chiudi', {
+                duration: 4000,
+                panelClass: ['warning-snackbar']
+              });
+              return of(property);
+            }),
+            switchMap(() => of(property))
+          );
         })
       ).subscribe({
         next: (property) => {
@@ -678,7 +706,7 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
             panelClass: ['success-snackbar']
           });
           this.isLoading.set(false);
-          // Step 3: Navigate to /properties/{id}
+          // Step 4: Navigate to /properties/{id}
           this.router.navigate(['/properties', property.id]);
         },
         error: (error) => {

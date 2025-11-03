@@ -73,7 +73,7 @@ export class PropertyService {
         // Agent
         agentId: agentId,
         // Defaults
-        status: 'active',
+        status: propertyData.status,
         isActive: true,
         views: 0,
         favorites: 0,
