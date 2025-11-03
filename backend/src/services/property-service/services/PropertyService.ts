@@ -16,6 +16,7 @@ import { GeoPropertyCardDto } from '@property/dto/GeoPropertyCardDto';
 import { Mappers } from '@property/utils/mappers';
 import { PropertyImageMetadata } from '@property/dto/addPropertyImageEndpoint/PropertyImageMetadata';
 import { UpdatePropertyRequest } from '@property/dto/UpdatePropertyEndpoint/UpdatePropertyRequest';
+import { isInRange, isStringInLengthRange, calculateTotalPages } from '@shared/utils/helpers';
 
 // Custom error classes for better error handling
 class ValidationError extends Error {
@@ -140,12 +141,12 @@ export class PropertyService {
     const errors: string[] = [];
 
     // Validazione titolo
-    if (!data.title || data.title.length < 10 || data.title.length > 200) {
+    if (!data.title || !isStringInLengthRange(data.title, 10, 200)) {
       errors.push('Title must be between 10 and 200 characters');
     }
 
     // Validazione descrizione
-    if (!data.description || data.description.length < 50 || data.description.length > 2000) {
+    if (!data.description || !isStringInLengthRange(data.description, 50, 2000)) {
       errors.push('Description must be between 50 and 2000 characters');
     }
 
@@ -155,17 +156,17 @@ export class PropertyService {
     }
 
     // Validazione camere
-    if (data.bedrooms < 0 || data.bedrooms > 20) {
+    if (!isInRange(data.bedrooms, 0, 20)) {
       errors.push('Bedrooms must be between 0 and 20');
     }
 
     // Validazione bagni
-    if (data.bathrooms < 0 || data.bathrooms > 20) {
+    if (!isInRange(data.bathrooms, 0, 20)) {
       errors.push('Bathrooms must be between 0 and 20');
     }
 
     // Validazione area
-    if (!data.area || data.area < 1 || data.area > 10000) {
+    if (!data.area || !isInRange(data.area, 1, 10000)) {
       errors.push('Area must be between 1 and 10000 square meters');
     }
 
@@ -173,13 +174,13 @@ export class PropertyService {
     if (!data.address) {
       errors.push('Address is required');
     } else {
-      if (!data.address.street || data.address.street.length < 5) {
+      if (!data.address.street || !isStringInLengthRange(data.address.street, 5, 200)) {
         errors.push('Street must be at least 5 characters');
       }
-      if (!data.address.city || data.address.city.length < 2) {
+      if (!data.address.city || !isStringInLengthRange(data.address.city, 2, 100)) {
         errors.push('City must be at least 2 characters');
       }
-      if (!data.address.province || data.address.province.length < 2) {
+      if (!data.address.province || !isStringInLengthRange(data.address.province, 2, 100)) {
         errors.push('Province must be at least 2 characters');
       }
       if (!data.address.zipCode || !/^\d{5}$/.test(data.address.zipCode)) {
@@ -341,7 +342,7 @@ export class PropertyService {
         distinct: true
       });
 
-      const totalPages = Math.ceil(totalCount / options.limit);
+      const totalPages = calculateTotalPages(totalCount, options.limit);
 
       // Formatta le proprietà per la risposta (gestisce Promise.all per gli URL S3)
       const formattedProperties = await Promise.all(
@@ -428,7 +429,7 @@ export class PropertyService {
         distinct: true
       });
 
-      const totalPages = Math.ceil(totalCount / options.limit);
+      const totalPages = calculateTotalPages(totalCount, options.limit);
 
       // Formatta le proprietà per la risposta (gestisce Promise.all per gli URL S3)
       const formattedProperties = await Promise.all(

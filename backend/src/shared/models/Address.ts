@@ -11,19 +11,19 @@ export interface AddressInterface {
 export class Address implements AddressInterface {
   @IsString({ message: 'Street must be a string' })
   @IsNotEmpty({ message: 'Street is required and cannot be empty' })
-  @MinLength(1, { message: 'Street must be at least 1 character long' })
+  @MinLength(5, { message: 'Street must be at least 1 character long' })
   @MaxLength(200, { message: 'Street must not exceed 200 characters' })
   street: string;
 
   @IsString({ message: 'City must be a string' })
   @IsNotEmpty({ message: 'City is required and cannot be empty' })
-  @MinLength(1, { message: 'City must be at least 1 character long' })
+  @MinLength(2, { message: 'City must be at least 2 characters long' })
   @MaxLength(100, { message: 'City must not exceed 100 characters' })
   city: string;
 
   @IsString({ message: 'Province must be a string' })
   @IsNotEmpty({ message: 'Province is required and cannot be empty' })
-  @MinLength(1, { message: 'Province must be at least 1 character long' })
+  @MinLength(2, { message: 'Province must be at least 2 characters long' })
   @MaxLength(100, { message: 'Province must not exceed 100 characters' })
   province: string;
 
