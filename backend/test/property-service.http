@@ -46,6 +46,93 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyOWU5M
 GET http://localhost:3002/api/properties/ca06467f-4bc2-5ba2-865d-3f584d01dd9e
 
 ###############################################
+# AGGIORNAMENTO PARZIALE PROPRIETÀ (PATCH)
+###############################################
+
+### Aggiorna solo lo status (es. marca come venduta)
+PATCH http://localhost:3002/api/properties/{{property_id}}
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "status": "sold"
+}
+
+### Aggiorna solo il prezzo
+PATCH http://localhost:3002/api/properties/{{property_id}}
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "price": 280000
+}
+
+### Aggiorna più campi contemporaneamente
+PATCH http://localhost:3002/api/properties/{{property_id}}
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "status": "active",
+  "price": 250000,
+  "description": "Appartamento completamente ristrutturato con finiture di pregio",
+  "hasElevator": true,
+  "features": ["ristrutturato", "doppi vetri", "climatizzato", "portineria"]
+}
+
+### Aggiorna l'indirizzo completo
+PATCH http://localhost:3002/api/properties/{{property_id}}
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "address": {
+    "street": "Via Roma 123",
+    "city": "Milano",
+    "province": "MI",
+    "zipCode": "20121",
+    "country": "Italia"
+  }
+}
+
+### Aggiorna caratteristiche booleane
+PATCH http://localhost:3002/api/properties/{{property_id}}
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "hasElevator": true,
+  "hasBalcony": true,
+  "hasGarden": false,
+  "hasParking": true
+}
+
+### Test errore: proprietà non trovata
+PATCH http://localhost:3002/api/properties/00000000-0000-0000-0000-000000000000
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "status": "sold"
+}
+
+### Test errore: status non valido
+PATCH http://localhost:3002/api/properties/{{property_id}}
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "status": "invalid_status"
+}
+
+### Test errore: nessun campo da aggiornare
+PATCH http://localhost:3002/api/properties/{{property_id}}
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{}
+
+###############################################
 # UPLOAD IMMAGINI PROPRIETÀ
 ###############################################
 # IMPORTANTE: Prima di usare queste richieste:

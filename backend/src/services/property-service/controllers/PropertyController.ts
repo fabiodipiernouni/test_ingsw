@@ -7,6 +7,8 @@ import { CreatePropertyRequest } from '@property/dto/CreatePropertyRequestEndpoi
 import { GetPropertiesCardsRequest } from '@property/dto/GetPropertiesCardsRequest';
 import { GetGeoPropertiesCardsRequest } from '@property/dto/GetGeoPropertiesCardsRequest';
 import { AddPropertyImageRequest } from '@property/dto/addPropertyImageEndpoint/AddPropertyImageRequest';
+import { UpdatePropertyRequest } from '@property/dto/UpdatePropertyEndpoint/UpdatePropertyRequest';
+import { Property } from '@shared/database/models/Property';
 
 export class PropertyController {
   /**
@@ -220,6 +222,62 @@ export class PropertyController {
       }
 
       setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to upload images', 500);
+    }
+  }
+
+  /**
+   * Aggiorna parzialmente una proprietà
+   * PATCH /properties/:propertyId
+   *
+   * Solo i campi presenti nel body vengono aggiornati.
+   * Il middleware validatePropertyUpdatePermissions garantisce che:
+   * - La proprietà esista
+   * - L'utente sia il proprietario (agentId)
+   * - La proprietà sia pre-caricata in req.property
+   */
+  async updateProperty(req: AuthenticatedRequest, res: Response, _next: NextFunction): Promise<void> {
+    try {
+      // Il middleware ha già pre-caricato la proprietà e verificato i permessi
+      const property = (req as any).property as Property;
+      const updateData: UpdatePropertyRequest = req.body; // Già validato dal middleware
+
+      logger.info(`Property update request from agent ${req.user!.id}`, {
+        propertyId: property.id,
+        fieldsToUpdate: Object.keys(req.body),
+        agentId: req.user!.id
+      });
+
+      // Aggiorna la proprietà tramite il service
+      const result = await propertyService.updateProperty(property.id, updateData, req.user!.id);
+
+      setResponseAsSuccess(
+        res,
+        result.data,
+        result.message,
+        200
+      );
+
+    } catch (error) {
+      logger.error('Error in updateProperty controller:', error);
+
+      const err = error as Error & { name?: string; details?: { errors?: string[] }; message: string };
+
+      if (err.name === 'NotFoundError') {
+        setResponseAsNotFound(res, err.message);
+        return;
+      }
+
+      if (err.name === 'ValidationError') {
+        setResponseAsValidationError(res, err.details?.errors || [err.message]);
+        return;
+      }
+
+      if (err.name === 'BadRequestError') {
+        setResponseAsError(res, 'BAD_REQUEST', err.message, 400);
+        return;
+      }
+
+      setResponseAsError(res, 'INTERNAL_SERVER_ERROR', 'Failed to update property', 500);
     }
   }
 }

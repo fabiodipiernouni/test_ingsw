@@ -5,6 +5,8 @@ import { PropertiesMiddlewareValidation } from '../middleware/validation';
 import { uploadToMemory, handleMulterError } from '@shared/middleware/upload';
 import { validateImageFiles, validatePropertyImageUploadPermissions } from '@property/middleware/validateImageUpload';
 import { validatePropertyImageMetadata } from '@property/middleware/validatePropertyImageMetadata';
+import { validatePropertyUpdatePermissions } from '@property/middleware/validatePropertyUpdatePermissions';
+import { validatePropertyUpdate } from '@property/middleware/validatePropertyUpdate';
 
 const router = express.Router();
 
@@ -155,69 +157,6 @@ router.post('/geocards', optionalAuth, PropertiesMiddlewareValidation.validatePr
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post('/cards/by-ids', optionalAuth, propertyController.getPropertiesByIdList.bind(propertyController));
-/**
- * @swagger
- * /properties:
- *   get:
- *     summary: Lista proprietà con paginazione
- *     description: |
- *       Restituisce una lista paginata di proprietà. Il comportamento varia in base al ruolo dell'utente:
- *       - **Utenti non autenticati/Clienti**: Solo proprietà pubbliche e attive
- *       - **Agenti**: Solo le proprie proprietà (tutte)
- *       - **Admin**: Proprietà degli agenti della propria agenzia
- *     tags:
- *       - Properties
- *     security:
- *       - bearerAuth: []
- *       - {}
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           minimum: 1
- *           default: 1
- *         description: Numero di pagina
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           minimum: 1
- *           maximum: 100
- *           default: 20
- *         description: Numero di elementi per pagina (max 100)
- *       - in: query
- *         name: status
- *         schema:
- *           type: string
- *           enum: [active, pending, sold, rented, withdrawn]
- *         description: Filtra per stato (solo per agenti e admin)
- *       - in: query
- *         name: agentId
- *         schema:
- *           type: string
- *         description: Filtra per agente specifico (solo per admin)
- *     responses:
- *       200:
- *         description: Lista delle proprietà recuperata con successo
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/PropertiesListResponse'
- *       403:
- *         description: Accesso negato (ruolo non valido)
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       500:
- *         description: Errore interno del server
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
-//router.get('/', optionalAuth, propertyController.getProperties.bind(propertyController));
 
 /**
  * @swagger
@@ -268,6 +207,155 @@ router.post('/cards/by-ids', optionalAuth, propertyController.getPropertiesByIdL
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post('/', authenticateToken, PropertiesMiddlewareValidation.validatePropertyCreate, propertyController.createProperty.bind(propertyController));
+
+/**
+ * @swagger
+ * /properties/{propertyId}:
+ *   patch:
+ *     summary: Aggiorna parzialmente una proprietà
+ *     description: |
+ *       Aggiorna uno o più campi di una proprietà esistente.
+ *       Solo i campi presenti nel body vengono modificati, gli altri rimangono invariati.
+ *
+ *       **Flusso di validazione (4 middleware):**
+ *       1. `authenticateToken` - Verifica JWT e popola req.user
+ *       2. `validatePropertyUpdatePermissions` - Verifica che la proprietà esista e appartenga all'utente
+ *       3. `validatePropertyUpdate` - Valida i campi presenti nel body con class-validator
+ *       4. Controller - Business logic (aggiornamento DB)
+ *
+ *       **Casi d'uso comuni:**
+ *       - Cambio status: `{"status": "sold"}` - Segna la proprietà come venduta
+ *       - Aggiornamento prezzo: `{"price": 280000}` - Modifica solo il prezzo
+ *       - Aggiornamento multiplo: `{"status": "active", "price": 250000, "hasElevator": true}`
+ *       - Cambio indirizzo: `{"address": {...}}` - Aggiorna indirizzo completo
+ *
+ *       **Validazioni:**
+ *       - Solo il proprietario (agentId) può modificare la proprietà
+ *       - Campi validati secondo le stesse regole della creazione
+ *       - Se l'indirizzo cambia, la location geografica viene ricalcolata automaticamente
+ *       - Almeno un campo deve essere presente nel body
+ *     tags:
+ *       - Properties
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: propertyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID univoco della proprietà (UUID v4)
+ *         example: "550e8400-e29b-41d4-a716-446655440000"
+ *     requestBody:
+ *       required: true
+ *       description: Campi da aggiornare (tutti opzionali, solo quelli presenti vengono modificati)
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdatePropertyRequest'
+ *           examples:
+ *             updateStatus:
+ *               summary: Cambia solo lo status
+ *               value:
+ *                 status: "sold"
+ *             updatePrice:
+ *               summary: Aggiorna solo il prezzo
+ *               value:
+ *                 price: 280000
+ *             updateMultiple:
+ *               summary: Aggiorna più campi contemporaneamente
+ *               value:
+ *                 status: "active"
+ *                 price: 250000
+ *                 description: "Appartamento completamente ristrutturato"
+ *                 hasElevator: true
+ *                 features: ["ristrutturato", "doppi vetri", "climatizzato"]
+ *             updateAddress:
+ *               summary: Aggiorna l'indirizzo completo
+ *               value:
+ *                 address:
+ *                   street: "Via Roma 123"
+ *                   city: "Milano"
+ *                   province: "MI"
+ *                   zipCode: "20121"
+ *                   country: "Italy"
+ *     responses:
+ *       200:
+ *         description: Proprietà aggiornata con successo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Property updated successfully. 3 field(s) modified."
+ *                 data:
+ *                   $ref: '#/components/schemas/PropertyModel'
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *       400:
+ *         description: Dati di input non validi
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationErrorResponse'
+ *             examples:
+ *               invalidStatus:
+ *                 summary: Status non valido
+ *                 value:
+ *                   success: false
+ *                   error: "VALIDATION_ERROR"
+ *                   details:
+ *                     - "Status must be one of: active, pending, sold, rented, withdrawn"
+ *               noFields:
+ *                 summary: Nessun campo da aggiornare
+ *                 value:
+ *                   success: false
+ *                   error: "VALIDATION_ERROR"
+ *                   details:
+ *                     - "At least one field must be provided for update"
+ *       401:
+ *         description: Non autenticato
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Non autorizzato (la proprietà non appartiene all'utente)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error: "FORBIDDEN"
+ *               message: "You do not have permission to update this property"
+ *       404:
+ *         description: Proprietà non trovata
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Errore interno del server
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.patch(
+  '/:propertyId',
+  authenticateToken,
+  validatePropertyUpdatePermissions,
+  validatePropertyUpdate,
+  propertyController.updateProperty.bind(propertyController)
+);
 
 /**
  * @swagger

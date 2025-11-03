@@ -15,6 +15,7 @@ import { GeoSearchPropertiesFilters } from '@property/dto/GeoSearchPropertiesFil
 import { GeoPropertyCardDto } from '@property/dto/GeoPropertyCardDto';
 import { Mappers } from '@property/utils/mappers';
 import { PropertyImageMetadata } from '@property/dto/addPropertyImageEndpoint/PropertyImageMetadata';
+import { UpdatePropertyRequest } from '@property/dto/UpdatePropertyEndpoint/UpdatePropertyRequest';
 
 // Custom error classes for better error handling
 class ValidationError extends Error {
@@ -801,6 +802,160 @@ export class PropertyService {
       return formattedProperties;
     } catch (error) {
       logger.error('Error getting properties:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Aggiorna parzialmente una proprietà
+   * Solo i campi presenti in updateData vengono modificati
+   *
+   * @param propertyId - ID della proprietà da aggiornare
+   * @param updateData - Campi da aggiornare (solo quelli presenti)
+   * @param agentId - ID dell'agente che richiede l'aggiornamento
+   * @returns Proprietà aggiornata con messaggio di successo
+   */
+  async updateProperty(
+    propertyId: string,
+    updateData: UpdatePropertyRequest,
+    agentId: string
+  ): Promise<{ data: PropertyModel; message: string }> {
+    try {
+      logger.info(`Updating property ${propertyId} for agent ${agentId}`, {
+        fieldsToUpdate: Object.keys(updateData)
+      });
+
+      // Recupera la proprietà con relazioni
+      const property = await Property.findByPk(propertyId, {
+        include: [
+          {
+            association: 'images',
+            attributes: [
+              'id', 's3KeyOriginal', 's3KeySmall', 's3KeyMedium', 's3KeyLarge',
+              'bucketName', 'fileName', 'contentType', 'fileSize', 'width', 'height',
+              'caption', 'alt', 'isPrimary', 'order', 'uploadDate'
+            ]
+          },
+          {
+            association: 'agent',
+            attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'agencyId']
+          }
+        ]
+      });
+
+      if (!property) {
+        throw new NotFoundError('Property not found');
+      }
+
+      // Verifica ownership (doppio check, già fatto dal middleware)
+      if (property.agentId !== agentId) {
+        throw new BadRequestError('You do not have permission to update this property');
+      }
+
+      // Applica gli aggiornamenti (solo campi presenti in updateData)
+      // Object.assign ignora automaticamente i campi undefined
+      const fieldsUpdated: string[] = [];
+
+      for (const [key, value] of Object.entries(updateData)) {
+        if (value !== undefined) {
+          // Gestione speciale per oggetti nested (address, location)
+          if (key === 'address' && value) {
+            property.street = value.street;
+            property.city = value.city;
+            property.province = value.province;
+            property.zipCode = value.zipCode;
+            property.country = value.country;
+            fieldsUpdated.push('address');
+          } else if (key === 'location' && value) {
+            // Valida GeoJSON Point
+            if (!isValidGeoJSONPoint(value)) {
+              throw new ValidationError('Invalid GeoJSON Point format');
+            }
+            (property as any)[key] = value;
+            fieldsUpdated.push(key);
+          } else {
+            // Campi normali
+            (property as any)[key] = value;
+            fieldsUpdated.push(key);
+          }
+        }
+      }
+
+      // Salva le modifiche
+      await property.save();
+
+      logger.info(`Property ${propertyId} updated successfully`, {
+        fieldsUpdated,
+        agentId
+      });
+
+      // Formatta la risposta
+      const propertyModel: PropertyModel = {
+        id: property.id,
+        title: property.title,
+        description: property.description,
+        price: property.price,
+        propertyType: property.propertyType,
+        listingType: property.listingType,
+        status: property.status,
+        rooms: property.rooms,
+        bedrooms: property.bedrooms,
+        bathrooms: property.bathrooms,
+        area: property.area,
+        floor: property.floor || undefined,
+        energyClass: property.energyClass || undefined,
+        hasElevator: property.hasElevator,
+        hasBalcony: property.hasBalcony,
+        hasGarden: property.hasGarden,
+        hasParking: property.hasParking,
+        features: property.features || undefined,
+        address: {
+          street: property.street,
+          city: property.city,
+          province: property.province,
+          zipCode: property.zipCode,
+          country: property.country
+        },
+        location: property.location,
+        images: property.images ? await Promise.all(
+          property.images.map(async (image) => ({
+            id: image.id,
+            propertyId: image.propertyId,
+            s3KeyOriginal: image.s3KeyOriginal,
+            s3KeySmall: image.s3KeySmall,
+            s3KeyMedium: image.s3KeyMedium,
+            s3KeyLarge: image.s3KeyLarge,
+            urlOriginal: await imageService.getSignedUrl(image.s3KeyOriginal),
+            urlSmall: image.s3KeySmall ? await imageService.getSignedUrl(image.s3KeySmall) : undefined,
+            urlMedium: image.s3KeyMedium ? await imageService.getSignedUrl(image.s3KeyMedium) : undefined,
+            urlLarge: image.s3KeyLarge ? await imageService.getSignedUrl(image.s3KeyLarge) : undefined,
+            bucketName: image.bucketName,
+            fileName: image.fileName,
+            contentType: image.contentType,
+            fileSize: image.fileSize,
+            width: image.width,
+            height: image.height,
+            caption: image.caption || undefined,
+            alt: image.alt || undefined,
+            isPrimary: image.isPrimary,
+            order: image.order,
+            uploadDate: image.uploadDate
+          }))
+        ) : [],
+        agentId: property.agentId,
+        views: property.views,
+        favorites: property.favorites,
+        createdAt: property.createdAt,
+        updatedAt: property.updatedAt
+      };
+
+      return {
+        data: propertyModel,
+        message: `Property updated successfully. ${fieldsUpdated.length} field(s) modified.`
+      };
+
+    } catch (error) {
+      logger.error('Error updating property:', error);
       throw error;
     }
   }

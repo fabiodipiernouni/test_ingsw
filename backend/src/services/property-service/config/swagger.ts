@@ -120,6 +120,124 @@ const options: swaggerJsdoc.Options = {
           }
         },
 
+        UpdatePropertyRequest: {
+          type: 'object',
+          description: 'DTO per l\'aggiornamento parziale di una proprietà. Tutti i campi sono opzionali - solo i campi presenti nel body vengono modificati.',
+          properties: {
+            title: {
+              type: 'string',
+              maxLength: 200,
+              description: 'Titolo della proprietà',
+              example: 'Appartamento luminoso in centro'
+            },
+            description: {
+              type: 'string',
+              maxLength: 4000,
+              description: 'Descrizione dettagliata',
+              example: 'Splendido appartamento completamente ristrutturato...'
+            },
+            price: {
+              type: 'number',
+              minimum: 0,
+              maximum: 99999999.99,
+              description: 'Prezzo (max 2 decimali)',
+              example: 280000
+            },
+            propertyType: {
+              type: 'string',
+              enum: ['apartment', 'villa', 'house', 'loft', 'office', 'commercial', 'land'],
+              description: 'Tipo di proprietà',
+              example: 'apartment'
+            },
+            listingType: {
+              type: 'string',
+              enum: ['sale', 'rent'],
+              description: 'Tipo di annuncio',
+              example: 'sale'
+            },
+            status: {
+              type: 'string',
+              enum: ['active', 'pending', 'sold', 'rented', 'withdrawn'],
+              description: 'Status della proprietà',
+              example: 'sold'
+            },
+            rooms: {
+              type: 'integer',
+              minimum: 0,
+              description: 'Numero di stanze',
+              example: 5
+            },
+            bedrooms: {
+              type: 'integer',
+              minimum: 0,
+              description: 'Numero di camere da letto',
+              example: 3
+            },
+            bathrooms: {
+              type: 'integer',
+              minimum: 0,
+              description: 'Numero di bagni',
+              example: 2
+            },
+            area: {
+              type: 'number',
+              minimum: 0,
+              maximum: 999999.99,
+              description: 'Area in mq (max 2 decimali)',
+              example: 135.50
+            },
+            floor: {
+              type: 'string',
+              maxLength: 50,
+              description: 'Piano',
+              example: '3'
+            },
+            energyClass: {
+              type: 'string',
+              enum: ['A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G'],
+              description: 'Classe energetica',
+              example: 'A'
+            },
+            hasElevator: {
+              type: 'boolean',
+              description: 'Presenza ascensore',
+              example: true
+            },
+            hasBalcony: {
+              type: 'boolean',
+              description: 'Presenza balcone',
+              example: true
+            },
+            hasGarden: {
+              type: 'boolean',
+              description: 'Presenza giardino',
+              example: false
+            },
+            hasParking: {
+              type: 'boolean',
+              description: 'Presenza parcheggio',
+              example: true
+            },
+            features: {
+              type: 'array',
+              items: {
+                type: 'string',
+                maxLength: 100
+              },
+              description: 'Caratteristiche aggiuntive',
+              example: ['ristrutturato', 'doppi vetri', 'climatizzato']
+            },
+            address: {
+              $ref: '#/components/schemas/Address',
+              description: 'Indirizzo completo (se modificato, location viene ricalcolata automaticamente)'
+            },
+            location: {
+              $ref: '#/components/schemas/GeoJSONPoint',
+              description: 'Posizione geografica'
+            }
+          }
+        },
+
         GetPropertiesCardsRequest: {
           type: 'object',
           properties: {
@@ -146,7 +264,7 @@ const options: swaggerJsdoc.Options = {
               type: 'string',
               format: 'uuid',
               description: 'Filtra per agente specifico'
-            },
+            }
           }
         },
 
@@ -751,6 +869,27 @@ const options: swaggerJsdoc.Options = {
             message: {
               type: 'string',
               example: 'Property created successfully'
+            },
+            timestamp: {
+              type: 'string',
+              format: 'date-time'
+            }
+          }
+        },
+
+        UpdatePropertyResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true
+            },
+            data: {
+              $ref: '#/components/schemas/PropertyModel'
+            },
+            message: {
+              type: 'string',
+              example: 'Property updated successfully. 3 field(s) modified.'
             },
             timestamp: {
               type: 'string',
