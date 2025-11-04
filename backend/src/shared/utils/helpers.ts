@@ -196,3 +196,70 @@ export const generateRandomString = (length: number = 32): string => {
   }
   return result;
 };
+
+/**
+ * Verifica se un valore è compreso in un intervallo specificato (estremi inclusi)
+ * 
+ * @param value - Il valore da verificare
+ * @param min - Valore minimo (incluso)
+ * @param max - Valore massimo (incluso)
+ * @returns true se il valore è compreso tra min e max (inclusi), false altrimenti
+ * @throws Error se min > max (intervallo non valido)
+ */
+export function isInRange(value: number, min: number, max: number): boolean {
+  // Se min > max, il range è invalido
+  if (min > max) {
+    throw new Error('Invalid range: min cannot be greater than max');
+  }
+
+  return value >= min && value <= max;
+}
+
+/**
+ * Verifica se la lunghezza di una stringa è compresa in un intervallo specificato (estremi inclusi)
+ *
+ * @param text - La stringa da verificare
+ * @param minLength - Lunghezza minima (inclusa, deve essere un intero non negativo)
+ * @param maxLength - Lunghezza massima (inclusa, deve essere un intero non negativo)
+ * @returns true se la lunghezza della stringa è compresa tra minLength e maxLength (inclusi), false altrimenti
+ * @throws Error se minLength o maxLength sono negativi o se minLength > maxLength
+ */
+export function isStringInLengthRange(text: string, minLength: number, maxLength: number): boolean {
+  // Validazione: minLength e maxLength devono essere numeri interi non negativi
+  if (!Number.isInteger(minLength) || minLength < 0) {
+    throw new Error('minLength must be a non-negative integer');
+  }
+  if (!Number.isInteger(maxLength) || maxLength < 0) {
+    throw new Error('maxLength must be a non-negative integer');
+  }
+
+  // Se minLength > maxLength, il range è invalido
+  if (minLength > maxLength) {
+    throw new Error('Invalid range: minLength cannot be greater than maxLength');
+  }
+
+  const length = text.length;
+  return length >= minLength && length <= maxLength;
+}
+
+/**
+ * Calcola il numero totale di pagine per la paginazione
+ * 
+ * @param totalCount - Numero totale di elementi
+ * @param limit - Numero di elementi per pagina
+ * @returns Numero di pagine necessarie
+ * @throws Error se i parametri non sono validi
+ */
+export function calculateTotalPages(totalCount: number, limit: number): number {
+  // Validazione: totalCount deve essere un intero non negativo
+  if (!Number.isInteger(totalCount) || totalCount < 0) {
+    throw new Error('totalCount must be a non-negative integer');
+  }
+
+  // Validazione: limit deve essere un intero positivo
+  if (!Number.isInteger(limit) || limit <= 0) {
+    throw new Error('limit must be a positive integer');
+  }
+
+  return Math.ceil(totalCount / limit);
+}

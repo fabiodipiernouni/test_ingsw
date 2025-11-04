@@ -52,8 +52,24 @@ export function isValidGeoJSONPoint(obj: any): obj is GeoJSONPoint {
 
 /**
  * Helper per creare un GeoJSON Point da coordinate separate
+ * Valida che le coordinate siano valide secondo lo standard GeoJSON
+ * 
+ * @param longitude - Longitudine (deve essere tra -180 e 180)
+ * @param latitude - Latitudine (deve essere tra -90 e 90)
+ * @returns GeoJSONPoint object
+ * @throws Error se le coordinate non sono valide
  */
 export function createGeoJSONPoint(longitude: number, latitude: number): GeoJSONPoint {
+  // Validazione longitude: deve essere tra -180 e 180
+  if (longitude < -180 || longitude > 180) {
+    throw new Error('Longitude must be between -180 and 180');
+  }
+
+  // Validazione latitude: deve essere tra -90 e 90
+  if (latitude < -90 || latitude > 90) {
+    throw new Error('Latitude must be between -90 and 90');
+  }
+
   return {
     type: 'Point',
     coordinates: [longitude, latitude]

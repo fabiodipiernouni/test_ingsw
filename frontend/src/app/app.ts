@@ -21,14 +21,10 @@ import { AuthService } from '@core/services/auth/auth.service';
 })
 export class App implements OnInit {
   private authService = inject(AuthService);
-  // private notificationService = inject(NotificationService); //TODO
   private router = inject(Router);
   private titleService = inject(Title);
 
   ngOnInit(): void {
-
-    // Initialize notifications
-    this.initializeNotifications();
 
     // Handle route changes for analytics/title updates
     this.router.events.pipe(
@@ -42,17 +38,6 @@ export class App implements OnInit {
 
     });
 
-  }
-
-  private initializeNotifications(): void {
-    // TODO
-    // Load notifications if user is authenticated
-    this.authService.currentUser$.subscribe(user => {
-      if (user) {
-        // Load user notifications
-        //this.notificationService.getNotifications().subscribe(); //TODO
-      }
-    });
   }
 
   private updatePageTitle(url: string): void {

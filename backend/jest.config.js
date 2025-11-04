@@ -15,7 +15,7 @@ module.exports = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@shared/(.*)$': '<rootDir>/src/shared/$1',
     '^@auth/(.*)$': '<rootDir>/src/services/auth-service/$1',
     '^@property/(.*)$': '<rootDir>/src/services/property-service/$1',
@@ -23,5 +23,6 @@ module.exports = {
     '^@user/(.*)$': '<rootDir>/src/services/user-service/$1',
     '^@notification/(.*)$': '<rootDir>/src/services/notification-service/$1',
     '^@generated/(.*)$': '<rootDir>/src/services/generated/$1'
-  }
+  },
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js']
 };

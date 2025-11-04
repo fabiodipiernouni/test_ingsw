@@ -8,6 +8,7 @@ import { SendPromotionalMessageDto } from '@notification/dto/SendPromotionalMess
 import logger from '@shared/utils/logger';
 import { GetNotificationsRequest } from '../dto/GetNotificationsRequest';
 import { Op, Sequelize } from 'sequelize';
+import { calculateTotalPages } from '@shared/utils/helpers';
 
 class NotFoundError extends Error {
   constructor(message: string) {
@@ -101,7 +102,7 @@ export class NotificationService {
             // Map to DTOs
             const data: NotificationDto[] = notifications.map(notification => this.convertNotificationToDto(notification));
 
-            const totalPages = Math.ceil(totalCount / limit);
+            const totalPages = calculateTotalPages(totalCount, limit);
 
             const result: PagedResult<NotificationDto> = {
                 data,

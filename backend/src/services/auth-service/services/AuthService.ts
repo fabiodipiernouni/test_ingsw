@@ -47,6 +47,7 @@ import { NotificationPreferencesResponse } from '../dto/NotificationPreferencesR
 import { PagedResult } from '@shared/dto/pagedResult';
 import { GetAgentsRequest } from '@auth/dto/GetAgentsRequest';
 import { GetAdminsRequest } from '@auth/dto/GetAdminsRequest';
+import { calculateTotalPages } from '@shared/utils/helpers';
 
 // Cognito Client
 const cognitoClient = new CognitoIdentityProviderClient({
@@ -1248,7 +1249,7 @@ export class AuthService {
 
     logger.info(`Retrieved ${agents.length} agents for agency ${user.agencyId} (page ${page})`);
 
-    const totalPages = Math.ceil(totalCount / limit);
+    const totalPages = calculateTotalPages(totalCount, limit);
 
     return {
       data: agents.map(agent => ({
@@ -1330,7 +1331,7 @@ export class AuthService {
 
     logger.info(`Retrieved ${admins.length} admins for agency ${user.agencyId} (page ${page})`);
 
-    const totalPages = Math.ceil(totalCount / limit);
+    const totalPages = calculateTotalPages(totalCount, limit);
 
     return {
       data: admins.map(admin => ({
