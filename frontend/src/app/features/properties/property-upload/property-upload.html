@@ -87,6 +87,15 @@
 
               <div class="form-row">
                 <mat-form-field appearance="outline">
+                  <mat-label>Numero Locali</mat-label>
+                  <input matInput
+                         type="number"
+                         formControlName="rooms"
+                         min="1">
+                  <mat-error>{{ getErrorMessage(detailsForm, 'rooms') }}</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
                   <mat-label>Camere da Letto</mat-label>
                   <input matInput
                          type="number"
@@ -103,7 +112,9 @@
                          min="1">
                   <mat-error>{{ getErrorMessage(detailsForm, 'bathrooms') }}</mat-error>
                 </mat-form-field>
+              </div>
 
+              <div class="form-row">
                 <mat-form-field appearance="outline">
                   <mat-label>Superficie (m²)</mat-label>
                   <input matInput
@@ -280,13 +291,21 @@
                   </mat-form-field>
 
                   @if (currentLocation()) {
-                    <div class="location-info">
-                      <mat-icon>check_circle</mat-icon>
+                    <div class="location-info" [class.incomplete]="!isAddressComplete()">
+                      <mat-icon [class.warning]="!isAddressComplete()">
+                        {{ isAddressComplete() ? 'check_circle' : 'warning' }}
+                      </mat-icon>
                       <div class="location-details">
-                        <strong>Indirizzo selezionato:</strong>
-                        <p>{{ addressForm.get('street')?.value || '' }}</p>
-                        <p>{{ addressForm.get('city')?.value || '' }}, {{ addressForm.get('province')?.value || '' }} {{ addressForm.get('zipCode')?.value || '' }}</p>
+                        <strong>{{ isAddressComplete() ? 'Indirizzo selezionato:' : 'Indirizzo approssimativo:' }}</strong>
+                        <p>{{ addressForm.get('street')?.value || 'Via non specificata' }}</p>
+                        <p>{{ addressForm.get('city')?.value || '' }}{{ addressForm.get('province')?.value ? ', ' + addressForm.get('province')?.value : '' }}{{ addressForm.get('zipCode')?.value ? ' ' + addressForm.get('zipCode')?.value : ' (CAP mancante)' }}</p>
                         <small>Coordinate: {{ currentLocation()!.lat.toFixed(6) }}, {{ currentLocation()!.lng.toFixed(6) }}</small>
+                        @if (!isAddressComplete()) {
+                          <small class="warning-text">
+                            <mat-icon class="small-icon">info</mat-icon>
+                            Clicca su un punto preciso della mappa per ottenere il CAP
+                          </small>
+                        }
                       </div>
                     </div>
                   }
@@ -320,7 +339,7 @@
             <button mat-raised-button
                     color="primary"
                     (click)="onSubmit()"
-                    [disabled]="isLoading() || !basicInfoForm.valid || !detailsForm.valid || !addressForm.valid || !currentLocation()">
+                    [disabled]="isLoading() || !basicInfoForm.valid || !detailsForm.valid || !addressForm.valid || !currentLocation() || !isAddressComplete()">
               @if (isLoading()) {
                 <ng-container>
                   <mat-icon class="spin">refresh</mat-icon>

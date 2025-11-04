@@ -83,6 +83,7 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
   geocodingError = signal<string | null>(null);
   addressSelectionError = signal<string | null>(null);
   lastValidAddress = signal<string>(''); // Ultimo indirizzo valido selezionato
+  isAddressComplete = signal(false); // True solo se l'indirizzo ha tutti i campi incluso CAP
 
   private map: any;
   private marker: any;
@@ -99,6 +100,7 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
 
   // Step 2: Property Details
   detailsForm: FormGroup = this.fb.group({
+    rooms: [null, [Validators.required, Validators.min(1)]],
     bedrooms: [null, [Validators.required, Validators.min(1)]],
     bathrooms: [null, [Validators.required, Validators.min(1)]],
     area: [null, [Validators.required, Validators.min(1)]],
@@ -145,10 +147,14 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
         file,
         previewUrl: URL.createObjectURL(file),
         isPrimary: currentImages.length === 0 && index === 0, // Prima foto caricata = primary
-        order: currentImages.length + index
+        order: currentImages.length + index // Order sequenziale
       }));
 
-      this.uploadedImages.update(current => [...current, ...newPreviews]);
+      // Aggiungi le nuove immagini e riordina tutte
+      const allImages = [...currentImages, ...newPreviews];
+      allImages.forEach((img, i) => img.order = i);
+
+      this.uploadedImages.set(allImages);
     }
   }
 
@@ -228,8 +234,6 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
         mapTypeControl: true,
         streetViewControl: false,
         fullscreenControl: true
-        // Nota: styles non è compatibile con mapId
-        // Gli stili vanno configurati tramite Google Cloud Console
       });
 
       // Listener per click sulla mappa
@@ -391,7 +395,19 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
         this.lastValidAddress.set(formattedAddress);
         this.addressSelectionError.set(null);
 
-        console.log('Reverse geocoding completato:', { street: fullStreet, city, province, zipCode });
+        // Verifica se l'indirizzo è completo (ha CAP)
+        if (zipCode && city && fullStreet) {
+          this.isAddressComplete.set(true);
+          console.log('Reverse geocoding completato - Indirizzo completo:', { street: fullStreet, city, province, zipCode });
+        } else {
+          this.isAddressComplete.set(false);
+          this.addressSelectionError.set('Indirizzo troppo generico. Seleziona un punto preciso sulla mappa.');
+          this.snackBar.open('⚠️ Seleziona un punto preciso sulla mappa per ottenere il CAP', 'OK', {
+            duration: 5000,
+            panelClass: ['warning-snackbar']
+          });
+          console.log('Reverse geocoding completato - Indirizzo incompleto (manca CAP):', { street: fullStreet, city, province, zipCode });
+        }
       } else {
         console.warn('Nessun indirizzo trovato per queste coordinate');
         this.snackBar.open('Impossibile determinare l\'indirizzo da queste coordinate', 'Chiudi', {
@@ -522,16 +538,33 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
         // Salva coordinate e indirizzo valido
         this.currentLocation.set({ lat, lng });
         this.lastValidAddress.set(place.formatted_address || place.name || '');
-        this.addressSelectionError.set(null);
+
+        // Verifica se l'indirizzo è completo (ha CAP, città e via)
+        if (zipCode && city && fullStreet) {
+          this.isAddressComplete.set(true);
+          this.addressSelectionError.set(null);
+          console.log('[Autocomplete] Indirizzo completo selezionato:', {
+            formatted: place.formatted_address,
+            coordinates: { lat, lng },
+            components: { street: fullStreet, city, province, zipCode }
+          });
+        } else {
+          // Indirizzo troppo generico (es. solo via senza numero o senza CAP)
+          this.isAddressComplete.set(false);
+          this.addressSelectionError.set('Indirizzo troppo generico. Seleziona un punto preciso sulla mappa.');
+          this.snackBar.open('⚠️ Indirizzo troppo ampio. Seleziona un punto preciso sulla mappa per ottenere il CAP.', 'OK', {
+            duration: 6000,
+            panelClass: ['warning-snackbar']
+          });
+          console.log('[Autocomplete] Indirizzo incompleto (manca CAP o dettagli):', {
+            formatted: place.formatted_address,
+            coordinates: { lat, lng },
+            components: { street: fullStreet, city, province, zipCode }
+          });
+        }
 
         // Posiziona il marker sulla mappa
         this.placeMarker(lat, lng);
-
-        console.log('[Autocomplete] Indirizzo selezionato:', {
-          formatted: place.formatted_address,
-          coordinates: { lat, lng },
-          components: { street: fullStreet, city, province, zipCode }
-        });
       });
 
       // Listener per blur: gestisce input manuale e ripristina lo stato coerente
@@ -543,6 +576,7 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
         if (currentValue.length === 0) {
           this.currentLocation.set(null);
           this.lastValidAddress.set('');
+          this.isAddressComplete.set(false);
           if (this.marker) {
             this.marker.map = null; // Rimuove il marker dalla mappa
             this.marker = null;
@@ -610,6 +644,7 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
         price: this.basicInfoForm.value.price,
         propertyType: this.basicInfoForm.value.propertyType,
         listingType: this.basicInfoForm.value.listingType,
+        rooms: this.detailsForm.value.rooms,
         bedrooms: this.detailsForm.value.bedrooms,
         bathrooms: this.detailsForm.value.bathrooms,
         area: this.detailsForm.value.area,
@@ -627,6 +662,7 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
           zipCode: this.addressForm.value.zipCode,
           country: this.addressForm.value.country || 'Italia'
         },
+        status: 'pending',
         location: {
           type: 'Point',
           coordinates: [location.lng, location.lat] // [longitude, latitude]
@@ -656,12 +692,16 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
               }),
               catchError(error => {
                 console.error('Errore durante l\'upload delle immagini:', error);
-                this.snackBar.open('Proprietà creata ma errore nel caricamento immagini', 'Chiudi', {
-                  duration: 4000,
-                  panelClass: ['warning-snackbar']
+
+                // Mostra dettagli errore se disponibili
+                const errorMessage = error?.error?.message || error?.message || 'Errore sconosciuto';
+                this.snackBar.open(`Errore upload immagini: ${errorMessage}`, 'Chiudi', {
+                  duration: 6000,
+                  panelClass: ['error-snackbar']
                 });
-                // Ritorna la proprietà comunque (è stata creata)
-                return of(null);
+
+                // Lancia l'errore per bloccare la pipeline
+                throw error;
               }),
               // Step 3: Imposta lo status ad 'active'
               switchMap(() => this.propertyService.updateProperty(property.id, { status: 'active' }).pipe(

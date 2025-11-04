@@ -47,7 +47,7 @@ export class PropertyService {
    */
   async createProperty(propertyData: CreatePropertyRequest, agentId: string): Promise<CreatePropertyResponse> {
     try {
-      logger.info(`Creating property for agent ${agentId}`, { title: propertyData.title });
+      logger.info(`Creating property for agent ${agentId}`, { title: propertyData.title, status: propertyData.status });
 
       // Validazione base dei dati
       this.validatePropertyData(propertyData);
@@ -57,10 +57,28 @@ export class PropertyService {
         ? propertyData.features.map(f => f.trim().toLowerCase())
         : undefined;
 
-      // Crea la proprietà nel database
-      const property = await Property.create({
-        ...propertyData,
-        // Address fields
+      // Prepara i dati per la creazione - esplicitiamo ogni campo per evitare problemi con lo spread
+      const createData = {
+        // Campi base obbligatori
+        title: propertyData.title,
+        description: propertyData.description,
+        price: propertyData.price,
+        propertyType: propertyData.propertyType,
+        listingType: propertyData.listingType,
+        status: propertyData.status, // IMPORTANTE: deve essere esplicito
+        rooms: propertyData.rooms,
+        bedrooms: propertyData.bedrooms,
+        bathrooms: propertyData.bathrooms,
+        area: propertyData.area,
+        // Campi opzionali
+        floor: propertyData.floor,
+        energyClass: propertyData.energyClass,
+        hasElevator: propertyData.hasElevator ?? false,
+        hasBalcony: propertyData.hasBalcony ?? false,
+        hasGarden: propertyData.hasGarden ?? false,
+        hasParking: propertyData.hasParking ?? false,
+        features: normalizedFeatures,
+        // Address fields (separati dall'oggetto address)
         street: propertyData.address.street,
         city: propertyData.address.city,
         province: propertyData.address.province,
@@ -68,20 +86,22 @@ export class PropertyService {
         country: propertyData.address.country || 'Italy',
         // Location field (GeoJSON)
         location: propertyData.location,
-        // Normalized features
-        features: normalizedFeatures,
         // Agent
         agentId: agentId,
-        // Defaults
-        status: propertyData.status,
+        // Valori di default per campi di sistema
         isActive: true,
         views: 0,
-        favorites: 0,
-        hasElevator: propertyData.hasElevator || false,
-        hasBalcony: propertyData.hasBalcony || false,
-        hasGarden: propertyData.hasGarden || false,
-        hasParking: propertyData.hasParking || false
+        favorites: 0
+      };
+
+      logger.debug('Creating property with data:', {
+        status: createData.status,
+        title: createData.title,
+        propertyType: createData.propertyType
       });
+
+      // Crea la proprietà nel database
+      const property = await Property.create(createData);
 
       // Carica la proprietà creata con le associazioni
       const createdProperty = await this.getPropertyById(property.id);

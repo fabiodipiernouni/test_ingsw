@@ -31,76 +31,100 @@ const options: swaggerJsdoc.Options = {
 
         CreatePropertyRequest: {
           type: 'object',
-          required: ['title', 'description', 'price', 'propertyType', 'listingType', 'bedrooms', 'bathrooms', 'area', 'address', 'location'],
+          required: ['title', 'description', 'price', 'propertyType', 'listingType', 'status', 'rooms', 'bedrooms', 'bathrooms', 'area', 'address', 'location'],
           properties: {
             title: {
               type: 'string',
-              minLength: 10,
               maxLength: 200,
+              description: 'Titolo della proprietà',
               example: 'Appartamento luminoso in centro'
             },
             description: {
               type: 'string',
-              minLength: 50,
-              maxLength: 2000,
+              maxLength: 4000,
+              description: 'Descrizione dettagliata della proprietà',
               example: 'Splendido appartamento di 100mq situato nel cuore della città...'
             },
             price: {
               type: 'number',
-              minimum: 1,
+              minimum: 0,
+              maximum: 99999999.99,
+              description: 'Prezzo della proprietà (max 2 decimali)',
               example: 250000
             },
             propertyType: {
               type: 'string',
               enum: ['apartment', 'villa', 'house', 'loft', 'office', 'commercial', 'land'],
+              description: 'Tipo di proprietà',
               example: 'apartment'
             },
             listingType: {
               type: 'string',
               enum: ['sale', 'rent'],
+              description: 'Tipo di annuncio',
               example: 'sale'
+            },
+            status: {
+              type: 'string',
+              enum: ['active', 'pending', 'sold', 'rented', 'withdrawn'],
+              description: 'Stato della proprietà',
+              example: 'pending'
+            },
+            rooms: {
+              type: 'integer',
+              minimum: 0,
+              description: 'Numero totale di stanze',
+              example: 4
             },
             bedrooms: {
               type: 'integer',
               minimum: 0,
-              maximum: 20,
+              description: 'Numero di camere da letto',
               example: 3
             },
             bathrooms: {
               type: 'integer',
               minimum: 0,
-              maximum: 20,
+              description: 'Numero di bagni',
               example: 2
             },
             area: {
               type: 'number',
-              minimum: 1,
-              maximum: 10000,
+              minimum: 0,
+              maximum: 999999.99,
+              description: 'Superficie in mq (max 2 decimali)',
               example: 100
             },
             floor: {
               type: 'string',
+              maxLength: 50,
+              description: 'Piano (opzionale)',
               example: '2'
             },
             energyClass: {
               type: 'string',
               enum: ['A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G'],
+              description: 'Classe energetica (opzionale)',
               example: 'B'
             },
             hasElevator: {
               type: 'boolean',
+              description: 'Presenza ascensore (opzionale)',
               example: true
             },
             hasBalcony: {
               type: 'boolean',
+              description: 'Presenza balcone (opzionale)',
               example: true
             },
             hasGarden: {
               type: 'boolean',
+              description: 'Presenza giardino (opzionale)',
               example: false
             },
             hasParking: {
               type: 'boolean',
+              description: 'Presenza parcheggio (opzionale)',
               example: true
             },
             features: {
@@ -108,7 +132,7 @@ const options: swaggerJsdoc.Options = {
               items: {
                 type: 'string'
               },
-              maxItems: 20,
+              description: 'Caratteristiche aggiuntive (opzionale)',
               example: ['aria condizionata', 'riscaldamento autonomo', 'doppi vetri']
             },
             address: {

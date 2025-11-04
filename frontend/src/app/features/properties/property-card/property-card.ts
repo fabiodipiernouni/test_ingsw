@@ -47,7 +47,7 @@ export class PropertyCard {
     return primaryImage?.urls?.medium ||
            primaryImage?.urls?.large ||
            primaryImage?.urls?.original ||
-           '/assets/images/no-image.jpg';
+           '/assets/images/property-placeholder.svg';
   }
 
   getListingTypeLabel(): string {

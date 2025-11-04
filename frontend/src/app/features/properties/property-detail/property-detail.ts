@@ -66,15 +66,15 @@ export class PropertyDetail implements OnInit, AfterViewInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  ngAfterViewInit(): void { 
+  ngAfterViewInit(): void {
     const hasUrlParams = this.route.snapshot.queryParamMap.keys.length > 0;
-      
+
     if (hasUrlParams) {
       // Leggi i filtri dall'URL
       this.filtersParam = this.route.snapshot.queryParamMap.get('filters');
       this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true }); // Rimuovi i parametri dall'URL
     }
-    
+
   }
 
   private async loadProperty(id: string): Promise<void> {
@@ -136,9 +136,9 @@ export class PropertyDetail implements OnInit, AfterViewInit, OnDestroy {
       return images[this.selectedImageIndex()].urls?.large ||
              images[this.selectedImageIndex()].urls?.medium ||
              images[this.selectedImageIndex()].urls?.original ||
-             '/assets/images/no-image.jpg';
+             '/assets/images/property-placeholder.svg';
     }
-    return '/assets/images/no-image.jpg';
+    return '/assets/images/property-placeholder.svg';
   }
 
   getThumbnailUrl(image: PropertyImageModel): string {
@@ -146,7 +146,7 @@ export class PropertyDetail implements OnInit, AfterViewInit, OnDestroy {
     return image.urls?.small ||
            image.urls?.medium ||
            image.urls?.original ||
-           '/assets/images/no-image.jpg';
+           '/assets/images/property-placeholder.svg';
   }
 
   getListingTypeLabel(): string {

@@ -1,4 +1,4 @@
-import {EnergyClass, ListingType, PropertyType} from '@core/services/property/models/types';
+import {EnergyClass, ListingType, PropertyStatus, PropertyType} from '@core/services/property/models/types';
 import {Address} from '@service-shared/models/Address';
 import {GeoJSONPoint} from '@service-shared/types/geojson.types';
 
@@ -12,6 +12,9 @@ export interface CreatePropertyRequest {
   price: number;
   propertyType: PropertyType;
   listingType: ListingType;
+  status: PropertyStatus;
+  address: Address;
+  rooms: number;
   bedrooms: number;
   bathrooms: number;
   area: number;
@@ -22,6 +25,5 @@ export interface CreatePropertyRequest {
   hasGarden?: boolean;
   hasParking?: boolean;
   features?: string[];
-  address: Address;
   location: GeoJSONPoint;
 }
