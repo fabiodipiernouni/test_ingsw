@@ -71,13 +71,13 @@ export class EmailSenderWorker {
       const batchSize = emailWorkerOptions.batchSize;
       const unsentNotifications = await Notification.findAll({
         where: {
-          sentAt: null,
+          sentAt: null
         },
         include: [
           {
             model: User,
             as: 'user',
-            attributes: ['id', 'email', 'firstName', 'lastName'],
+            attributes: ['id', 'email', 'firstName', 'lastName']
           },
           {
             model: User,
@@ -95,7 +95,7 @@ export class EmailSenderWorker {
           }
         ],
         order: [['createdAt', 'ASC']], // Invia prima le più vecchie
-        limit: batchSize, // Limita il numero di notifiche da processare
+        limit: batchSize // Limita il numero di notifiche da processare
       });
 
       if (unsentNotifications.length === 0) {
@@ -106,8 +106,8 @@ export class EmailSenderWorker {
       // Conta il totale delle notifiche in attesa (per logging)
       const totalPending = await Notification.count({
         where: {
-          sentAt: null,
-        },
+          sentAt: null
+        }
       });
 
       logger.info(
@@ -122,10 +122,8 @@ export class EmailSenderWorker {
         try {
           const user = notification.user;
 
-          if (!user || !user.email) {
-            logger.error(
-              `User not found or email missing for notification ${notification.id}`
-            );
+          if (!user?.email) {
+            logger.error(`User not found or email missing for notification ${notification.id}`);
             failureCount++;
             continue;
           }

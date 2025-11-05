@@ -6,7 +6,7 @@ import path from 'path';
 import { URL } from 'url';
 import { Sequelize } from 'sequelize-typescript';
 import { insertAgency } from './seed-agencies';
-import { imageService } from '../src/shared/services/ImageService';
+import { imageService } from '@shared/services/ImageService';
 import https from 'https';
 import http from 'http';
 import config from '../src/shared/config';

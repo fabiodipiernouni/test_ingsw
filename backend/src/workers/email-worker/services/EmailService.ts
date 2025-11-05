@@ -83,7 +83,7 @@ export class EmailService {
       to,
       subject: `${title} - DietiEstates25`,
       text: `${title}\n\n${message}${fullActionUrl ? `\n\nLink: ${fullActionUrl}` : ''}${agencyName ? `\n\nDa: ${agencyName}` : ''}`,
-      html,
+      html
     });
   }
 
