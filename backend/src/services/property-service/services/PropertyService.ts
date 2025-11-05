@@ -1,4 +1,4 @@
-import { Property, PropertyImage, User } from '@shared/database/models';
+import { Property, PropertyImage } from '@shared/database/models';
 import logger from '@shared/utils/logger';
 import { imageService } from '@shared/services/ImageService';
 import config from '@shared/config';
@@ -17,6 +17,7 @@ import { Mappers } from '@property/utils/mappers';
 import { PropertyImageMetadata } from '@property/dto/addPropertyImageEndpoint/PropertyImageMetadata';
 import { UpdatePropertyRequest } from '@property/dto/UpdatePropertyEndpoint/UpdatePropertyRequest';
 import { isInRange, isStringInLengthRange, calculateTotalPages } from '@shared/utils/helpers';
+import { v4 as uuidv4 } from 'uuid';
 
 // Custom error classes for better error handling
 class ValidationError extends Error {
@@ -134,7 +135,7 @@ export class PropertyService {
       include: [
         {
           association: 'agent',
-          attributes: ['id', 'firstName', 'lastName', 'email', 'phone']
+          attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'agencyId']
         },
         {
           association: 'images',
@@ -474,66 +475,25 @@ export class PropertyService {
   
   /**
    * Add images to a property - gestisce upload S3 e salvataggio DB
-   * @param propertyId - ID della proprietà
+   * @param property - proprietà
    * @param files - File caricati tramite multer
    * @param metadata - Array di metadata validati per ogni immagine
    * @param userId - ID dell'utente che sta caricando le immagini
    * @returns Promise con le immagini create ed eventuali warning
    */
   async addPropertyImages(
-    propertyId: string,
+    property: PropertyModel,
     files: Express.Multer.File[],
     metadata: PropertyImageMetadata[],
     userId: string
   ): Promise<{ images: PropertyImage[], warnings?: any[] }> {
     try {
-      // Verify property exists and user has permission
-      const property = await Property.findByPk(propertyId, {
-        include: [{
-          model: User,
-          as: 'agent',
-          attributes: ['id', 'agencyId']
-        }]
-      });
-
-      if (!property) {
-        throw new NotFoundError('Property not found');
-      }
-
-      // Check if user is the agent of this property
-      if (property.agentId !== userId) {
-        throw new Error('You do not have permission to add images to this property');
-      }
-
-      // Validate metadata array length matches files
-      if (metadata.length !== files.length) {
-        throw new ValidationError('Metadata count must match uploaded files count');
-      }
-
       const images: PropertyImage[] = [];
       const warnings: any[] = [];
 
       // Get user's agency for S3 path
-      const agent = property.agent as any;
-      const agencyId = agent?.agencyId;
-
-      if (!agencyId) {
-        throw new Error('Agent must belong to an agency');
-      }
-
-      // Check if there are existing images
-      const existingImages = await PropertyImage.count({ where: { propertyId } });
-
-      // Handle primary image logic
-      const hasPrimaryInMetadata = metadata.some(m => m.isPrimary);
-
-      // If a new primary is being set, unset existing primary images
-      if (hasPrimaryInMetadata && existingImages > 0) {
-        await PropertyImage.update(
-          { isPrimary: false },
-          { where: { propertyId } }
-        );
-      }
+      const agent = property.agent!;
+      const agencyId = agent.agencyId!;
 
       // import dinamico per evitare dipendenza circolare
       const { imageService } = await import('@shared/services/ImageService');
@@ -544,31 +504,26 @@ export class PropertyService {
         const imageMetadata = metadata[i];
 
         try {
+
+          const imageId = uuidv4();
+
           // Upload to S3 with variants
           const uploadResult = await imageService.uploadImage(
             file.buffer,
             file.originalname,
-            file.mimetype,
-            propertyId,
+            property.id,
             agencyId,
+            imageId,
             property.listingType
           );
-
-          // Determine if this image should be primary
-          let isPrimary = false;
-          if (existingImages === 0 && i === 0 && !hasPrimaryInMetadata) {
-            // First image of property and no explicit primary set
-            isPrimary = true;
-          } else {
-            isPrimary = imageMetadata.isPrimary || false;
-          }
 
           // Get image metadata from file
           const fileMetadata = (file as any).imageMetadata;
 
           // Create database record
           const image = await PropertyImage.create({
-            propertyId,
+            id: imageId,
+            propertyId: property.id,
             s3KeyOriginal: uploadResult.originalKey,
             s3KeySmall: uploadResult.smallKey,
             s3KeyMedium: uploadResult.mediumKey,
@@ -580,7 +535,7 @@ export class PropertyService {
             uploadDate: new Date(),
             width: fileMetadata?.width || uploadResult.width,
             height: fileMetadata?.height || uploadResult.height,
-            isPrimary: isPrimary,
+            isPrimary: imageMetadata.isPrimary,
             order: imageMetadata.order,
             caption: imageMetadata.caption || null,
             alt: imageMetadata.altText || null
@@ -602,7 +557,7 @@ export class PropertyService {
         throw new Error('All image uploads failed');
       }
 
-      logger.info(`Added ${images.length} images to property ${propertyId}`);
+      logger.info(`Added ${images.length} images to property ${property.id} by user ${userId}`);
 
       return {
         images: images.map(img => ({

@@ -1,0 +1,14 @@
+@if (showWarning()) {
+  <div class="session-warning-banner">
+    <div class="warning-content">
+      <mat-icon class="warning-icon">warning</mat-icon>
+      <span class="warning-text">
+        La tua sessione sta per scadere. Salva il tuo lavoro.
+      </span>
+      <button mat-button class="renew-button" (click)="renewSession()">
+        Rinnova Sessione
+      </button>
+    </div>
+  </div>
+}
+

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from '@shared/dto/AuthenticatedRequest';
 import sharp from 'sharp';
+import { propertyService } from '@property/services/PropertyService';
 
 /**
  * Middleware per validare i file immagine caricati
@@ -161,8 +162,25 @@ export const validatePropertyImageUploadPermissions = async (
       return;
     }
 
+    const property = await propertyService.getPropertyById(propertyId);
+
+    const propertyAgencyId = property.agent!.agencyId;
+
+    if (propertyAgencyId !== authReq.user.agencyId) {
+      res.status(403).json({
+        success: false,
+        error: 'FORBIDDEN',
+        message: 'User does not have permission to upload images for this property which belongs to a different agency'
+      });
+      return;
+    }
+
     // Aggiungi propertyId alla request per uso successivo
     (req as any).validatedPropertyId = propertyId;
+    (req as any).property = property;
+
+    //pulisci req.params
+    delete req.params.propertyId;
 
     next();
 

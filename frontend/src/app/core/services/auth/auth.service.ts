@@ -1,10 +1,10 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, BehaviorSubject, throwError, catchError, tap, map } from 'rxjs';
+import { Observable, BehaviorSubject, throwError, catchError, tap } from 'rxjs';
 import { environment } from '@src/environments/environment';
 
-
+import { TokenManagerService } from '@core-services/auth/token-manager.service';
 import { AuthResponse } from '@core-services/auth/dto/AuthResponse';
 import { ChangePasswordRequest } from '@core-services/auth/dto/ChangePasswordRequest';
 import { ConfirmEmailRequest } from '@core-services/auth/dto/ConfirmEmailRequest';
@@ -13,7 +13,6 @@ import { CreateAdminRequest } from '@core-services/auth/dto/CreateAdminRequest';
 import { CreateAgentRequest } from '@core-services/auth/dto/CreateAgentRequest';
 import { ForgotPasswordRequest } from '@core-services/auth/dto/ForgotPasswordRequest';
 import { LoginRequest } from '@core-services/auth/dto/LoginRequest';
-import { RefreshTokenRequest } from '@core-services/auth/dto/RefreshTokenRequest';
 import { RegisterRequest } from '@core-services/auth/dto/RegisterRequest';
 import { ResendVerificationCodeRequest } from '@core-services/auth/dto/ResendVerificationCodeRequest';
 import { UserResponse } from '@core-services/auth/dto/UserResponse';
@@ -23,7 +22,6 @@ import { UpdateNotificationPreferencesDto } from '@core-services/auth/dto/Update
 
 import { ApiResponse } from '@service-shared/dto/ApiResponse';
 import { RefreshTokenResponse } from '@core-services/auth/dto/RefreshTokenResponse';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { UserModel } from '@core-services/auth/models/UserModel';
 import { AgencyResponse } from '@core-services/auth/dto/AgencyResponse';
 import {AgencyModel} from '@service-shared/models/AgencyModel';
@@ -32,19 +30,15 @@ import {AgencyModel} from '@service-shared/models/AgencyModel';
   providedIn: 'root'
 })
 export class AuthService {
-  private http = inject(HttpClient);
-  private router = inject(Router);
-
-  private snackBar = inject(MatSnackBar);
+  private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
+  private readonly tokenManager = inject(TokenManagerService);
 
   private readonly API_URL = environment.apiUrlAuth;
-  private readonly ACCESS_TOKEN_KEY = 'auth_access_token';
-  private readonly REFRESH_TOKEN_KEY = 'auth_refresh_token';
-  private readonly ID_TOKEN_KEY = 'auth_id_token';
   private readonly USER_KEY = 'auth_user';
 
   // State management
-  private currentUserSubject = new BehaviorSubject<UserModel | null>(null);
+  private readonly currentUserSubject = new BehaviorSubject<UserModel | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
   // Signals for reactive UI
@@ -53,6 +47,21 @@ export class AuthService {
 
   constructor() {
     this.loadUserFromStorage();
+
+    // Imposta il callback per quando il token scade
+    this.tokenManager.setOnTokenExpiredCallback(() => {
+      this.handleLogout(true); // true = mostra notifica di sessione scaduta
+    });
+
+    // Avvia il controllo se c'è un token valido
+    if (this.tokenManager.hasValidToken()) {
+      this.tokenManager.startTokenExpirationCheck();
+    }
+  }
+
+  // Espone il signal del token manager
+  get tokenExpiringWarning() {
+    return this.tokenManager.tokenExpiringWarning;
   }
 
   // ===== PUBLIC METHODS =====
@@ -97,35 +106,22 @@ export class AuthService {
   /**
    * Logout utente
    */
-  logout() {
+  logout(showExpiredMessage = false) {
     // La chiamata al backend non è necessaria per il logout, i token scadranno da soli
-    this.handleLogout();
+    this.handleLogout(showExpiredMessage);
   }
 
   /**
    * Refresh del token di accesso
    */
   refreshToken(): Observable<ApiResponse<RefreshTokenResponse>> {
-    const refreshToken = this.getRefreshToken();
-    if (!refreshToken) {
-      return throwError(() => new Error('No refresh token available'));
-    }
-
-    const request: RefreshTokenRequest = { refreshToken };
-
-    return this.http.post<ApiResponse<RefreshTokenResponse>>(`${this.API_URL}/refresh-token`, request)
-      .pipe(
-        tap(response => {
-          if (response.success && response.data) {
-            this.updateTokens(response.data.accessToken, response.data.idToken, refreshToken);
-          }
-        }),
-        catchError((error) => {
-          // Se il refresh fallisce, facciamo logout
-          this.handleLogout();
-          return throwError(() => error);
-        })
-      );
+    return this.tokenManager.refreshToken().pipe(
+      catchError((error) => {
+        // Se il refresh fallisce, facciamo logout
+        this.handleLogout();
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
@@ -231,21 +227,21 @@ export class AuthService {
    * Ottieni access token
    */
   getAccessToken(): string | null {
-    return localStorage.getItem(this.ACCESS_TOKEN_KEY);
+    return this.tokenManager.getAccessToken();
   }
 
   /**
    * Ottieni refresh token
    */
   getRefreshToken(): string | null {
-    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
+    return this.tokenManager.getRefreshToken();
   }
 
   /**
    * Ottieni ID token
    */
   getIdToken(): string | null {
-    return localStorage.getItem(this.ID_TOKEN_KEY);
+    return this.tokenManager.getIdToken();
   }
 
   /**
@@ -302,6 +298,13 @@ export class AuthService {
     return user?.lastLoginAt === undefined || user?.lastLoginAt === null;
   }
 
+  /**
+   * Rinnova manualmente la sessione (può essere chiamato dall'UI)
+   */
+  renewSession(): Observable<ApiResponse<RefreshTokenResponse>> {
+    return this.tokenManager.renewSession();
+  }
+
   // ===== PRIVATE METHODS =====
 
   /**
@@ -326,10 +329,12 @@ export class AuthService {
    * Gestisce il successo dell'autenticazione
    */
   handleAuthSuccess(authResponse: AuthResponse): void {
-    this.storeTokens(authResponse.accessToken, authResponse.idToken, authResponse.refreshToken);
+    this.tokenManager.storeTokens(authResponse.accessToken, authResponse.idToken, authResponse.refreshToken);
     const user = this.convertUserResponseToUserModel(authResponse.user);
     this.storeUser(user);
     this.setAuthenticationState(user);
+    this.tokenManager.tokenExpiringWarning.set(false);
+    this.tokenManager.startTokenExpirationCheck();
   }
 
   /**
@@ -361,7 +366,7 @@ export class AuthService {
       firstName: userResponse.firstName,
       lastName: userResponse.lastName,
       role: userResponse.role,
-      avatar: userResponse.avatar, 
+      avatar: userResponse.avatar,
       phone: userResponse.phone,
       isVerified: userResponse.isVerified,
       passwordChangeRequired: userResponse.passwordChangeRequired,
@@ -380,33 +385,20 @@ export class AuthService {
 
   /**
    * Gestisce il logout
+   * @param showExpiredMessage - Se true, mostra la notifica di sessione scaduta
    */
-  private handleLogout(): void {
-    this.clearTokens();
+  private handleLogout(showExpiredMessage = false): void {
+    this.tokenManager.stopTokenExpirationCheck();
+
+    // Mostra notifica se richiesto (es. token scaduto)
+    if (showExpiredMessage) {
+      this.tokenManager.showSessionExpiredNotification();
+    }
+
+    this.tokenManager.clearTokens();
     this.clearUser();
     this.clearAuthenticationState();
     this.router.navigate(['/login']);
-  }
-
-  /**
-   * Salva i token nel localStorage
-   */
-  private storeTokens(accessToken: string, idToken: string, refreshToken: string): void {
-    localStorage.setItem(this.ACCESS_TOKEN_KEY, accessToken);
-    localStorage.setItem(this.ID_TOKEN_KEY, idToken);
-    localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
-  }
-
-  /**
-   * Aggiorna i token nel localStorage
-   */
-  private updateTokens(accessToken: string, idToken: string, refreshToken: string): void {
-    localStorage.setItem(this.ACCESS_TOKEN_KEY, accessToken);
-    localStorage.setItem(this.ID_TOKEN_KEY, idToken);
-    // Il refresh token rimane lo stesso se non fornito
-    if (refreshToken) {
-      localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
-    }
   }
 
   /**
@@ -435,15 +427,6 @@ export class AuthService {
   }
 
   /**
-   * Rimuove i token dal localStorage
-   */
-  private clearTokens(): void {
-    localStorage.removeItem(this.ACCESS_TOKEN_KEY);
-    localStorage.removeItem(this.ID_TOKEN_KEY);
-    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
-  }
-
-  /**
    * Rimuove l'utente dal localStorage
    */
   private clearUser(): void {
@@ -453,7 +436,7 @@ export class AuthService {
   /**
    * Gestisce gli errori delle richieste HTTP
    */
-  private handleError(error: any): Observable<never> {
+  private handleError(error: unknown): Observable<never> {
     console.error('Auth service error:', error);
 
     return throwError(() => error);

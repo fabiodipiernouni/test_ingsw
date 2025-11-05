@@ -8,7 +8,6 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Upload } from '@aws-sdk/lib-storage';
 import config from '@shared/config';
-import { v4 as uuidv4 } from 'uuid';
 import sharp from 'sharp';
 import logger from '@shared/utils/logger';
 
@@ -54,9 +53,9 @@ export class ImageService {
   async uploadImage(
     buffer: Buffer,
     fileName: string,
-    contentType: string,
     propertyId: string,
     agencyId: string,
+    imageId: string,
     listingType: 'sale' | 'rent'
   ): Promise<UploadResult> {
     try {
@@ -69,7 +68,6 @@ export class ImageService {
 
       // Generate unique file key with agency hierarchy using folder structure
       const fileExtension = 'webp'; // Convert all to WebP
-      const imageId = uuidv4();
       const baseKey = `agencies/${agencyId}/properties/${listingType}/${propertyId}/${imageId}`;
 
       const variants: ImageVariant[] = [];

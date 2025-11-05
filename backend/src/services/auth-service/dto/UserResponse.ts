@@ -1,7 +1,6 @@
 import { OAuthProvider } from '@shared/types/auth.types';
 import { AgencyResponse } from './AgencyResponse';
 import { UserRole } from '@shared/types/user.types';
-import { NotificationType } from '@shared/types/notification.types';
 
 export interface UserResponse {
   id: string;

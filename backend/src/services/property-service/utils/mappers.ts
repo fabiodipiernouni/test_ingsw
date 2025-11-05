@@ -64,8 +64,8 @@ export class Mappers {
       agentId: property.agentId,
       views: property.views,
       location: property.location,
-      createdAt: property.createdAt.toISOString(),
-      updatedAt: property.updatedAt.toISOString()
+      createdAt: property.createdAt,
+      updatedAt: property.updatedAt
     };
   }
 
@@ -179,8 +179,8 @@ export class Mappers {
       agent: Helper.userToUserModel(property.agent),
       views: property.views,
       favorites: property.favorites,
-      createdAt: property.createdAt.toISOString(),
-      updatedAt: property.updatedAt.toISOString()
+      createdAt: property.createdAt,
+      updatedAt: property.updatedAt
     };
   }
 

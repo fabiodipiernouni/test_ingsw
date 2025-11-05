@@ -5,6 +5,7 @@ import { Title } from '@angular/platform-browser';
 import { filter } from 'rxjs/operators';
 import { Header } from '@shared/components/header/header';
 import { Footer } from '@shared/components/footer/footer';
+import { SessionWarningComponent } from '@shared/components/session-warning/session-warning';
 import { AuthService } from '@core/services/auth/auth.service';
 
 @Component({
@@ -14,7 +15,8 @@ import { AuthService } from '@core/services/auth/auth.service';
     CommonModule,
     RouterOutlet,
     Header,
-    Footer
+    Footer,
+    SessionWarningComponent
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss'

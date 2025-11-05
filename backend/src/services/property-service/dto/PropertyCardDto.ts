@@ -27,6 +27,6 @@ export interface PropertyCardDto {
   hasParking: boolean;
   agentId?: string; // per mostrare il nome dell'agente,
   views?: number;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 }

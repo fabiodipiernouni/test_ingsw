@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { validate, ValidatorOptions } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import logger from '@shared/utils/logger';
-import { AddPropertyImageRequest } from '@property/dto/addPropertyImageEndpoint';
+import { AddPropertyImageRequest } from '@property/dto/addPropertyImageEndpoint/AddPropertyImageRequest';
 import { PropertyImageFileRequest } from '@property/dto/addPropertyImageEndpoint/PropertyImageFileRequest';
 import { PropertyImageMetadata } from '@property/dto/addPropertyImageEndpoint/PropertyImageMetadata';
 
@@ -23,55 +23,32 @@ export const validatePropertyImageMetadata = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // Recupera i file caricati da Multer
-    const files = req.files as Express.Multer.File[];
-
-    if (!files || files.length === 0) {
-      res.status(400).json({
-        success: false,
-        error: 'Validation failed',
-        message: 'No files uploaded',
-        details: ['At least one image file is required']
-      });
-      return;
-    }
-
-    // Recupera i metadata dal body
-    let metadata: any[];
+    // Recupera i propertyImageMetadataArray dal body
+    let propertyImageMetadataArray: any[];
     try {
-      // Se metadata è una stringa JSON, parsala
+      // Se propertyImageMetadataArray è una stringa JSON, parsala
       if (typeof req.body.metadata === 'string') {
-        metadata = JSON.parse(req.body.metadata);
+        propertyImageMetadataArray = JSON.parse(req.body.metadata);
       } else if (Array.isArray(req.body.metadata)) {
-        metadata = req.body.metadata;
+        propertyImageMetadataArray = req.body.metadata;
       } else {
-        throw new Error('metadata must be an array');
+        throw new Error('propertyImageMetadataArray must be an array');
       }
     } catch (error) {
       res.status(400).json({
         success: false,
         error: 'Validation failed',
-        message: 'Invalid metadata format',
-        details: ['metadata must be a valid JSON array']
+        message: 'Invalid propertyImageMetadataArray format',
+        details: ['propertyImageMetadataArray must be a valid JSON array']
       });
       return;
     }
 
-    // Verifica che il numero di metadata corrisponda al numero di file
-    if (metadata.length !== files.length) {
-      res.status(400).json({
-        success: false,
-        error: 'Validation failed',
-        message: 'Metadata count mismatch',
-        details: [`Expected ${files.length} metadata objects, got ${metadata.length}`]
-      });
-      return;
-    }
-
-    // Combina file e metadata in PropertyImageFileRequest
+    const files = req.files as Express.Multer.File[] || (req.file ? [req.file] : []);
+    // Combina file e propertyImageMetadataArray in PropertyImageFileRequest
     const propertyImages: PropertyImageFileRequest[] = files.map((file, index) => {
       // Crea un'istanza di PropertyImageMetadata dal singolo oggetto
-      const metadataObj = metadata[index];
+      const metadataObj = propertyImageMetadataArray[index];
       const imageMetadata = Object.assign(new PropertyImageMetadata(
         metadataObj.isPrimary,
         metadataObj.order,
@@ -107,10 +84,10 @@ export const validatePropertyImageMetadata = async (
 
       const formattedErrors = extractErrors(errors);
 
-      logger.warn('Property image metadata validation failed', {
+      logger.warn('Property image propertyImageMetadataArray validation failed', {
         errors: formattedErrors,
         fileCount: files.length,
-        metadataCount: metadata.length
+        metadataCount: propertyImageMetadataArray.length
       });
 
       res.status(400).json({
@@ -125,9 +102,9 @@ export const validatePropertyImageMetadata = async (
     // Sostituisci req.body con l'oggetto validato
     req.body = requestBody;
 
-    logger.debug('Property image metadata validated successfully', {
+    logger.debug('Property image propertyImageMetadataArray validated successfully', {
       fileCount: files.length,
-      metadata: metadata
+      metadata: propertyImageMetadataArray
     });
 
     // Tutto ok, procedi

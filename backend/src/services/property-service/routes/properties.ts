@@ -509,10 +509,10 @@ router.patch(
 router.post(
   '/:propertyId/images',
   authenticateToken,
-  validatePropertyImageUploadPermissions,
-  uploadToMemory.array('images', 10),
-  handleMulterError,
-  validateImageFiles,
+  validatePropertyImageUploadPermissions, // check autenticazione e utente agente, verifica propertyId e verifica che la proprietà sia di pertinenza all'agenzia dell'utente loggato
+  uploadToMemory.array('images', 10), // check multer upload (max 10 files) e max size 5MB ciascuno
+  handleMulterError, // gestisce errori multer con messaggi user-friendly
+  validateImageFiles, // check file metadati reali con Sharp e colleziona in files in imageMetadata
   validatePropertyImageMetadata,
   propertyController.addPropertyImagePost.bind(propertyController)
 );

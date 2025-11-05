@@ -199,6 +199,13 @@ export class Property extends Model {
   @HasMany(() => PropertyImage)
   images!: PropertyImage[];
 
+  // Timestamps (automatically managed by Sequelize)
+  @Column(DataType.DATE)
+  createdAt!: Date;
+
+  @Column(DataType.DATE)
+  updatedAt!: Date;
+
   // Helper getters per accesso semplificato alle coordinate
   // Estraggono lat/lng dal formato GeoJSON
   get latitude(): number {

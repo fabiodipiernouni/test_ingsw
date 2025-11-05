@@ -9,6 +9,7 @@ import { GetGeoPropertiesCardsRequest } from '@property/dto/GetGeoPropertiesCard
 import { AddPropertyImageRequest } from '@property/dto/addPropertyImageEndpoint/AddPropertyImageRequest';
 import { UpdatePropertyRequest } from '@property/dto/UpdatePropertyEndpoint/UpdatePropertyRequest';
 import { Property } from '@shared/database/models/Property';
+import { Mappers } from '@property/utils/mappers';
 
 export class PropertyController {
   /**
@@ -173,14 +174,10 @@ export class PropertyController {
     try {
       // authenticateToken middleware garantisce che req.user sia sempre presente
       const propertyImageRequest = req.body as AddPropertyImageRequest;
-      const propertyId = req.params.propertyId;
+      const property = (req as any).property as Property; // Dal middleware validatePropertyImageUploadPermissions
       const userId = req.user!.id;
 
-      logger.info(`Adding ${propertyImageRequest.propertyImages.length} images to property ${propertyId}`, {
-        userId,
-        propertyId,
-        fileCount: propertyImageRequest.propertyImages.length
-      });
+      logger.info(`Adding ${propertyImageRequest.propertyImages.length} images to property ${property.id} by user ${userId}`);
 
       // Estrai i file caricati da req.files
       const files = propertyImageRequest.propertyImages.map(img => img.file);
@@ -188,7 +185,7 @@ export class PropertyController {
 
       // Chiama il service che gestirà l'upload e il salvataggio
       const result = await propertyService.addPropertyImages(
-        propertyId,
+        await Mappers.formatPropertyToModel(property),
         files,
         metadata,
         userId

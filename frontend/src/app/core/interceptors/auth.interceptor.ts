@@ -33,7 +33,7 @@ export const authInterceptor: HttpInterceptorFn = (
         if (refreshToken && !req.url.includes('/refresh-token')) {
           // Attempt token refresh
           return authService.refreshToken().pipe(
-            switchMap((response) => {
+            switchMap(() => {
               // Retry the original request with new token
               const newToken = authService.getAccessToken();
               const retryReq = req.clone({
@@ -44,19 +44,19 @@ export const authInterceptor: HttpInterceptorFn = (
             catchError(refreshError => {
               if (refreshError.error?.error === 'TOKEN_EXPIRED') {
                 console.warn('Refresh token also expired, logging out user');
-                authService.logout();
+                authService.logout(true); // true = mostra notifica sessione scaduta
               }
               return throwError(() => refreshError);
             })
           );
         } else {
           // No refresh token or already trying to refresh, logout user
-          authService.logout();
+          authService.logout(true); // true = mostra notifica sessione scaduta
         }
       }
 
       if (error.error?.error === 'USER_NOT_REGISTERED') {
-        authService.logout();
+        authService.logout(); // Logout normale senza notifica di scadenza
       }
 
       // For other errors, just pass through

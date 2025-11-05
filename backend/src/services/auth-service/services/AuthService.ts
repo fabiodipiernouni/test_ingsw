@@ -5,7 +5,6 @@ import {
   RespondToAuthChallengeCommand,
   AdminAddUserToGroupCommand,
   AdminCreateUserCommand,
-  AdminSetUserPasswordCommand,
   AdminDeleteUserCommand,
   ChangePasswordCommand,
   ForgotPasswordCommand,

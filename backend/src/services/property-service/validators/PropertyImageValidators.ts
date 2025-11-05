@@ -6,18 +6,19 @@ import {
   ValidatorConstraintInterface
 } from 'class-validator';
 import { PropertyImageMetadata } from '../dto/addPropertyImageEndpoint/PropertyImageMetadata';
+import { PropertyImageFileRequest } from '@property/dto/addPropertyImageEndpoint/PropertyImageFileRequest';
 
 /**
  * Validator constraint per verificare che ci sia al massimo un'immagine primaria
  */
 @ValidatorConstraint({ name: 'OnlyOnePrimary', async: false })
 export class OnlyOnePrimaryConstraint implements ValidatorConstraintInterface {
-  validate(metadata: PropertyImageMetadata[], _args: ValidationArguments) {
-    if (!Array.isArray(metadata)) {
+  validate(propertyImages: PropertyImageFileRequest[], _args: ValidationArguments) {
+    if (!Array.isArray(propertyImages)) {
       return true; // Lascia che @IsArray gestisca questo
     }
 
-    const primaryCount = metadata.filter(m => m.isPrimary).length;
+    const primaryCount = propertyImages.filter(m => m.metadata.isPrimary).length;
     return primaryCount <= 1;
   }
 
@@ -46,13 +47,13 @@ export function OnlyOnePrimary(validationOptions?: ValidationOptions) {
  */
 @ValidatorConstraint({ name: 'UniqueOrders', async: false })
 export class UniqueOrdersConstraint implements ValidatorConstraintInterface {
-  validate(metadata: PropertyImageMetadata[], _args: ValidationArguments) {
-    if (!Array.isArray(metadata)) {
+  validate(propertyImages: PropertyImageFileRequest[], _args: ValidationArguments) {
+    if (!Array.isArray(propertyImages)) {
       return true; // Lascia che @IsArray gestisca questo
     }
 
-    const orders = metadata.map(m => m.order);
-    const uniqueOrders = new Set(orders);
+    const orders = propertyImages.map(m => m.metadata.order);
+    const uniqueOrders = new Set(orders); //faccio la distinct per poi confrontare le lunghezze
     return orders.length === uniqueOrders.size;
   }
 
