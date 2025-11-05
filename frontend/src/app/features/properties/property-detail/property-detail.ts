@@ -87,6 +87,8 @@ export class PropertyDetail implements OnInit, AfterViewInit, OnDestroy {
       );
 
       if (property) {
+        property.images = property.images || [];
+        property.images.sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0));
         this.property.set(property);
       } else {
         this.error.set('Immobile non trovato');
