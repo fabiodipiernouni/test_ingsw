@@ -12,141 +12,96 @@
 
     <!-- Card per Gestione Agenzia (per owner e admin) -->
     @if (canManageAgency()) {
-    <mat-card class="action-card">
+    <mat-card class="action-card clickable-card" routerLink="/admin/manage-agency">
         <mat-card-header>
         <mat-icon mat-card-avatar style="color: #2196f3">business</mat-icon>
         <mat-card-title>Gestisci Agenzia</mat-card-title>
         <mat-card-subtitle>Visualizza e gestisci gli utenti della tua agenzia</mat-card-subtitle>
         </mat-card-header>
-        <mat-card-actions>
-        <button mat-raised-button style="background-color: #2196f3; color: white;" routerLink="/admin/manage-agency">
-            Gestisci
-        </button>
-        </mat-card-actions>
     </mat-card>
     }
 
     <!-- Card per Creazione Admin (solo per owner) -->
     @if (canCreateAdmins()) {
-    <mat-card class="action-card">
+    <mat-card class="action-card clickable-card" routerLink="/create-admin">
         <mat-card-header>
         <mat-icon mat-card-avatar style="color: #ff9800">admin_panel_settings</mat-icon>
         <mat-card-title>Crea Amministratore</mat-card-title>
         <mat-card-subtitle>Crea un nuovo account amministratore</mat-card-subtitle>
         </mat-card-header>
-        <mat-card-actions>
-        <button mat-raised-button style="background-color: #ff9800; color: white;" routerLink="/create-admin">
-            Crea Admin
-        </button>
-        </mat-card-actions>
     </mat-card>
     }
 
     <!-- Card per Creazione Agenti (per owner e admin) -->
     @if (canCreateAgents()) {
-    <mat-card class="action-card">
+    <mat-card class="action-card clickable-card" routerLink="/create-agent">
         <mat-card-header>
         <mat-icon mat-card-avatar style="color: #4caf50">person_add</mat-icon>
         <mat-card-title>Crea Agente</mat-card-title>
         <mat-card-subtitle>Aggiungi un nuovo agente immobiliare</mat-card-subtitle>
         </mat-card-header>
-        <mat-card-actions>
-        <button mat-raised-button style="background-color: #4caf50; color: white;" routerLink="/create-agent">
-            Crea Agente
-        </button>
-        </mat-card-actions>
     </mat-card>
     }
 
     <!-- Card per Messaggi Promozionali (per owner e admin) -->
     @if (canSendPromotions()) {
-    <mat-card class="action-card">
+    <mat-card class="action-card clickable-card" routerLink="/send-promotional-message">
         <mat-card-header>
         <mat-icon mat-card-avatar style="color: #9c27b0">campaign</mat-icon>
         <mat-card-title>Messaggi Promozionali</mat-card-title>
         <mat-card-subtitle>Invia notifiche promozionali agli utenti</mat-card-subtitle>
         </mat-card-header>
-        <mat-card-actions>
-        <button mat-raised-button style="background-color: #9c27b0; color: white;" routerLink="/send-promotional-message">
-            Invia Messaggio
-        </button>
-        </mat-card-actions>
     </mat-card>
     }
 
     <!-- Card per Ricerca -->
-    <mat-card class="action-card">
+    <mat-card class="action-card clickable-card" routerLink="/search">
         <mat-card-header>
-        <mat-icon mat-card-avatar>search</mat-icon>
+        <mat-icon mat-card-avatar color="primary">search</mat-icon>
         <mat-card-title>Cerca Immobili</mat-card-title>
         <mat-card-subtitle>Trova la proprietà perfetta per te</mat-card-subtitle>
         </mat-card-header>
-        <mat-card-actions>
-        <button mat-raised-button color="primary" routerLink="/search">
-            Inizia Ricerca
-        </button>
-        </mat-card-actions>
     </mat-card>
 
     <!-- Card per Ricerche Salvate -->
-    <mat-card class="action-card">
+    <mat-card class="action-card clickable-card" routerLink="/saved-searches">
         <mat-card-header>
-        <mat-icon mat-card-avatar>bookmark</mat-icon>
+        <mat-icon mat-card-avatar color="accent">bookmark</mat-icon>
         <mat-card-title>Ricerche Salvate</mat-card-title>
         <mat-card-subtitle>Visualizza le tue ricerche preferite</mat-card-subtitle>
         </mat-card-header>
-        <mat-card-actions>
-        <button mat-raised-button color="accent" routerLink="/saved-searches">
-            Visualizza
-        </button>
-        </mat-card-actions>
     </mat-card>
 
     <!-- Card per I Miei Immobili (solo per agenti) -->
     @if (canUploadProperties()) {
-    <mat-card class="action-card">
+    <mat-card class="action-card clickable-card" (click)="goToMyProperties()" (keydown.enter)="goToMyProperties()" (keydown.space)="goToMyProperties()" tabindex="0">
         <mat-card-header>
         <mat-icon mat-card-avatar style="color: #4caf50">home_work</mat-icon>
         <mat-card-title>I Miei Immobili</mat-card-title>
         <mat-card-subtitle>Visualizza e gestisci i tuoi immobili</mat-card-subtitle>
         </mat-card-header>
-        <mat-card-actions>
-        <button mat-raised-button style="background-color: #4caf50; color: white;" (click)="goToMyProperties()">
-            Visualizza
-        </button>
-        </mat-card-actions>
     </mat-card>
     }
 
     <!-- Card per Immobili dell'Agenzia (per owner, admin e agenti) -->
     @if (canViewAgencyProperties()) {
-    <mat-card class="action-card">
+    <mat-card class="action-card clickable-card" (click)="goToAgencyProperties()" (keydown.enter)="goToAgencyProperties()" (keydown.space)="goToAgencyProperties()" tabindex="0">
         <mat-card-header>
         <mat-icon mat-card-avatar style="color: #2196f3">business</mat-icon>
         <mat-card-title>Immobili dell'Agenzia</mat-card-title>
         <mat-card-subtitle>Visualizza tutti gli immobili dell'agenzia</mat-card-subtitle>
         </mat-card-header>
-        <mat-card-actions>
-        <button mat-raised-button style="background-color: #2196f3; color: white;" (click)="goToAgencyProperties()">
-            Visualizza
-        </button>
-        </mat-card-actions>
     </mat-card>
     }
 
     <!-- Card per Agenti (solo per agenti) -->
     @if (isAgent()) {
-    <mat-card class="action-card">
+    <mat-card class="action-card clickable-card" routerLink="/properties/upload">
         <mat-card-header>
         <mat-icon mat-card-avatar>home</mat-icon>
         <mat-card-title>Carica Immobile</mat-card-title>
         <mat-card-subtitle>Aggiungi un nuovo immobile</mat-card-subtitle>
         </mat-card-header>
-        <mat-card-actions>
-        <button mat-raised-button color="primary" routerLink="/properties/upload">
-            Carica Immobile
-        </button>
-        </mat-card-actions>
     </mat-card>
     }
 
