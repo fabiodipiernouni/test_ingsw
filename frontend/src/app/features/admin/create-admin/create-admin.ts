@@ -69,6 +69,10 @@ export class CreateAdmin {
               duration: 3000,
               panelClass: ['success-snackbar']
             });
+            // Naviga alla gestione agenzia per vedere il nuovo amministratore
+            this.router.navigate(['/admin/manage-agency'], {
+              queryParams: { view: 'admins' }
+            });
           } else {
             this.snackBar.open(response.message || 'Errore durante la creazione dell\'amministratore', 'Chiudi', {
               duration: 5000,

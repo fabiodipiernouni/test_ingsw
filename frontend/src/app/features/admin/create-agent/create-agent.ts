@@ -93,6 +93,10 @@ export class CreateAgent {
               duration: 3000,
               panelClass: ['success-snackbar']
             });
+            // Naviga alla gestione agenzia per vedere il nuovo agente
+            this.router.navigate(['/admin/manage-agency'], {
+              queryParams: { view: 'agents' }
+            });
           } else {
             this.snackBar.open(response.message || 'Errore durante la creazione dell\'agente', 'Chiudi', {
               duration: 5000,
