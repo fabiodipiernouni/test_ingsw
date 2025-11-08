@@ -1,0 +1,208 @@
+// Definizione variabili principali
+$color-primary: #2d3748;
+$color-secondary: #718096;
+$color-accent: #667eea;
+$color-bg-light: #f7fafc;
+$border-radius-lg: 16px;
+$border-radius-md: 12px;
+$padding-lg: 2rem;
+$padding-md: 1.5rem;
+$padding-sm: 1rem;
+
+.notification-preferences-container {
+  padding: $padding-lg;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.section-header {
+  margin-bottom: $padding-lg;
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0 0 0.5rem 0;
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: $color-primary;
+
+    mat-icon {
+      color: $color-accent;
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+    }
+  }
+
+  p {
+    margin: 0;
+    color: $color-secondary;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1.5rem;
+
+  mat-spinner {
+    margin: 0 auto;
+  }
+
+  p {
+    color: $color-secondary;
+    font-size: 1rem;
+  }
+}
+
+.preferences-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.notification-types-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.notification-type-card {
+  border-radius: $border-radius-md;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+
+  mat-card-header {
+    padding: $padding-md;
+
+    .notification-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba($color-accent, 0.1);
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+
+      mat-icon {
+        color: $color-accent;
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+      }
+    }
+  }
+
+  mat-card-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: $color-primary;
+    margin-bottom: 0.25rem;
+  }
+
+  mat-card-subtitle {
+    font-size: 0.875rem;
+    color: $color-secondary;
+    line-height: 1.5;
+  }
+
+  mat-card-content {
+    padding: 0 $padding-md $padding-md;
+
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+
+      mat-slide-toggle {
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-top: $padding-md;
+  border-top: 1px solid rgba($color-secondary, 0.2);
+
+  button {
+    min-width: 160px;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    border-radius: $border-radius-md;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .notification-preferences-container {
+    padding: $padding-md;
+  }
+
+  .section-header {
+    h2 {
+      font-size: 1.5rem;
+    }
+  }
+
+  .notification-type-card {
+    mat-card-header {
+      padding: $padding-sm;
+
+      .notification-icon {
+        width: 40px;
+        height: 40px;
+
+        mat-icon {
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+      }
+    }
+
+    mat-card-title {
+      font-size: 1rem;
+    }
+
+    mat-card-subtitle {
+      font-size: 0.8rem;
+    }
+
+    mat-card-content {
+      padding: 0 $padding-sm $padding-sm;
+    }
+  }
+
+  .form-actions {
+    flex-direction: column;
+
+    button {
+      width: 100%;
+    }
+  }
+}

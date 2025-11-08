@@ -1,0 +1,319 @@
+### Creazione Proprietà
+POST http://localhost:3002/api/properties
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5MGI3ZGIxYy1hYTJhLTQwNmMtYTBjOC00NTA5ZmI0OGUzOTUiLCJlbWFpbCI6ImFnZW50QGxhcnRlZGlhYml0YXJlYm9sb2duYW5hdmlsZWJvbG9nbmEuaXQiLCJyb2xlIjoiYWdlbnQiLCJpYXQiOjE3NTk1MzEyNDQsImV4cCI6MTc1OTUzNDg0NH0.uV8sAZG1WTgLCzzGxdOt5TvIK9WR7rAUYP6rnwB4xi8
+
+{
+  "title": "Bellissimo Appartamento nel Centro Storico di Milano",
+  "description": "Elegante appartamento di 120 mq situato nel cuore del centro storico di Milano, a pochi passi dal Duomo. L'immobile si trova al terzo piano di un elegante palazzo d'epoca con ascensore. L'appartamento è composto da un luminoso soggiorno con cucina a vista, tre camere da letto di cui una matrimoniale, due bagni completi e un balcone che affaccia su una tranquilla corte interna. L'immobile è in ottime condizioni, completamente ristrutturato e arredato con gusto moderno. Riscaldamento autonomo, aria condizionata, parquet e doppi vetri. Ideale per famiglie o professionisti. Zona servita da tutti i mezzi pubblici.",
+  "price": 450000,
+  "propertyType": "apartment",
+  "listingType": "sale",
+  "bedrooms": 3,
+  "bathrooms": 2,
+  "area": 120,
+  "floor": "3",
+  "energyClass": "B",
+  "hasElevator": true,
+  "hasBalcony": true,
+  "hasGarden": false,
+  "hasParking": false,
+  "features": ["aria condizionata", "riscaldamento autonomo", "parquet", "doppi vetri", "ristrutturato"],
+  "address": {
+    "street": "Via Giuseppe Verdi, 15",
+    "city": "Milano",
+    "province": "Milano",
+    "zipCode": "20121",
+    "country": "Italia"
+  },
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      9.1859243,
+      45.4654219
+    ]
+  }
+}
+
+### Ottenere Lista Proprietà (non autenticato)
+GET http://localhost:3002/api/properties/
+
+### Ottenere Lista Proprietà (autenticato come agente)
+GET http://localhost:3002/api/properties/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyOWU5MGY5Yi0wNGE0LTQ1ZGItODFhZi00NzhiZTRkOWI5YmIiLCJlbWFpbCI6ImZhYmlvQHRlY25vY2FzYS5pdCIsInJvbGUiOiJhZ2VudCIsImlhdCI6MTc1ODk5NDg0MiwiZXhwIjoxNzU4OTk4NDQyfQ.k6RBlD8DCDVcSv7GLf-P8tOMdWQo8V3DAKzU7qzY3OQ
+
+### Ottenere Dettagli di una Proprietà
+GET http://localhost:3002/api/properties/ca06467f-4bc2-5ba2-865d-3f584d01dd9e
+
+###############################################
+# AGGIORNAMENTO PARZIALE PROPRIETÀ (PATCH)
+###############################################
+
+### Aggiorna solo lo status (es. marca come venduta)
+PATCH http://localhost:3002/api/properties/{{property_id}}
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "status": "sold"
+}
+
+### Aggiorna solo il prezzo
+PATCH http://localhost:3002/api/properties/{{property_id}}
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "price": 280000
+}
+
+### Aggiorna più campi contemporaneamente
+PATCH http://localhost:3002/api/properties/{{property_id}}
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "status": "active",
+  "price": 250000,
+  "description": "Appartamento completamente ristrutturato con finiture di pregio",
+  "hasElevator": true,
+  "features": ["ristrutturato", "doppi vetri", "climatizzato", "portineria"]
+}
+
+### Aggiorna l'indirizzo completo
+PATCH http://localhost:3002/api/properties/{{property_id}}
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "address": {
+    "street": "Via Roma 123",
+    "city": "Milano",
+    "province": "MI",
+    "zipCode": "20121",
+    "country": "Italia"
+  }
+}
+
+### Aggiorna caratteristiche booleane
+PATCH http://localhost:3002/api/properties/{{property_id}}
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "hasElevator": true,
+  "hasBalcony": true,
+  "hasGarden": false,
+  "hasParking": true
+}
+
+### Test errore: proprietà non trovata
+PATCH http://localhost:3002/api/properties/00000000-0000-0000-0000-000000000000
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "status": "sold"
+}
+
+### Test errore: status non valido
+PATCH http://localhost:3002/api/properties/{{property_id}}
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "status": "invalid_status"
+}
+
+### Test errore: nessun campo da aggiornare
+PATCH http://localhost:3002/api/properties/{{property_id}}
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{}
+
+###############################################
+# UPLOAD IMMAGINI PROPRIETÀ
+###############################################
+# IMPORTANTE: Prima di usare queste richieste:
+# 1. Modifica il file http-client.env.json nella stessa cartella
+# 2. Inserisci il tuo JWT token (ottenuto dal login)
+# 3. Inserisci un property_id valido di una proprietà esistente
+# 4. Assicurati che i path alle immagini esistano sul tuo sistema
+
+### Upload Singola Immagine
+POST {{base_url}}/api/property/{{property_id}}/images
+Authorization: Bearer {{jwt_token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="images"; filename="soggiorno.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/soggiorno.jpg
+--boundary
+Content-Disposition: form-data; name="metadata"
+
+[
+  {
+    "isPrimary": true,
+    "order": 0,
+    "caption": "Soggiorno luminoso",
+    "altText": "Vista del soggiorno principale con finestre panoramiche"
+  }
+]
+POST {{base_url}}/api/property/{{property_id}}/images
+
+### Upload Multiple Immagini (2)
+POST http://localhost:3002/api/properties/550e8400-e29b-41d4-a716-446655440000/images
+Authorization: Bearer {{jwt_token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="images"; filename="soggiorno.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/soggiorno.jpg
+--boundary
+Content-Disposition: form-data; name="images"; filename="cucina.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/cucina.jpg
+--boundary
+Content-Disposition: form-data; name="metadata"
+
+[
+  {
+    "isPrimary": true,
+    "order": 0,
+    "caption": "Soggiorno luminoso",
+    "altText": "Vista del soggiorno con finestre panoramiche"
+  },
+  {
+    "isPrimary": false,
+    "order": 1,
+    "caption": "Cucina moderna",
+    "altText": "Cucina completamente attrezzata"
+  }
+]
+--boundary--
+
+### Upload con Metadata Minimale
+POST {{base_url}}/api/property/{{property_id}}/images
+Authorization: Bearer {{jwt_token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="images"; filename="image1.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image1.jpg
+--boundary
+Content-Disposition: form-data; name="images"; filename="image2.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image2.jpg
+--boundary
+Content-Disposition: form-data; name="metadata"
+
+[
+  {
+    "isPrimary": true,
+    "order": 0
+  },
+  {
+    "isPrimary": false,
+    "order": 1
+  }
+]
+--boundary--
+
+###############################################
+# TEST ERRORI - UPLOAD IMMAGINI
+###############################################
+
+### Errore: Due immagini primary
+POST {{base_url}}/api/property/{{property_id}}/images
+Authorization: Bearer {{jwt_token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="images"; filename="image1.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image1.jpg
+--boundary
+Content-Disposition: form-data; name="images"; filename="image2.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image2.jpg
+--boundary
+Content-Disposition: form-data; name="metadata"
+
+[
+  {
+    "isPrimary": true,
+    "order": 0
+  },
+  {
+    "isPrimary": true,
+    "order": 1
+  }
+]
+--boundary--
+
+### Errore: Order duplicati
+POST {{base_url}}/api/property/{{property_id}}/images
+Authorization: Bearer {{jwt_token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="images"; filename="image1.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image1.jpg
+--boundary
+Content-Disposition: form-data; name="images"; filename="image2.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image2.jpg
+--boundary
+Content-Disposition: form-data; name="metadata"
+
+[
+  {
+    "isPrimary": true,
+    "order": 0
+  },
+  {
+    "isPrimary": false,
+    "order": 0
+  }
+]
+--boundary--
+
+### Errore: Metadata mismatch (2 file, 1 metadata)
+POST {{base_url}}/api/property/{{property_id}}/images
+Authorization: Bearer {{jwt_token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="images"; filename="image1.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image1.jpg
+--boundary
+Content-Disposition: form-data; name="images"; filename="image2.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image2.jpg
+--boundary
+Content-Disposition: form-data; name="metadata"
+
+[
+  {
+    "isPrimary": true,
+    "order": 0
+  }
+]
+--boundary--

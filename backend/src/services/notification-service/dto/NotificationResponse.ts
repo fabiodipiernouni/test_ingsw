@@ -1,0 +1,21 @@
+import { NotificationType } from '@shared/types/notification.types';
+
+export interface NotificationDto {
+    id: string;
+    userId: string;
+    type: NotificationType;
+    title: string;
+    message: string;
+    isRead: boolean;
+    isSent: boolean;
+    actionUrl?: string;
+    imageUrl?: string;
+    agency?: {
+        id: string;
+        name: string;
+    };
+    readAt?: string;
+    sentAt?: string;
+    createdAt: string;
+    updatedAt: string;
+}

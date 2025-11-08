@@ -1,0 +1,12 @@
+<div class="user-avatar-container" [ngClass]="'size-' + size">
+  @if (avatarUrl) {
+    <img 
+      [src]="avatarUrl" 
+      [alt]="altText || (firstName + ' ' + lastName)"
+      class="avatar-image">
+  } @else {
+    <div class="avatar-initials">
+      {{ getUserInitials() }}
+    </div>
+  }
+</div>

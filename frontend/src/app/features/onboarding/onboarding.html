@@ -1,0 +1,244 @@
+<div class="onboarding-container">
+    <app-user-warning></app-user-warning>
+
+    <div class="welcome-header">
+    <mat-icon class="welcome-icon">celebration</mat-icon>
+    <h1>Benvenuto in DietiEstates25, {{ currentUser?.firstName }}!</h1>
+    <p class="welcome-subtitle">
+        La registrazione è avvenuta con successo. Scopri cosa puoi fare con il tuo nuovo account.
+    </p>
+    </div>
+
+    <div class="features-grid">
+
+    <!-- Gestione Agenzia (per owner e admin) -->
+    @if (canManageAgency()) {
+    <mat-card class="feature-card">
+        <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #ff9800">groups</mat-icon>
+        <mat-card-title>Gestione Agenzia</mat-card-title>
+        <mat-card-subtitle>Gestisci il team della tua agenzia</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+        <p>Visualizza e gestisci tutti i membri del team della tua agenzia immobiliare.</p>
+        <ul>
+            <li>Visualizza amministratori e agenti</li>
+            <li>Crea nuovi membri del team</li>
+            <li>Rimuovi membri dall'agenzia</li>
+            <li>Gestisci permessi e accessi</li>
+        </ul>
+        </mat-card-content>
+        <mat-card-actions>
+        <button mat-raised-button style="background-color: #ff9800; color: white;" routerLink="/admin/manage-agency">
+            Gestisci Agenzia
+        </button>
+        @if (canCreateAdmins()) {
+        <button mat-button style="color: #ff9800;" routerLink="/create-admin">
+            Crea Admin
+        </button>
+        }
+        </mat-card-actions>
+    </mat-card>
+    }
+
+    <!-- Gestione Agenti (per owner e admin) -->
+    @if (canCreateAgents()) {
+    <mat-card class="feature-card">
+        <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #4caf50">person_add</mat-icon>
+        <mat-card-title>Crea Agenti</mat-card-title>
+        <mat-card-subtitle>Aggiungi nuovi agenti al team</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+        <p>Crea nuovi account per gli agenti immobiliari della tua agenzia.</p>
+        <ul>
+            <li>Registra nuovi agenti</li>
+            <li>Assegna licenze e permessi</li>
+            <li>Configura accessi alla piattaforma</li>
+            <li>Monitora le performance</li>
+        </ul>
+        </mat-card-content>
+        <mat-card-actions>
+        <button mat-raised-button style="background-color: #4caf50; color: white;" routerLink="/create-agent">
+            Crea Agente
+        </button>
+        </mat-card-actions>
+    </mat-card>
+    }
+
+    <!-- Messaggi Promozionali (per owner e admin) -->
+    @if (canSendPromotions()) {
+    <mat-card class="feature-card">
+        <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #2196f3">campaign</mat-icon>
+        <mat-card-title>Messaggi Promozionali</mat-card-title>
+        <mat-card-subtitle>Comunica con i clienti</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+        <p>Invia messaggi promozionali a tutti gli utenti attivi della piattaforma.</p>
+        <ul>
+            <li>Crea messaggi personalizzati</li>
+            <li>Aggiungi immagini e link</li>
+            <li>Raggiungi tutti i clienti attivi</li>
+            <li>Monitora l'invio in tempo reale</li>
+        </ul>
+        </mat-card-content>
+        <mat-card-actions>
+        <button mat-raised-button style="background-color: #2196f3; color: white;" routerLink="/admin/send-promotional-message">
+            Invia Messaggio
+        </button>
+        </mat-card-actions>
+    </mat-card>
+    }
+
+    <!-- Ricerca Immobili -->
+    <mat-card class="feature-card">
+        <mat-card-header>
+        <mat-icon mat-card-avatar color="primary">search</mat-icon>
+        <mat-card-title>Ricerca Avanzata</mat-card-title>
+        <mat-card-subtitle>Trova l'immobile perfetto</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+        <p>Utilizza i nostri filtri avanzati per cercare immobili per zona, prezzo, caratteristiche e molto altro.</p>
+        <ul>
+            <li>Filtri per tipologia e prezzo</li>
+            <li>Ricerca per mappa interattiva</li>
+            <li>Notifiche per nuovi immobili</li>
+        </ul>
+        </mat-card-content>
+        <mat-card-actions>
+        <button mat-raised-button color="primary" routerLink="/search">
+            Inizia a Cercare
+        </button>
+        </mat-card-actions>
+    </mat-card>
+
+    <!-- Ricerche Salvate -->
+    <mat-card class="feature-card">
+        <mat-card-header>
+        <mat-icon mat-card-avatar color="accent">bookmark</mat-icon>
+        <mat-card-title>Ricerche Salvate</mat-card-title>
+        <mat-card-subtitle>Non perdere mai un'opportunità</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+        <p>Salva le tue ricerche preferite e ricevi notifiche quando sono disponibili nuovi immobili.</p>
+        <ul>
+            <li>Salva fino a 10 ricerche</li>
+            <li>Notifiche email automatiche</li>
+            <li>Gestione semplice e intuitiva</li>
+        </ul>
+        </mat-card-content>
+        <mat-card-actions>
+        <button mat-button color="accent" routerLink="/saved-searches">
+            Gestisci Ricerche
+        </button>
+        </mat-card-actions>
+    </mat-card>
+
+    <!-- I Miei Immobili (solo per agenti) -->
+    @if (canUploadProperties()) {
+    <mat-card class="feature-card">
+        <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #4caf50">home_work</mat-icon>
+        <mat-card-title>I Miei Immobili</mat-card-title>
+        <mat-card-subtitle>Visualizza e gestisci i tuoi immobili</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+        <p>Visualizza tutti gli immobili che hai caricato sulla piattaforma.</p>
+        <ul>
+            <li>Lista dei tuoi immobili</li>
+            <li>Statistiche di visualizzazione</li>
+            <li>Gestione richieste clienti</li>
+        </ul>
+        </mat-card-content>
+        <mat-card-actions>
+        <button mat-raised-button style="background-color: #4caf50; color: white;" (click)="goToMyProperties()">
+            Visualizza I Miei Immobili
+        </button>
+        </mat-card-actions>
+    </mat-card>
+    }
+
+    <!-- Immobili dell'Agenzia (per owner, admin e agenti) -->
+    @if (canViewAgencyProperties()) {
+    <mat-card class="feature-card">
+        <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #2196f3">business</mat-icon>
+        <mat-card-title>Immobili dell'Agenzia</mat-card-title>
+        <mat-card-subtitle>Visualizza il portfolio completo</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+        <p>Accedi a tutti gli immobili gestiti dalla tua agenzia immobiliare.</p>
+        <ul>
+            <li>Portfolio completo dell'Agenzia</li>
+            <li>Immobili di tutti gli agenti</li>
+            <li>Statistiche e performance</li>
+        </ul>
+        </mat-card-content>
+        <mat-card-actions>
+        <button mat-raised-button style="background-color: #2196f3; color: white;" (click)="goToAgencyProperties()">
+            Visualizza Immobili Agenzia
+        </button>
+        </mat-card-actions>
+    </mat-card>
+    }
+
+    <!-- Funzionalità Agente (solo per agenti) -->
+    @if (canUploadProperty()) {
+    <mat-card class="feature-card">
+        <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #ff9800">add_home</mat-icon>
+        <mat-card-title>Carica Immobili</mat-card-title>
+        <mat-card-subtitle>Aggiungi nuove proprietà</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+        <p>Come agente immobiliare, hai accesso a strumenti avanzati per la gestione dei tuoi immobili.</p>
+        <ul>
+            <li>Caricamento immobili con foto</li>
+            <li>Gestione richieste clienti</li>
+            <li>Statistiche e analytics</li>
+        </ul>
+        </mat-card-content>
+        <mat-card-actions>
+        <button mat-raised-button style="background-color: #ff9800; color: white;" routerLink="/properties/upload">
+            Carica Immobile
+        </button>
+        </mat-card-actions>
+    </mat-card>
+    }
+
+    <!-- Consigli per iniziare -->
+    <mat-card class="feature-card tips-card">
+        <mat-card-header>
+        <mat-icon mat-card-avatar style="color: #ff9800">lightbulb</mat-icon>
+        <mat-card-title>Consigli per Iniziare</mat-card-title>
+        <mat-card-subtitle>Massimizza la tua esperienza</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+        <div class="tips-list">
+            <div class="tip-item">
+            <mat-icon class="tip-icon">check_circle</mat-icon>
+            <span>Attiva le notifiche per non perdere opportunità</span>
+            </div>
+            <div class="tip-item">
+            <mat-icon class="tip-icon">check_circle</mat-icon>
+            <span>Salva le tue ricerche preferite per un accesso rapido</span>
+            </div>
+        </div>
+        </mat-card-content>
+    </mat-card>
+    </div>
+
+    <!-- Azioni Finali -->
+    <div class="action-section">
+    <h3>Sei pronto per iniziare?</h3>
+    <div class="action-buttons">
+        <button mat-raised-button color="primary" size="large" (click)="goToDashboard()">
+        Vai alla Dashboard
+        </button>
+        <button mat-raised-button color="accent" size="large" routerLink="/search">
+        Inizia a Cercare
+        </button>
+    </div>
+    </div>
+</div>

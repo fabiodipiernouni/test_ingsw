@@ -1,0 +1,360 @@
+<div class="upload-container">
+  <mat-card class="upload-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>add_home</mat-icon>
+        Carica Nuovo Immobile
+      </mat-card-title>
+      <mat-card-subtitle>
+        Inserisci tutte le informazioni relative al tuo immobile
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <mat-stepper #stepper>
+        <!-- Step 1: Basic Information -->
+        <mat-step [stepControl]="basicInfoForm" label="Informazioni Base">
+          <form [formGroup]="basicInfoForm">
+            <div class="form-section">
+              <h3>Dettagli Generali</h3>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Titolo Annuncio</mat-label>
+                <input matInput
+                       formControlName="title"
+                       placeholder="Es: Splendido appartamento nel centro di Napoli">
+                <mat-error>{{ getErrorMessage(basicInfoForm, 'title') }}</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Descrizione</mat-label>
+                <textarea matInput
+                          formControlName="description"
+                          rows="4"
+                          placeholder="Descrivi l'immobile in dettaglio..."></textarea>
+                <mat-error>{{ getErrorMessage(basicInfoForm, 'description') }}</mat-error>
+              </mat-form-field>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>Prezzo (€)</mat-label>
+                  <input matInput
+                         type="number"
+                         formControlName="price"
+                         placeholder="285000">
+                  <mat-error>{{ getErrorMessage(basicInfoForm, 'price') }}</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Tipo Immobile</mat-label>
+                  <mat-select formControlName="propertyType">
+                    @for (type of propertyTypes; track type.value) {
+                      <mat-option [value]="type.value">{{ type.label }}</mat-option>
+                    }
+                  </mat-select>
+                  <mat-error>{{ getErrorMessage(basicInfoForm, 'propertyType') }}</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Contratto</mat-label>
+                  <mat-select formControlName="listingType">
+                    @for (type of listingTypes; track type.value) {
+                      <mat-option [value]="type.value">{{ type.label }}</mat-option>
+                    }
+                  </mat-select>
+                  <mat-error>{{ getErrorMessage(basicInfoForm, 'listingType') }}</mat-error>
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div class="step-actions">
+              <button mat-raised-button
+                      color="primary"
+                      matStepperNext
+                      [disabled]="!basicInfoForm.valid">
+                Avanti
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </div>
+          </form>
+        </mat-step>
+
+        <!-- Step 2: Property Details -->
+        <mat-step [stepControl]="detailsForm" label="Caratteristiche">
+          <form [formGroup]="detailsForm">
+            <div class="form-section">
+              <h3>Caratteristiche Immobile</h3>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>Numero Locali</mat-label>
+                  <input matInput
+                         type="number"
+                         formControlName="rooms"
+                         min="1">
+                  <mat-error>{{ getErrorMessage(detailsForm, 'rooms') }}</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Camere da Letto</mat-label>
+                  <input matInput
+                         type="number"
+                         formControlName="bedrooms"
+                         min="1">
+                  <mat-error>{{ getErrorMessage(detailsForm, 'bedrooms') }}</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Bagni</mat-label>
+                  <input matInput
+                         type="number"
+                         formControlName="bathrooms"
+                         min="1">
+                  <mat-error>{{ getErrorMessage(detailsForm, 'bathrooms') }}</mat-error>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>Superficie (m²)</mat-label>
+                  <input matInput
+                         type="number"
+                         formControlName="area"
+                         min="1">
+                  <mat-error>{{ getErrorMessage(detailsForm, 'area') }}</mat-error>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>Piano</mat-label>
+                  <input matInput
+                         formControlName="floor"
+                         placeholder="Es: 2° piano">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Classe Energetica</mat-label>
+                  <mat-select formControlName="energyClass">
+                    @for (energyClass of energyClasses; track energyClass) {
+                      <mat-option [value]="energyClass">{{ energyClass }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <div class="features-section">
+                <h4>Servizi e Caratteristiche</h4>
+                <div class="checkboxes-grid">
+                  <mat-checkbox formControlName="hasElevator">
+                    <mat-icon>elevator</mat-icon>
+                    Ascensore
+                  </mat-checkbox>
+                  <mat-checkbox formControlName="hasBalcony">
+                    <mat-icon>balcony</mat-icon>
+                    Balcone
+                  </mat-checkbox>
+                  <mat-checkbox formControlName="hasGarden">
+                    <mat-icon>yard</mat-icon>
+                    Giardino
+                  </mat-checkbox>
+                  <mat-checkbox formControlName="hasParking">
+                    <mat-icon>local_parking</mat-icon>
+                    Parcheggio
+                  </mat-checkbox>
+                </div>
+              </div>
+            </div>
+
+            <div class="step-actions">
+              <button mat-button matStepperPrevious>
+                <mat-icon>arrow_back</mat-icon>
+                Indietro
+              </button>
+              <button mat-raised-button
+                      color="primary"
+                      matStepperNext
+                      [disabled]="!detailsForm.valid">
+                Avanti
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </div>
+          </form>
+        </mat-step>
+
+        <!-- Step 3: Images -->
+        <mat-step label="Foto">
+          <div class="form-section">
+            <h3>Foto dell'Immobile</h3>
+
+            <div class="image-upload-area">
+              <input type="file"
+                     #fileInput
+                     multiple
+                     accept="image/*"
+                     (change)="onFileSelected($event)"
+                     style="display: none;">
+
+              <div class="upload-dropzone" (click)="fileInput.click()">
+                <mat-icon>cloud_upload</mat-icon>
+                <h4>Carica le foto del tuo immobile</h4>
+                <p>Clicca qui per selezionare le immagini o trascinale</p>
+                <p class="upload-info">PNG, JPG fino a 10MB. Massimo 20 foto.</p>
+              </div>
+
+              @if (uploadedImages().length > 0) {
+                <div class="uploaded-images">
+                  <h4>Immagini caricate ({{ uploadedImages().length }})</h4>
+                  <p class="primary-hint">
+                    <mat-icon>info</mat-icon>
+                    Clicca su "Imposta come copertina" per scegliere la foto principale
+                  </p>
+                  <div class="images-grid">
+                    @for (image of uploadedImages(); track $index) {
+                      <div class="image-preview" [class.is-primary]="image.isPrimary">
+                        <img [src]="image.previewUrl" [alt]="image.file.name">
+
+                        <!-- Badge Copertina -->
+                        @if (image.isPrimary) {
+                          <div class="primary-badge">
+                            <mat-icon>star</mat-icon>
+                            COPERTINA
+                          </div>
+                        }
+
+                        <!-- Pulsante Rimuovi -->
+                        <button mat-icon-button
+                                class="remove-image"
+                                (click)="removeImage($index)"
+                                matTooltip="Rimuovi immagine">
+                          <mat-icon>close</mat-icon>
+                        </button>
+
+                        <!-- Pulsante Imposta come Copertina -->
+                        @if (!image.isPrimary) {
+                          <button mat-mini-fab class="set-primary-btn" color="accent" type="button" tabindex="0"
+                                  (click)="setPrimaryImage($index); $event.stopPropagation()" (keyup)="$event.key === 'Enter' && setPrimaryImage($index)"
+                                  matTooltip="Imposta come copertina" [attr.aria-label]="'Imposta foto ' + ($index + 1) + ' come copertina'">
+                            <mat-icon>star_border</mat-icon>
+                          </button>
+                        }
+
+                        <div class="image-name">{{ image.file.name }}</div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+
+            <div class="step-actions">
+              <button mat-button matStepperPrevious>
+                <mat-icon>arrow_back</mat-icon>
+                Indietro
+              </button>
+              <button mat-raised-button
+                      color="primary"
+                      matStepperNext
+                      [disabled]="!detailsForm.valid">
+                Avanti
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-step>
+
+        <!-- Step 4: Address & Location -->
+        <mat-step [stepControl]="addressForm" label="Posizione">
+          <div class="form-section">
+            <h3>Posizione dell'Immobile</h3>
+            <p class="section-hint">
+              <mat-icon>info</mat-icon>
+              Cerca l'indirizzo utilizzando l'autocomplete oppure clicca sulla mappa per posizionare il marker
+            </p>
+
+            <div class="address-location-container">
+              <!-- Colonna Sinistra: Autocomplete Indirizzo -->
+              <div class="address-form-column">
+                <form [formGroup]="addressForm">
+                  <h4>Ricerca Indirizzo</h4>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Indirizzo Completo</mat-label>
+                    <input matInput
+                           #addressInput
+                           formControlName="fullAddress"
+                           placeholder="Cerca indirizzo (es: Via dei Mille 123, Napoli)"
+                           autocomplete="off">
+                    <mat-icon matSuffix>location_on</mat-icon>
+                    <mat-hint>Seleziona un indirizzo dall'autocomplete</mat-hint>
+                    <mat-error>{{ getErrorMessage(addressForm, 'fullAddress') }}</mat-error>
+                  </mat-form-field>
+
+                  @if (currentLocation()) {
+                    <div class="location-info" [class.incomplete]="!isAddressComplete()">
+                      <mat-icon [class.warning]="!isAddressComplete()">
+                        {{ isAddressComplete() ? 'check_circle' : 'warning' }}
+                      </mat-icon>
+                      <div class="location-details">
+                        <strong>{{ isAddressComplete() ? 'Indirizzo selezionato:' : 'Indirizzo approssimativo:' }}</strong>
+                        <p>{{ addressForm.get('street')?.value || 'Via non specificata' }}</p>
+                        <p>{{ addressForm.get('city')?.value || '' }}{{ addressForm.get('province')?.value ? ', ' + addressForm.get('province')?.value : '' }}{{ addressForm.get('zipCode')?.value ? ' ' + addressForm.get('zipCode')?.value : ' (CAP mancante)' }}</p>
+                        <small>Coordinate: {{ currentLocation()!.lat.toFixed(6) }}, {{ currentLocation()!.lng.toFixed(6) }}</small>
+                        @if (!isAddressComplete()) {
+                          <small class="warning-text">
+                            <mat-icon class="small-icon">info</mat-icon>
+                            Clicca su un punto preciso della mappa per ottenere il CAP
+                          </small>
+                        }
+                      </div>
+                    </div>
+                  }
+
+                  @if (addressSelectionError()) {
+                    <div class="error-message">
+                      <mat-icon>error</mat-icon>
+                      {{ addressSelectionError() }}
+                    </div>
+                  }
+                </form>
+              </div>
+
+              <!-- Colonna Destra: Mappa -->
+              <div class="map-column">
+                <h4>Mappa Interattiva</h4>
+                <div class="map-hint">
+                  <mat-icon>touch_app</mat-icon>
+                  Clicca sulla mappa per posizionare il marker della proprietà
+                </div>
+                <div #mapContainer class="map-container"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-actions">
+            <button mat-button matStepperPrevious>
+              <mat-icon>arrow_back</mat-icon>
+              Indietro
+            </button>
+            <button mat-raised-button
+                    color="primary"
+                    (click)="onSubmit()"
+                    [disabled]="isLoading() || !basicInfoForm.valid || !detailsForm.valid || !addressForm.valid || !currentLocation() || !isAddressComplete()">
+              @if (isLoading()) {
+                <ng-container>
+                  <mat-icon class="spin">refresh</mat-icon>
+                  Caricamento...
+                </ng-container>
+              } @else {
+                <ng-container>
+                  <mat-icon>publish</mat-icon>
+                  Pubblica Immobile
+                </ng-container>
+              }
+            </button>
+          </div>
+        </mat-step>
+      </mat-stepper>
+    </mat-card-content>
+  </mat-card>
+</div>

@@ -1,0 +1,142 @@
+<div class="profile-container">
+  <div class="profile-header">
+    <mat-card class="profile-card">
+      <mat-card-header class="user-info">
+        <div class="avatar-section">
+          <app-user-avatar
+            [avatarUrl]="currentUser()?.avatar"
+            [firstName]="currentUser()?.firstName || ''"
+            [lastName]="currentUser()?.lastName || ''"
+            [altText]="fullName()"
+            size="large">
+          </app-user-avatar>
+        </div>
+
+        <div class="user-details">
+          <h1 class="user-name">{{ fullName() }}</h1>
+          <div class="user-role">
+            <mat-icon>{{ isAgent() ? 'work' : isAdmin() || isOwner() ? 'admin_panel_settings' : 'person' }}</mat-icon>
+            {{ userRoleLabel() }}
+          </div>
+
+          @if (currentUser()?.email) {
+            <div class="user-email">
+              <mat-icon>email</mat-icon>
+              {{ currentUser()?.email }}
+            </div>
+          }
+
+          @if (currentUser()?.phone) {
+            <div class="user-phone">
+              <mat-icon>phone</mat-icon>
+              {{ currentUser()?.phone }}
+            </div>
+          }
+
+          @if (isAgent() && currentUser()?.agency?.name) {
+            <div class="agency-info">
+              <mat-icon>business</mat-icon>
+              {{ currentUser()?.agency?.name }}
+            </div>
+          }
+
+          @if (isAgent() && currentUser()?.licenseNumber) {
+            <div class="license-info">
+              <mat-icon>badge</mat-icon>
+              Licenza: {{ currentUser()?.licenseNumber }}
+            </div>
+          }
+        </div>
+
+        <div class="user-stats">
+          <div class="stat-item">
+            <span class="stat-label">Membro dal</span>
+            <span class="stat-value">{{ getJoinDateLabel() }}</span>
+          </div>
+        </div>
+      </mat-card-header>
+
+      @if (isAgent() && currentUser()?.biography) {
+        <mat-card-content>
+          <div class="biography-section">
+            <h3>
+              <mat-icon>info</mat-icon>
+              Biografia
+            </h3>
+            <p>{{ currentUser()?.biography }}</p>
+          </div>
+        </mat-card-content>
+      }
+
+      @if (isAgent() && currentUser()?.specializations && currentUser()!.specializations!.length > 0) {
+        <mat-card-content>
+          <div class="specializations-section">
+            <h3>
+              <mat-icon>work_outline</mat-icon>
+              Specializzazioni
+            </h3>
+            <div class="specializations-chips">
+              @for (spec of currentUser()?.specializations; track spec) {
+                <mat-chip>{{ spec }}</mat-chip>
+              }
+            </div>
+          </div>
+        </mat-card-content>
+      }
+
+      <mat-card-actions class="profile-actions">
+        <button mat-button (click)="goToDashboard()">
+          <mat-icon>dashboard</mat-icon>
+          Dashboard
+        </button>
+
+        @if (!currentUser()?.isVerified) {
+          <button mat-raised-button color="warn" (click)="onTabChange(1)">
+            <mat-icon>email</mat-icon>
+            Verifica Email
+          </button>
+        }
+
+        @if (currentUser()?.passwordChangeRequired) {
+          <button mat-raised-button color="warn" (click)="onTabChange(0)">
+            <mat-icon>security</mat-icon>
+            Cambia Password (Richiesto)
+          </button>
+        }
+
+        <button mat-raised-button color="accent" (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          Logout
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <div class="profile-tabs">
+    <mat-card>
+      <mat-tab-group [selectedIndex]="selectedTab()" (selectedIndexChange)="onTabChange($event)">
+
+        <!-- Tab Cambia Password -->
+        <mat-tab label="Cambia Password">
+          <ng-template matTabContent>
+            <div class="tab-content">
+              <app-change-password
+                (passwordChanged)="onPasswordChanged()">
+              </app-change-password>
+            </div>
+          </ng-template>
+        </mat-tab>
+
+        <!-- Tab Preferenze Notifiche -->
+        <mat-tab label="Preferenze Notifiche">
+          <ng-template matTabContent>
+            <div class="tab-content">
+              <app-notification-preferences></app-notification-preferences>
+            </div>
+          </ng-template>
+        </mat-tab>
+
+      </mat-tab-group>
+    </mat-card>
+  </div>
+</div>

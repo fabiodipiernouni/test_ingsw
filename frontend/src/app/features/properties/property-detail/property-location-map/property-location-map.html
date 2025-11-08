@@ -1,0 +1,18 @@
+<div class="property-location-map-container">
+  @if (isLoading) {
+    <div class="loading-state">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Caricamento mappa...</p>
+    </div>
+  }
+
+  <div #mapContainer class="map-container" [class.hidden]="isLoading"></div>
+
+  @if (!latitude || !longitude) {
+    <div class="error-state">
+      <mat-icon>location_off</mat-icon>
+      <p>Coordinate non disponibili</p>
+    </div>
+  }
+</div>
+

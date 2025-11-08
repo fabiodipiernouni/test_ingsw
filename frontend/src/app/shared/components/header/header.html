@@ -1,0 +1,238 @@
+<mat-toolbar class="app-header">
+  <div class="header-container">
+    <!-- Logo and Brand -->
+    <div class="brand" routerLink="/">
+      <mat-icon class="brand-icon">home</mat-icon>
+      <span class="brand-text">DietiEstates25</span>
+    </div>
+
+    <!-- Desktop Navigation -->
+    <nav class="desktop-nav">
+      <a mat-button routerLink="/search" routerLinkActive="active">
+        <mat-icon>search</mat-icon>
+        Cerca
+      </a>
+
+      @if (isAuthenticated()) {
+        <a mat-button routerLink="/dashboard" routerLinkActive="active">
+          <mat-icon>dashboard</mat-icon>
+          Dashboard
+        </a>
+        <a mat-button routerLink="/saved-searches" routerLinkActive="active">
+          <mat-icon>bookmark</mat-icon>
+          Ricerche Salvate
+        </a>
+      }
+
+    </nav>
+
+    <!-- User Actions -->
+    <div class="user-actions">
+      @if (isAuthenticated()) {
+        <!-- Notifications -->
+        <app-notification-menu></app-notification-menu>
+
+        <!-- User Menu -->
+        <button mat-icon-button
+                [matMenuTriggerFor]="userMenu"
+                class="user-avatar-btn"
+                matTooltip="{{ getUserDisplayName() }}">
+          <app-user-avatar
+            [avatarUrl]="currentUser()?.avatar"
+            [firstName]="currentUser()?.firstName || ''"
+            [lastName]="currentUser()?.lastName || ''"
+            [altText]="getUserDisplayName()"
+            size="medium">
+          </app-user-avatar>
+        </button>
+
+        <mat-menu #userMenu="matMenu" class="user-menu">
+          <div class="user-info">
+            <div class="user-name">{{ getUserDisplayName() }}</div>
+            <div class="user-email">{{ currentUser()?.email }}</div>
+          </div>
+
+          <mat-divider></mat-divider>
+
+          <button mat-menu-item (click)="onProfileClick()">
+            <mat-icon>person</mat-icon>
+            <span>Il Mio Profilo</span>
+          </button>
+
+          @if (canUploadProperties()) {
+            <a mat-menu-item routerLink="/properties/upload">
+              <mat-icon>add_home</mat-icon>
+              <span>Carica Immobile</span>
+            </a>
+            <button mat-menu-item (click)="onMyProperties()">
+              <mat-icon>home_work</mat-icon>
+              <span>I Miei Immobili</span>
+            </button>
+          }
+
+          @if(canManageAgency()) {
+            <a mat-menu-item routerLink="/admin/manage-agency">
+              <mat-icon>business</mat-icon>
+              <span>Gestisci Agenzia</span>
+            </a>
+          }
+
+          @if (canViewAgencyProperties()) {
+            <button mat-menu-item (click)="onAgencyProperties()">
+              <mat-icon>home_work</mat-icon>
+              <span>Immobili dell'Agenzia</span>
+            </button>
+          }
+
+          @if(canSendPromotions()) {
+            <a mat-menu-item routerLink="/send-promotional-message">
+              <mat-icon>campaign</mat-icon>
+              <span>Messaggi Promozionali</span>
+            </a>
+          }
+
+          <mat-divider></mat-divider>
+
+          <button mat-menu-item (click)="onLogout()" class="logout-item">
+            <mat-icon>logout</mat-icon>
+            <span>Esci</span>
+          </button>
+        </mat-menu>
+      } @else {
+        <!-- Guest Actions -->
+        <button mat-button (click)="onLogin()" class="login-button">
+          <mat-icon>login</mat-icon>
+          Accedi
+        </button>
+
+        <button mat-raised-button
+                color="primary"
+                (click)="onRegister()"
+                class="register-button">
+          <mat-icon>person_add</mat-icon>
+          Registrati
+        </button>
+      }
+
+      <!-- Mobile Menu Toggle -->
+      <button mat-icon-button
+              class="mobile-menu-toggle"
+              (click)="toggleMobileMenu()"
+              [class.active]="isMobileMenuOpen()">
+        <mat-icon>{{ isMobileMenuOpen() ? 'close' : 'menu' }}</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Navigation -->
+  @if (isMobileMenuOpen()) {
+    <div class="mobile-nav">
+      <div class="mobile-nav-content">
+        @if (isAuthenticated()) {
+          <!-- User Info -->
+          <div class="mobile-user-info">
+            <div class="mobile-avatar">
+              <app-user-avatar
+                [avatarUrl]="currentUser()?.avatar"
+                [firstName]="currentUser()?.firstName || ''"
+                [lastName]="currentUser()?.lastName || ''"
+                [altText]="getUserDisplayName()"
+                size="medium">
+              </app-user-avatar>
+            </div>
+            <div class="user-details">
+              <div class="user-name">{{ getUserDisplayName() }}</div>
+              <div class="user-email">{{ currentUser()?.email }}</div>
+            </div>
+          </div>
+
+          <mat-divider></mat-divider>
+        }
+
+        <!-- Navigation Links -->
+        <div class="mobile-nav-links">
+          <a mat-button routerLink="/search" (click)="toggleMobileMenu()">
+            <mat-icon>search</mat-icon>
+            <span>Cerca Immobili</span>
+          </a>
+
+          @if (isAuthenticated()) {
+            <a mat-button routerLink="/saved-searches" (click)="toggleMobileMenu()">
+              <mat-icon>bookmark</mat-icon>
+              <span>Ricerche Salvate</span>
+            </a>
+
+            @if (canViewDashboard()) {
+              <a mat-button routerLink="/dashboard" (click)="toggleMobileMenu()">
+                <mat-icon>dashboard</mat-icon>
+                <span>Dashboard</span>
+              </a>
+            }
+
+            @if (canUploadProperty()) {
+              <a mat-button routerLink="/properties/upload" (click)="toggleMobileMenu()">
+                <mat-icon>add_home</mat-icon>
+                <span>Carica Immobile</span>
+              </a>
+            }
+
+            @if (canManageAgency()) {
+              <a mat-button routerLink="/admin/manage-agency" (click)="toggleMobileMenu()">
+                <mat-icon>business</mat-icon>
+                <span>Gestisci Agenzia</span>
+              </a>
+            }
+
+            @if (canSendPromotions()) {
+              <a mat-button routerLink="/send-promotional-message" (click)="toggleMobileMenu()">
+                <mat-icon>campaign</mat-icon>
+                <span>Invia Promozioni</span>
+              </a>
+            }
+
+            @if (canUploadProperties()) {
+              <button mat-button (click)="onMyProperties()">
+                <mat-icon>home_work</mat-icon>
+                <span>I Miei Immobili</span>
+              </button>
+            }
+
+            @if (canViewAgencyProperties()) {
+              <button mat-button (click)="onAgencyProperties()">
+                <mat-icon>business</mat-icon>
+                <span>Immobili dell'Agenzia</span>
+              </button>
+            }
+
+            <a mat-button routerLink="/profile" (click)="toggleMobileMenu()">
+              <mat-icon>person</mat-icon>
+              <span>Il Mio Profilo</span>
+            </a>
+            
+            <mat-divider></mat-divider>
+
+            <button mat-button (click)="onLogout()" class="logout-button">
+              <mat-icon>logout</mat-icon>
+              <span>Esci</span>
+            </button>
+          } @else {
+            <div class="guest-actions">
+              <button mat-button (click)="onLogin()" class="mobile-login">
+                <mat-icon>login</mat-icon>
+                <span>Accedi</span>
+              </button>
+
+              <button mat-raised-button
+                      color="primary"
+                      (click)="onRegister()"
+                      class="mobile-register">
+                <mat-icon>person_add</mat-icon>
+                <span>Registrati</span>
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</mat-toolbar>

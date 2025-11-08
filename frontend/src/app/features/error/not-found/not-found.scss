@@ -1,0 +1,69 @@
+.error-container {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.error-card {
+    max-width: 500px;
+    text-align: center;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.error-content {
+    padding: 2rem;
+}
+
+.error-number {
+    font-size: 6rem;
+    font-weight: 700;
+    color: #3f51b5;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #3f51b5, #9c27b0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.error-icon {
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+    color: #cbd5e0;
+    margin-bottom: 1.5rem;
+}
+
+h1 {
+    color: #1a202c;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+p {
+    color: #718096;
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+    .error-number {
+    font-size: 4rem;
+    }
+
+    .error-actions {
+    flex-direction: column;
+    }
+}

@@ -1,0 +1,68 @@
+<div class="notification-preferences-container">
+  <!-- Section Header -->
+  <div class="section-header">
+    <h2>
+      <mat-icon>notifications</mat-icon>
+      Preferenze di Notifica
+    </h2>
+    <p>Gestisci quali notifiche desideri ricevere. Abilita o disabilita i tipi di notifica secondo le tue preferenze.</p>
+  </div>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>Caricamento preferenze...</p>
+    </div>
+  }
+
+  <!-- Preferences Form -->
+  @if (!isLoading()) {
+    <form [formGroup]="notificationForm" (ngSubmit)="onSubmit()" class="preferences-form">
+
+      <!-- Notification Types List -->
+      <div class="notification-types-list">
+        @for (notifType of notificationTypes; track notifType.type) {
+          <mat-card class="notification-type-card">
+            <mat-card-header>
+              <div mat-card-avatar class="notification-icon">
+                <mat-icon>{{ notifType.icon }}</mat-icon>
+              </div>
+              <mat-card-title>{{ notifType.title }}</mat-card-title>
+              <mat-card-subtitle>{{ notifType.description }}</mat-card-subtitle>
+            </mat-card-header>
+
+            <mat-card-content>
+              <div class="toggle-container">
+                <mat-slide-toggle
+                  [formControlName]="notifType.type"
+                  color="primary">
+                  {{ isEnabled(notifType.type) ? 'Abilitato' : 'Disabilitato' }}
+                </mat-slide-toggle>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="form-actions">
+        <button
+          type="submit"
+          mat-raised-button
+          color="primary"
+          [disabled]="!notificationForm.dirty || isSaving()">
+          @if (isSaving()) {
+            <mat-spinner diameter="20" style="display: inline-block; margin-right: 8px;"></mat-spinner>
+            Salvataggio...
+          } @else {
+            <ng-container>
+              <mat-icon>save</mat-icon>
+              Salva Preferenze
+            </ng-container>
+          }
+        </button>
+      </div>
+    </form>
+  }
+</div>

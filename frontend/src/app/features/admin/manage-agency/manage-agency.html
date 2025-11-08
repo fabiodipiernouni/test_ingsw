@@ -1,0 +1,130 @@
+<div class="manage-agency-container">
+  <div class="header">
+    <h1>Gestisci Agenzia</h1>
+    <p class="subtitle">Visualizza e gestisci gli utenti della tua agenzia</p>
+  </div>
+
+  <mat-card class="controls-card">
+    <div class="controls">
+      <mat-form-field appearance="outline" class="view-mode-select">
+        <mat-label>Visualizza</mat-label>
+        <mat-select 
+          [value]="viewMode()" 
+          (selectionChange)="onViewModeChange($event.value)">
+          <mat-option value="agents">Agenti</mat-option>
+          @if (canViewAdmins()) {
+            <mat-option value="admins">Amministratori</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (canCreate()) {
+        <button 
+          mat-raised-button 
+          color="primary"
+          (click)="navigateToCreate()">
+          <mat-icon>add</mat-icon>
+          {{ viewMode() === 'agents' ? 'Crea Agente' : 'Crea Amministratore' }}
+        </button>
+      }
+    </div>
+  </mat-card>
+
+  <mat-card class="table-card">
+    @if (isLoading()) {
+      <div class="loading-container">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>Caricamento in corso...</p>
+      </div>
+    } @else if (users().length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">people_outline</mat-icon>
+        <h3>Nessun {{ viewMode() === 'agents' ? 'agente' : 'amministratore' }} trovato</h3>
+        <p>Non ci sono {{ viewMode() === 'agents' ? 'agenti' : 'amministratori' }} nella tua agenzia.</p>
+        @if (canCreate()) {
+          <button 
+            mat-raised-button 
+            color="primary"
+            (click)="navigateToCreate()">
+            <mat-icon>add</mat-icon>
+            {{ viewMode() === 'agents' ? 'Crea Primo Agente' : 'Crea Primo Amministratore' }}
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="table-container">
+        <table mat-table [dataSource]="users()">
+          
+          <!-- Name Column -->
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Nome</th>
+            <td mat-cell *matCellDef="let user">
+              {{ user.firstName }} {{ user.lastName }}
+            </td>
+          </ng-container>
+
+          <!-- Email Column -->
+          <ng-container matColumnDef="email">
+            <th mat-header-cell *matHeaderCellDef>Email</th>
+            <td mat-cell *matCellDef="let user">{{ user.email }}</td>
+          </ng-container>
+
+          <!-- Phone Column -->
+          <ng-container matColumnDef="phone">
+            <th mat-header-cell *matHeaderCellDef>Telefono</th>
+            <td mat-cell *matCellDef="let user">{{ user.phone || '-' }}</td>
+          </ng-container>
+
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Stato</th>
+            <td mat-cell *matCellDef="let user">
+              <span 
+                class="status-badge" 
+                [ngClass]="getUserStatusBadge(user).class">
+                {{ getUserStatusBadge(user).text }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Created At Column -->
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef>Data Creazione</th>
+            <td mat-cell *matCellDef="let user">{{ formatDate(user.createdAt) }}</td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Azioni</th>
+            <td mat-cell *matCellDef="let user">
+              <button 
+                mat-icon-button 
+                color="warn"
+                (click)="deleteUser(user)"
+                [matTooltip]="'Elimina ' + (viewMode() === 'agents' ? 'agente' : 'amministratore')">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="totalCount()"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="pageSizeOptions"
+        [pageIndex]="currentPage() - 1"
+        (page)="onPageChange($event)"
+        showFirstLastButtons
+        aria-label="Seleziona pagina">
+      </mat-paginator>
+
+      <div class="table-footer">
+        <p>{{ totalCount() }} {{ viewMode() === 'agents' ? 'agenti' : 'amministratori' }} totali</p>
+      </div>
+    }
+  </mat-card>
+</div>

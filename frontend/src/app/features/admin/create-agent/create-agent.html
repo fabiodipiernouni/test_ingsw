@@ -1,0 +1,149 @@
+<app-auth-layout [config]="authConfig">
+  <form [formGroup]="agentForm" (ngSubmit)="onSubmit()">
+    <div class="form-fields">
+      <!-- Informazioni Personali -->
+      <div class="form-section">
+        <h3 class="section-title">Informazioni Personali</h3>
+        
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Nome</mat-label>
+          <input matInput 
+                 formControlName="firstName" 
+                 placeholder="Es: Mario"
+                 required>
+          <mat-icon matSuffix>person</mat-icon>
+          <mat-error>{{ getErrorMessage('firstName') }}</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Cognome</mat-label>
+          <input matInput 
+                 formControlName="lastName" 
+                 placeholder="Es: Rossi"
+                 required>
+          <mat-icon matSuffix>person</mat-icon>
+          <mat-error>{{ getErrorMessage('lastName') }}</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email</mat-label>
+          <input matInput 
+                 type="email"
+                 formControlName="email" 
+                 placeholder="esempio@dominio.it"
+                 required>
+          <mat-icon matSuffix>email</mat-icon>
+          <mat-error>{{ getErrorMessage('email') }}</mat-error>
+          <mat-hint>L'agente riceverà le credenziali a questo indirizzo</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Telefono (opzionale)</mat-label>
+          <input matInput 
+                 type="tel"
+                 formControlName="phone" 
+                 placeholder="+391234567890">
+          <mat-icon matSuffix>phone</mat-icon>
+          <mat-error>{{ getErrorMessage('phone') }}</mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Informazioni Professionali -->
+      <div class="form-section">
+        <h3 class="section-title">Informazioni Professionali</h3>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Numero Licenza</mat-label>
+          <input matInput 
+                 formControlName="licenseNumber" 
+                 placeholder="Es: AG123456789"
+                 required>
+          <mat-icon matSuffix>badge</mat-icon>
+          <mat-error>{{ getErrorMessage('licenseNumber') }}</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Biografia Professionale (opzionale)</mat-label>
+          <textarea matInput 
+                    formControlName="biography"
+                    rows="4"
+                    placeholder="Descrivi l'esperienza e le competenze dell'agente..."></textarea>
+          <mat-icon matSuffix>description</mat-icon>
+          <mat-error>{{ getErrorMessage('biography') }}</mat-error>
+          <mat-hint align="end">{{ agentForm.get('biography')?.value?.length || 0 }}/1000</mat-hint>
+        </mat-form-field>
+
+        <!-- Specializzazioni -->
+        <div class="specializations-section">
+          <label class="section-label">Specializzazioni (opzionale)</label>
+          
+          <div class="specialization-input">
+            <mat-form-field appearance="outline" class="flex-grow">
+              <mat-label>Aggiungi specializzazione</mat-label>
+              <input matInput 
+                     formControlName="specializationInput"
+                     placeholder="Es: Residenziale, Commerciale, Lusso"
+                     (keydown.enter)="addSpecialization($event)">
+              <mat-icon matSuffix>category</mat-icon>
+            </mat-form-field>
+            <button mat-raised-button 
+                    type="button"
+                    color="accent"
+                    (click)="addSpecialization()"
+                    [disabled]="!agentForm.get('specializationInput')?.value?.trim()">
+              <mat-icon>add</mat-icon>
+              Aggiungi
+            </button>
+          </div>
+
+          @if (specializations().length > 0) {
+            <div class="chips-container">
+              @for (spec of specializations(); track spec) {
+                <mat-chip (removed)="removeSpecialization(spec)">
+                  {{ spec }}
+                  <button matChipRemove>
+                    <mat-icon>cancel</mat-icon>
+                  </button>
+                </mat-chip>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <mat-icon>info</mat-icon>
+      <div>
+        <p><strong>Nota:</strong> L'agente riceverà un'email con le istruzioni per impostare la password e accedere al sistema. Potrà quindi iniziare a gestire immobili e clienti.</p>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button mat-button 
+              type="button" 
+              (click)="goBack()"
+              [disabled]="isLoading()">
+        <mat-icon>arrow_back</mat-icon>
+        Annulla
+      </button>
+      <button mat-raised-button 
+              color="primary" 
+              type="submit"
+              class="submit-button"
+              [disabled]="!agentForm.valid || isLoading()">
+        @if (isLoading()) {
+          <ng-container>
+            <mat-icon class="spin">refresh</mat-icon>
+            Creazione in corso...
+          </ng-container>
+        } @else {
+          <ng-container>
+            <mat-icon>add</mat-icon>
+            Crea Agente
+          </ng-container>
+        }
+      </button>
+    </div>
+  </form>
+</app-auth-layout>

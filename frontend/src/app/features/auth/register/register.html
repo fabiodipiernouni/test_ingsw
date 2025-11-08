@@ -1,0 +1,164 @@
+<app-auth-layout [config]="authConfig">
+  <form [formGroup]="registrationForm" (ngSubmit)="onSubmit()">
+    <!-- Personal Information -->
+    <div class="form-section">
+      <h3>Informazioni Personali</h3>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Nome</mat-label>
+          <input matInput
+                 formControlName="firstName"
+                 placeholder="Mario"
+                 autocomplete="given-name">
+          <mat-error>{{ getErrorMessage('firstName') }}</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Cognome</mat-label>
+          <input matInput
+                 formControlName="lastName"
+                 placeholder="Rossi"
+                 autocomplete="family-name">
+          <mat-error>{{ getErrorMessage('lastName') }}</mat-error>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Email</mat-label>
+        <input matInput
+               type="email"
+               formControlName="email"
+               placeholder="mario.rossi@email.com"
+               autocomplete="email">
+        <mat-icon matSuffix>email</mat-icon>
+        <mat-error>{{ getErrorMessage('email') }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Telefono (opzionale)</mat-label>
+        <input matInput
+               type="tel"
+               formControlName="phone"
+               placeholder="+391234567890"
+               autocomplete="tel">
+        <mat-icon matSuffix>phone</mat-icon>
+        <mat-error>{{ getErrorMessage('phone') }}</mat-error>
+      </mat-form-field>
+    </div>
+
+    <!-- Password Section -->
+    <div class="form-section">
+      <h3>Imposta la tua password</h3>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Password</mat-label>
+        <input matInput
+               [type]="hidePassword() ? 'password' : 'text'"
+               formControlName="password"
+               placeholder="Scegli una password sicura"
+               autocomplete="new-password">
+        <button mat-icon-button
+                matSuffix
+                type="button"
+                (click)="hidePassword.set(!hidePassword())"
+                [attr.aria-label]="'Toggle password visibility'"
+                [attr.aria-pressed]="!hidePassword()">
+          <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error>{{ getErrorMessage('password') }}</mat-error>
+      </mat-form-field>
+
+      <!-- Password Strength Indicator -->
+      @if (registrationForm.get('password')?.hasError('passwordStrength')) {
+        <div class="password-requirements">
+          <p>La password deve contenere:</p>
+          <div class="requirements-list">
+            @let requirements = registrationForm.get('password')?.getError('passwordStrength');
+            <div class="requirement" [class.met]="requirements?.hasLower">
+              <mat-icon>{{ requirements?.hasLower ? 'check' : 'close' }}</mat-icon>
+              Almeno una lettera minuscola
+            </div>
+            <div class="requirement" [class.met]="requirements?.hasUpper">
+              <mat-icon>{{ requirements?.hasUpper ? 'check' : 'close' }}</mat-icon>
+              Almeno una lettera maiuscola
+            </div>
+            <div class="requirement" [class.met]="requirements?.hasNumber">
+              <mat-icon>{{ requirements?.hasNumber ? 'check' : 'close' }}</mat-icon>
+              Almeno un numero
+            </div>
+            <div class="requirement" [class.met]="requirements?.hasSpecial">
+              <mat-icon>{{ requirements?.hasSpecial ? 'check' : 'close' }}</mat-icon>
+              Almeno un carattere speciale
+            </div>
+          </div>
+        </div>
+      }
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Conferma Password</mat-label>
+        <input matInput
+               [type]="hideConfirmPassword() ? 'password' : 'text'"
+               formControlName="confirmPassword"
+               placeholder="Ripeti la password"
+               autocomplete="new-password">
+        <button mat-icon-button
+                matSuffix
+                type="button"
+                (click)="hideConfirmPassword.set(!hideConfirmPassword())"
+                [attr.aria-label]="'Toggle confirm password visibility'"
+                [attr.aria-pressed]="!hideConfirmPassword()">
+          <mat-icon>{{ hideConfirmPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error>{{ getErrorMessage('confirmPassword') }}</mat-error>
+      </mat-form-field>
+    </div>
+
+    <!-- Terms and Conditions -->
+    <div class="terms-section">
+      <div class="terms-checkbox">
+        <mat-checkbox formControlName="acceptTerms">
+          Dichiaro di essere maggiorenne ed accetto i <a class="terms-link" [routerLink]="['/terms']">Termini di Servizio</a>*
+        </mat-checkbox>
+        
+        <mat-checkbox formControlName="acceptPrivacy">
+          Accetto la <a class="terms-link" [routerLink]="['/privacy']">Privacy Policy</a>*
+        </mat-checkbox>
+
+        <mat-checkbox 
+          formControlName="notifyPropertyAndVisit"
+          matTooltip="Puoi modificare le tue preferenze in qualsiasi momento dalla pagina profilo"
+          matTooltipPosition="above">
+          Desidero ricevere notifiche via email riguardo nuovi immobili in linea con le mie ricerche salvate e aggiornamenti sullo stato delle mie visite.
+        </mat-checkbox>
+
+        <mat-checkbox 
+          formControlName="notifyPromotional"
+          matTooltip="Puoi modificare le tue preferenze in qualsiasi momento dalla pagina profilo"
+          matTooltipPosition="above">
+          Acconsento a ricevere comunicazioni di marketing e promozionali.
+        </mat-checkbox>
+      </div>
+
+      <button mat-raised-button
+              color="primary"
+              type="submit"
+              class="register-button"
+              [disabled]="!registrationForm.valid || isLoading()">
+        @if (isLoading()) {
+          <ng-container>
+            <mat-icon class="spin">refresh</mat-icon>
+            Registrazione in corso...
+          </ng-container>
+        } @else {
+          <ng-container>
+            <mat-icon>person_add</mat-icon>
+            Crea Account
+          </ng-container>
+        }
+      </button>
+    </div>
+  </form>
+  
+  <app-oauth-providers mode="register"></app-oauth-providers>
+</app-auth-layout>

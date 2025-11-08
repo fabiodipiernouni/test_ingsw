@@ -1,0 +1,297 @@
+// Stile per il bottone della campanella
+:host {
+  display: flex;
+  align-items: center;
+  
+  button[mat-icon-button] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    mat-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+  
+  // Posiziona il badge più vicino al bottone
+  ::ng-deep .mat-badge-content {
+    top: 8px !important;
+    right: 8px !important;
+  }
+}
+
+// Menu posizionamento responsive
+::ng-deep .cdk-overlay-pane:has(.notification-menu) {
+  // Da mobile: centrato orizzontalmente
+  @media (max-width: 767px) {
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+}
+
+::ng-deep .notification-menu {
+  max-height: 90vh;
+  overflow: hidden;
+  
+  // Desktop: larghezza fissa tra 600-700px
+  @media (min-width: 768px) {
+    min-width: 600px !important;
+    width: 650px !important;
+    max-width: 700px !important;
+  }
+  
+  // Mobile: usa viewport width
+  @media (max-width: 767px) {
+    min-width: 90vw !important;
+    width: 90vw !important;
+    max-width: 90vw !important;
+  }
+  
+  .notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background-color: #f5f5f5;
+    
+    h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 500;
+    }
+    
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    button {
+      font-size: 12px;
+    }
+  }
+  
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    gap: 16px;
+    
+    p {
+      margin: 0;
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.54);
+    }
+  }
+  
+  .no-notifications {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px;
+    color: rgba(0, 0, 0, 0.54);
+    
+    mat-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      margin-bottom: 8px;
+      opacity: 0.3;
+    }
+    
+    p {
+      margin: 0;
+      font-size: 14px;
+    }
+  }
+  
+  .notifications-list {
+    max-height: calc(90vh - 140px);
+    overflow-y: auto;
+    
+    .notification-item {
+      width: 100%;
+      height: auto;
+      padding: 0;
+      min-height: fit-content;
+      
+      &.unread {
+        background-color: #e3f2fd;
+        
+        &:hover {
+          background-color: #bbdefb;
+        }
+      }
+      
+      .notification-content {
+        display: flex;
+        gap: 12px;
+        padding: 12px 16px;
+        width: 100%;
+        align-items: flex-start;
+        
+        .notification-icon-wrapper {
+          position: relative;
+          flex-shrink: 0;
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          
+          .notification-type-icon {
+            font-size: 24px;
+            width: 24px;
+            height: 24px;
+          }
+          
+          .notification-image {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            object-fit: cover;
+          }
+          
+          .unread-indicator {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 8px;
+            height: 8px;
+            background-color: #2196f3;
+            border-radius: 50%;
+            border: 2px solid white;
+          }
+        }
+        
+        .notification-text {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          min-width: 0;
+          max-width: 100%;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          
+          .notification-title {
+            font-weight: 500;
+            font-size: 14px;
+            color: rgba(0, 0, 0, 0.87);
+            display: flex;
+            align-items: flex-start;
+            gap: 4px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+            line-height: 1.4;
+            
+            .link-icon {
+              font-size: 16px;
+              width: 16px;
+              height: 16px;
+              color: #1976d2;
+              flex-shrink: 0;
+            }
+          }
+          
+          .notification-message {
+            font-size: 13px;
+            color: rgba(0, 0, 0, 0.6);
+            line-height: 1.4;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+          }
+          
+          .notification-date {
+            font-size: 12px;
+            color: rgba(0, 0, 0, 0.45);
+            margin-top: 2px;
+          }
+          
+          .notification-agency {
+            font-size: 11px;
+            color: rgba(0, 0, 0, 0.5);
+            margin-top: 4px;
+            font-style: italic;
+          }
+        }
+        
+        .notification-actions {
+          flex-shrink: 0;
+          display: flex;
+          align-items: flex-start;
+          gap: 4px;
+          padding-top: 4px;
+          
+          button.action-button {
+            mat-icon {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            
+            &.delete-button {
+              mat-icon {
+                color: #d32f2f;
+              }
+              
+              &:hover mat-icon {
+                color: #b71c1c;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  .load-more-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px 16px;
+    background-color: #fafafa;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+    
+    button {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+    }
+    
+    mat-spinner {
+      margin: 0;
+    }
+  }
+  
+  // Personalizza la scrollbar
+  .notifications-list::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .notifications-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+  
+  .notifications-list::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+    
+    &:hover {
+      background: #555;
+    }
+  }
+}

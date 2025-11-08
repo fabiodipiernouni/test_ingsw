@@ -1,0 +1,253 @@
+<mat-card class="search-form-card">
+  <form [formGroup]="searchForm" (ngSubmit)="onSearch()">
+    <!-- Main Search Bar -->
+    <div class="search-bar">
+      <!--<div class="debug-banner">
+        `DATA [showLocationError: {{ showLocationError }}, locationHasFocus: {{ locationHasFocus }}, control?.invalid: {{ searchForm.get('location')?.invalid }}, control?.touched: {{ searchForm.get('location')?.touched }}]`
+      </div>-->
+      <div class="location-field-wrapper">
+        <mat-form-field appearance="outline" class="location-field"
+          [class.mat-form-field-invalid]="showLocationError">
+          <mat-label>Dove vuoi cercare?</mat-label>
+          <input matInput
+                 #locationInput
+                 formControlName="location"
+                 placeholder="Inserisci città, provincia o CAP (es: Villaricca, Napoli, 80100)"
+                 autocomplete="off"
+                 (focus)="onLocationInputFocus()"
+                 (blur)="onLocationInputBlur()"
+                 (input)="onLocationInputChange()">
+          <mat-icon matSuffix>location_on</mat-icon>
+        </mat-form-field>
+
+        @if (showLocationError) {
+          <div class="mat-mdc-form-field-error mat-mdc-form-field-bottom-align">
+            La località è obbligatoria
+          </div>
+        }
+        <!-- Dropdown menu con opzione "Cerca in mappa" -->
+        <div class="location-dropdown" *ngIf="showMapSearchOption">
+          <button type="button" class="dropdown-item map-search-item" (click)="onMapSearchClick()">
+            <svg class="item-icon-image" width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+              <rect width="32" height="32" fill="#E3F2FD" rx="3"/>
+              <rect x="3" y="3" width="7" height="5" fill="#BDBDBD" stroke="#757575" stroke-width="1"/>
+              <rect x="12" y="3" width="6" height="4" fill="#BDBDBD" stroke="#757575" stroke-width="1"/>
+              <rect x="20" y="3" width="8" height="6" fill="#BDBDBD" stroke="#757575" stroke-width="1"/>
+              <rect x="3" y="12" width="5" height="7" fill="#BDBDBD" stroke="#757575" stroke-width="1"/>
+              <rect x="15" y="13" width="7" height="5" fill="#BDBDBD" stroke="#757575" stroke-width="1"/>
+              <rect x="24" y="12" width="5" height="8" fill="#BDBDBD" stroke="#757575" stroke-width="1"/>
+              <rect x="3" y="22" width="8" height="7" fill="#BDBDBD" stroke="#757575" stroke-width="1"/>
+              <rect x="13" y="22" width="7" height="7" fill="#BDBDBD" stroke="#757575" stroke-width="1"/>
+              <rect x="22" y="23" width="7" height="6" fill="#BDBDBD" stroke="#757575" stroke-width="1"/>
+              <rect y="9.5" width="32" height="3" fill="#FF9800"/>
+              <rect x="10.5" y="0" width="3" height="32" fill="#FF9800"/>
+              <rect y="20.5" width="32" height="2" fill="#EEEEEE" stroke="#BDBDBD" stroke-width="0.5"/>
+              <rect x="22.5" y="0" width="2" height="32" fill="#EEEEEE" stroke="#BDBDBD" stroke-width="0.5"/>
+              <line x1="5" y1="11" x2="8" y2="11" stroke="white" stroke-width="1"/>
+              <line x1="16" y1="11" x2="19" y2="11" stroke="white" stroke-width="1"/>
+              <line x1="26" y1="11" x2="29" y2="11" stroke="white" stroke-width="1"/>
+              <circle cx="17" cy="26" r="2.5" fill="#4CAF50"/>
+              <rect x="1" y="1" width="30" height="30" stroke="#90A4AE" stroke-width="2" fill="none" rx="3"/>
+            </svg>
+            <div class="item-content">
+              <span class="item-text">Cerca in mappa</span>
+              <span class="item-description">Ricerca utilizzando direttamente la mappa</span>
+            </div>
+            <mat-icon class="item-arrow">arrow_forward</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <button mat-raised-button
+              color="primary"
+              type="submit"
+              class="search-button">
+        <mat-icon>search</mat-icon>
+        <span class="button-text">Cerca</span>
+      </button>
+    </div>
+
+    <!-- Sort Options Bar -->
+    <div class="sort-bar">
+      <mat-form-field appearance="outline" class="sort-field">
+        <mat-label>Ordina per</mat-label>
+        <mat-select formControlName="sortBy">
+          <mat-option value="createdAt">Data pubblicazione</mat-option>
+          <mat-option value="price">Prezzo</mat-option>
+          <mat-option value="area">Superficie</mat-option>
+          <mat-option value="rooms">Numero locali</mat-option>
+          <mat-option value="bedrooms">Camere da letto</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="sort-order-field">
+        <mat-label>Direzione</mat-label>
+        <mat-select formControlName="sortOrder">
+          <mat-option value="ASC">
+            <mat-icon>arrow_upward</mat-icon>
+            Crescente
+          </mat-option>
+          <mat-option value="DESC">
+            <mat-icon>arrow_downward</mat-icon>
+            Decrescente
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- Advanced Filters -->
+    <mat-expansion-panel class="filters-panel"
+                         [(expanded)]="filtersExpanded">
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          <mat-icon>tune</mat-icon>
+          <span class="panel-title-text">Filtri Avanzati</span>
+        </mat-panel-title>
+        <mat-panel-description>
+          Affina la tua ricerca
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <div class="filters-content">
+        <!-- Basic Filters Grid -->
+        <div class="filters-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo Immobile</mat-label>
+            <mat-select formControlName="propertyType">
+              <mat-option value="">Tutti</mat-option>
+              <mat-option value="apartment">Appartamento</mat-option>
+              <mat-option value="villa">Villa</mat-option>
+              <mat-option value="house">Casa</mat-option>
+              <mat-option value="loft">Loft</mat-option>
+              <mat-option value="office">Ufficio</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Contratto</mat-label>
+            <mat-select formControlName="listingType">
+              <mat-option value="">Tutti</mat-option>
+              <mat-option value="sale">Vendita</mat-option>
+              <mat-option value="rent">Affitto</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Camere</mat-label>
+            <mat-select formControlName="rooms">
+              <mat-option [value]="null">Qualsiasi</mat-option>
+              <mat-option [value]="2">2+</mat-option>
+              <mat-option [value]="3">3+</mat-option>
+              <mat-option [value]="4">4+</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Camere da Letto</mat-label>
+            <mat-select formControlName="bedrooms">
+              <mat-option [value]="null">Qualsiasi</mat-option>
+              <mat-option [value]="1">1+</mat-option>
+              <mat-option [value]="2">2+</mat-option>
+              <mat-option [value]="3">3+</mat-option>
+              <mat-option [value]="4">4+</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Bagni</mat-label>
+            <mat-select formControlName="bathrooms">
+              <mat-option [value]="null">Qualsiasi</mat-option>
+              <mat-option [value]="1">1+</mat-option>
+              <mat-option [value]="2">2+</mat-option>
+              <mat-option [value]="3">3+</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!-- Price Range -->
+        <div class="price-range-section">
+          <div class="range-label">
+            <mat-icon>euro</mat-icon>
+            Fascia di Prezzo: {{ priceDisplay() }}
+          </div>
+          <mat-slider min="0" max="10000000" step="10000" class="price-slider">
+            <input matSliderStartThumb formControlName="priceMin">
+            <input matSliderEndThumb formControlName="priceMax">
+          </mat-slider>
+          <div class="price-range-labels">
+            <span>€0</span>
+            <span>€10.000.000+</span>
+          </div>
+        </div>
+
+        <!-- Features Checkboxes -->
+        <div class="features-section">
+          <h4 class="section-title">
+            <mat-icon>home</mat-icon>
+            Caratteristiche
+          </h4>
+          <div class="features-grid">
+            <mat-checkbox formControlName="hasElevator">
+              <mat-icon>elevator</mat-icon>
+              Ascensore
+            </mat-checkbox>
+            <mat-checkbox formControlName="hasBalcony">
+              <mat-icon>balcony</mat-icon>
+              Balcone
+            </mat-checkbox>
+            <mat-checkbox formControlName="hasGarden">
+              <mat-icon>yard</mat-icon>
+              Giardino
+            </mat-checkbox>
+            <mat-checkbox formControlName="hasParking">
+              <mat-icon>local_parking</mat-icon>
+              Parcheggio
+            </mat-checkbox>
+          </div>
+        </div>
+
+        <!-- Agency Filter (only for agents, admins, owners) -->
+        @if (canFilterByAgency() || canFilterMyProperties()) {
+          <div class="agency-filter-section">
+            <h4 class="section-title">
+              <mat-icon>business</mat-icon>
+              Filtri Agenzia
+            </h4>
+            <div class="agency-filter-grid">
+              @if (canFilterByAgency()) {
+              <mat-checkbox formControlName="myAgencyOnly">
+                <mat-icon>apartment</mat-icon>
+                Solo immobili della mia agenzia
+              </mat-checkbox>
+              }
+              @if (canFilterMyProperties()) {
+                <mat-checkbox formControlName="myPropertiesOnly">
+                  <mat-icon>person</mat-icon>
+                  Solo i miei immobili
+                </mat-checkbox>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Action Buttons -->
+        <div class="filter-actions">
+          <button mat-button
+                  type="button"
+                  (click)="resetFilters()"
+                  class="reset-button">
+            <mat-icon>refresh</mat-icon>
+            Reset
+          </button>
+          <button mat-raised-button
+                  color="primary"
+                  type="submit"
+                  class="apply-button">
+            <mat-icon>filter_list</mat-icon>
+            Applica Filtri
+          </button>
+        </div>
+      </div>
+    </mat-expansion-panel>
+  </form>
+</mat-card>

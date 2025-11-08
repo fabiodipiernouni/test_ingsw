@@ -1,0 +1,34 @@
+<h2 mat-dialog-title>Modifica nome ricerca</h2>
+<mat-dialog-content>
+<form [formGroup]="form">
+    <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Nome della ricerca</mat-label>
+    <input 
+        matInput 
+        formControlName="name"
+        placeholder="Inserisci il nuovo nome"
+        maxlength="200"
+        autofocus>
+    @if (form.get('name')?.hasError('required') && form.get('name')?.touched) {
+        <mat-error>Il nome è obbligatorio</mat-error>
+    }
+    @if (form.get('name')?.hasError('minlength')) {
+        <mat-error>Il nome deve contenere almeno 1 carattere</mat-error>
+    }
+    @if (form.get('name')?.hasError('maxlength')) {
+        <mat-error>Il nome non può superare i 200 caratteri</mat-error>
+    }
+    <mat-hint align="end">{{ form.get('name')?.value?.length || 0 }}/200</mat-hint>
+    </mat-form-field>
+</form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+<button mat-button mat-dialog-close>Annulla</button>
+<button 
+    mat-raised-button 
+    color="primary" 
+    [disabled]="!form.valid || form.get('name')?.value === data.currentName"
+    (click)="onSave()">
+    Salva
+</button>
+</mat-dialog-actions>

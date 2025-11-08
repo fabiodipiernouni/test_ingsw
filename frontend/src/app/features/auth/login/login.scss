@@ -1,0 +1,62 @@
+// Variabili per il form login
+$color-primary: #3f51b5;
+$color-secondary: #718096;
+$radius-btn: 12px;
+$gap-md: 1.5rem;
+$gap-sm: 0.75rem;
+
+.form-fields {
+  margin-bottom: $gap-md;
+}
+
+.full-width {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+
+  .forgot-password-link {
+    color: $color-primary;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.login-button {
+  width: 100%;
+  height: 48px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: $radius-btn;
+  margin-bottom: $gap-md;
+
+  .spin {
+    animation: spin 1s linear infinite;
+    margin-right: 0.5rem;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 480px) {
+  .form-options {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+    text-align: center;
+  }
+}

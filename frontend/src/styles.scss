@@ -1,0 +1,118 @@
+@use '@angular/material' as mat;
+@include mat.core();
+
+// Define theme
+$primary: mat.m2-define-palette(mat.$m2-indigo-palette);
+$accent: mat.m2-define-palette(mat.$m2-pink-palette, A200, A100, A400);
+$warn: mat.m2-define-palette(mat.$m2-red-palette);
+
+$theme: mat.m2-define-light-theme((
+  color: (
+    primary: $primary,
+    accent: $accent,
+    warn: $warn,
+  ),
+  typography: mat.m2-define-typography-config(),
+  density: 0,
+));
+
+@include mat.all-component-themes($theme);
+
+// Global styles
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Roboto', 'Helvetica Neue', sans-serif;
+  line-height: 1.6;
+  color: #333;
+  background-color: #fafafa;
+}
+
+html, body {
+  height: 100%;
+}
+
+// Fix per il centraggio verticale delle icone nei pulsanti
+button mat-icon,
+.mat-mdc-button mat-icon,
+.mat-mdc-raised-button mat-icon,
+.mat-mdc-unelevated-button mat-icon,
+.mat-mdc-outlined-button mat-icon,
+.mat-mdc-icon-button mat-icon {
+  vertical-align: middle !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+// Assicura che i pulsanti abbiano display flex per centrare il contenuto
+.mat-mdc-button,
+.mat-mdc-raised-button,
+.mat-mdc-unelevated-button,
+.mat-mdc-outlined-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  .mdc-button__label {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
+// Utility classes
+.full-width { width: 100%; }
+.text-center { text-align: center; }
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.p-1 { padding: 0.5rem; }
+.p-2 { padding: 1rem; }
+
+// Responsive grid utilities
+.grid-1 { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+
+@media (max-width: 768px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
+/* Google Maps Autocomplete  */
+.pac-container {
+  font-family: 'Roboto', sans-serif !important;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: none;
+  z-index: 10000 !important;
+  margin-top: 4px;
+}
+
+.pac-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-top: 1px solid #e0e0e0;
+
+  &:first-child {
+    border-top: none;
+  }
+
+  &:hover {
+    background-color: #f5f5f5;
+  }
+}
+
+.pac-item-query {
+  font-weight: 500;
+}
+
+.pac-matched {
+  font-weight: 600;
+  color: #1a73e8;
+}

@@ -1,0 +1,47 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sfondo -->
+  <rect width="32" height="32" fill="#FEF7E8" rx="3"/>
+
+  <!-- Blocchi edifici -->
+  <rect x="3" y="3" width="7" height="5" fill="#C5C5C5" stroke="#808080" stroke-width="0.8"/>
+  <rect x="12" y="3" width="6" height="4" fill="#C5C5C5" stroke="#808080" stroke-width="0.8"/>
+  <rect x="20" y="3" width="8" height="6" fill="#C5C5C5" stroke="#808080" stroke-width="0.8"/>
+
+  <rect x="3" y="12" width="5" height="7" fill="#C5C5C5" stroke="#808080" stroke-width="0.8"/>
+  <rect x="15" y="13" width="7" height="5" fill="#C5C5C5" stroke="#808080" stroke-width="0.8"/>
+  <rect x="24" y="12" width="5" height="8" fill="#C5C5C5" stroke="#808080" stroke-width="0.8"/>
+
+  <rect x="3" y="22" width="8" height="7" fill="#C5C5C5" stroke="#808080" stroke-width="0.8"/>
+  <rect x="13" y="22" width="7" height="7" fill="#C5C5C5" stroke="#808080" stroke-width="0.8"/>
+  <rect x="22" y="23" width="7" height="6" fill="#C5C5C5" stroke="#808080" stroke-width="0.8"/>
+
+  <!-- Strada principale orizzontale -->
+  <rect y="9.5" width="32" height="2.5" fill="#FFA726"/>
+  <rect y="9.5" width="32" height="2.5" fill="none" stroke="#E65100" stroke-width="0.5"/>
+
+  <!-- Strada principale verticale -->
+  <rect x="10.5" y="0" width="2.5" height="32" fill="#FFA726"/>
+  <rect x="10.5" y="0" width="2.5" height="32" fill="none" stroke="#E65100" stroke-width="0.5"/>
+
+  <!-- Strada secondaria orizzontale -->
+  <rect y="20.5" width="32" height="2" fill="#E0E0E0" stroke="#9E9E9E" stroke-width="0.5"/>
+
+  <!-- Strada secondaria verticale -->
+  <rect x="22.5" y="0" width="2" height="32" fill="#E0E0E0" stroke="#9E9E9E" stroke-width="0.5"/>
+
+  <!-- Linee stradali -->
+  <line x1="5" y1="11" x2="8" y2="11" stroke="white" stroke-width="0.8"/>
+  <line x1="16" y1="11" x2="19" y2="11" stroke="white" stroke-width="0.8"/>
+  <line x1="26" y1="11" x2="29" y2="11" stroke="white" stroke-width="0.8"/>
+
+  <line x1="11.5" y1="5" x2="11.5" y2="8" stroke="white" stroke-width="0.8"/>
+  <line x1="11.5" y1="16" x2="11.5" y2="19" stroke="white" stroke-width="0.8"/>
+  <line x1="11.5" y1="25" x2="11.5" y2="28" stroke="white" stroke-width="0.8"/>
+
+  <!-- Parco -->
+  <circle cx="17" cy="26" r="2" fill="#66BB6A"/>
+
+  <!-- Bordo -->
+  <rect x="1" y="1" width="30" height="30" stroke="#757575" stroke-width="2" fill="none" rx="3"/>
+</svg>
+

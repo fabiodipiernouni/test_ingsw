@@ -1,0 +1,31 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <mat-card>
+      <mat-card-header>
+        <div class="auth-header">
+          <h1>{{ config().title }}</h1>
+          <p>{{ config().subtitle }}</p>
+        </div>
+      </mat-card-header>
+
+      <mat-card-content>
+        <ng-content></ng-content>
+      </mat-card-content>
+
+      @if (config().footerText) {
+        <mat-card-footer>
+          <div class="footer-link">
+            <span>{{ config().footerText }} </span>
+            @if (config().footerLinkRoute && config().footerLinkText) {
+              <a [routerLink]="config().footerLinkRoute" 
+                 [queryParams]="config().footerLinkQueryParams || {}"
+                 class="link-button">
+                {{ config().footerLinkText }}
+              </a>
+            }
+          </div>
+        </mat-card-footer>
+      }
+    </mat-card>
+  </div>
+</div>

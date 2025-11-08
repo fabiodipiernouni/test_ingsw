@@ -1,0 +1,350 @@
+<div class="property-detail-page">
+  @if (isLoading()) {
+    <!-- Loading State -->
+    <div class="loading-container">
+      <mat-spinner diameter="60"></mat-spinner>
+      <p>Caricamento dettagli immobile...</p>
+    </div>
+  } @else if (error()) {
+    <!-- Error State -->
+    <div class="error-container">
+      <mat-icon>error_outline</mat-icon>
+      <h2>{{ error() }}</h2>
+      <p>L'immobile richiesto non è disponibile o non esiste.</p>
+      <button mat-raised-button color="primary" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+        Torna alla Ricerca
+      </button>
+    </div>
+  } @else if (property()) {
+    <!-- Property Details -->
+    <div class="property-detail-container">
+      <!-- Back Button -->
+      <div class="back-navigation">
+        <button mat-button (click)="goBack()">
+          <mat-icon>arrow_back</mat-icon>
+          Torna ai Risultati
+        </button>
+      </div>
+
+      <!-- Image Gallery -->
+      <div class="gallery-section">
+        <div class="main-image-container">
+          <img [src]="getSelectedImageUrl()"
+               [alt]="property()?.title"
+               class="main-image">
+
+          <!-- Navigation Arrows -->
+          @if ((property()?.images?.length ?? 0) > 1) {
+            <button mat-icon-button
+                    class="nav-arrow prev"
+                    (click)="previousImage()">
+              <mat-icon>chevron_left</mat-icon>
+            </button>
+            <button mat-icon-button
+                    class="nav-arrow next"
+                    (click)="nextImage()">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          }
+
+          <!-- Image Counter -->
+          <div class="image-counter">
+            {{ selectedImageIndex() + 1 }} / {{ property()?.images?.length || 0 }}
+          </div>
+        </div>
+
+        <!-- Thumbnails -->
+        @if ((property()?.images?.length ?? 0) > 1) {
+          <div class="thumbnails-container">
+            @for (image of property()?.images; track image.id; let i = $index) {
+              <div class="thumbnail"
+                   [class.active]="selectedImageIndex() === i"
+                   (click)="selectImage(i)">
+                <img [src]="getThumbnailUrl(image)" [alt]="image.alt || 'Foto ' + (i + 1)">
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Main Content -->
+      <div class="content-grid">
+        <!-- Left Column - Main Info -->
+        <div class="main-column">
+          <!-- Header Card -->
+          <mat-card class="header-card">
+            <mat-card-header>
+              <div class="header-content">
+                <div class="title-section">
+                  <h1>{{ property()?.title }}</h1>
+                  <div class="location">
+                    <mat-icon>location_on</mat-icon>
+                    <span>{{ getFullAddress() }}</span>
+                  </div>
+                </div>
+                <div class="price-section">
+                  <div class="price">{{ property()?.price | number:'1.0-0' }}€</div>
+                  <mat-chip class="listing-type-chip" [class.sale]="property()?.listingType === 'sale'">
+                    {{ getListingTypeLabel() }}
+                  </mat-chip>
+                </div>
+              </div>
+            </mat-card-header>
+          </mat-card>
+
+          <!-- Key Features -->
+          <mat-card class="features-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>home</mat-icon>
+                Caratteristiche Principali
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="features-grid">
+                <div class="feature-item">
+                  <mat-icon>king_bed</mat-icon>
+                  <div class="feature-info">
+                    <span class="feature-value">{{ property()?.bedrooms }}</span>
+                    <span class="feature-label">Camere</span>
+                  </div>
+                </div>
+                <div class="feature-item">
+                  <mat-icon>bathtub</mat-icon>
+                  <div class="feature-info">
+                    <span class="feature-value">{{ property()?.bathrooms }}</span>
+                    <span class="feature-label">Bagni</span>
+                  </div>
+                </div>
+                <div class="feature-item">
+                  <mat-icon>square_foot</mat-icon>
+                  <div class="feature-info">
+                    <span class="feature-value">{{ property()?.area }} m²</span>
+                    <span class="feature-label">Superficie</span>
+                  </div>
+                </div>
+                <div class="feature-item">
+                  <mat-icon>meeting_room</mat-icon>
+                  <div class="feature-info">
+                    <span class="feature-value">{{ property()?.rooms }}</span>
+                    <span class="feature-label">Locali</span>
+                  </div>
+                </div>
+                @if (property()?.floor) {
+                  <div class="feature-item">
+                    <mat-icon>stairs</mat-icon>
+                    <div class="feature-info">
+                      <span class="feature-value">{{ property()?.floor }}</span>
+                      <span class="feature-label">Piano</span>
+                    </div>
+                  </div>
+                }
+                @if (property()?.energyClass) {
+                  <div class="feature-item">
+                    <mat-icon>bolt</mat-icon>
+                    <div class="feature-info">
+                      <span class="feature-value energy-class"
+                            [style.background-color]="getEnergyClassColor()">
+                        {{ property()?.energyClass }}
+                      </span>
+                      <span class="feature-label">Classe Energetica</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Description -->
+          <mat-card class="description-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>description</mat-icon>
+                Descrizione
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <p class="description-text">{{ property()?.description }}</p>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Additional Features -->
+          <mat-card class="amenities-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>checklist</mat-icon>
+                Dotazioni
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="amenities-list">
+                @if (property()?.hasElevator) {
+                  <div class="amenity-item">
+                    <mat-icon class="available">check_circle</mat-icon>
+                    <span>Ascensore</span>
+                  </div>
+                }
+                @if (property()?.hasBalcony) {
+                  <div class="amenity-item">
+                    <mat-icon class="available">check_circle</mat-icon>
+                    <span>Balcone</span>
+                  </div>
+                }
+                @if (property()?.hasGarden) {
+                  <div class="amenity-item">
+                    <mat-icon class="available">check_circle</mat-icon>
+                    <span>Giardino</span>
+                  </div>
+                }
+                @if (property()?.hasParking) {
+                  <div class="amenity-item">
+                    <mat-icon class="available">check_circle</mat-icon>
+                    <span>Parcheggio</span>
+                  </div>
+                }
+              </div>
+
+              @if (property()?.features && (property()?.features?.length ?? 0) > 0) {
+                <mat-divider></mat-divider>
+                <div class="custom-features">
+                  <h4>Altre Caratteristiche:</h4>
+                  <div class="features-chips">
+                    @for (feature of property()?.features; track feature) {
+                      <mat-chip>{{ feature }}</mat-chip>
+                    }
+                  </div>
+                </div>
+              }
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Map -->
+          <mat-card class="map-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>map</mat-icon>
+                Posizione
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              @if (property()?.location) {
+                <app-property-location-map
+                  [latitude]="property()!.location.coordinates[1]"
+                  [longitude]="property()!.location.coordinates[0]">
+                </app-property-location-map>
+                <div class="map-address">
+                  <mat-icon>place</mat-icon>
+                  <p>{{ getFullAddress() }}</p>
+                </div>
+              } @else {
+                <div class="map-placeholder">
+                  <mat-icon>place</mat-icon>
+                  <p>{{ getFullAddress() }}</p>
+                  <small>Coordinate non disponibili</small>
+                </div>
+              }
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <!-- Right Column - Sidebar -->
+        <div class="sidebar-column">
+          <!-- Contact Card -->
+          <mat-card class="contact-card sticky">
+            <mat-card-header>
+              <mat-card-title>Interessato?</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              @if (property()?.agent) {
+                <div class="agent-info">
+                  <div class="agent-avatar">
+                    <mat-icon>person</mat-icon>
+                  </div>
+                  <div class="agent-details">
+                    <h4>{{ property()?.agent?.firstName }} {{ property()?.agent?.lastName }}</h4>
+                    <p>Agente Immobiliare</p>
+                  </div>
+                </div>
+                <mat-divider></mat-divider>
+              }
+
+              <div class="contact-actions">
+                <button mat-raised-button color="primary" (click)="contactAgent()" class="full-width">
+                  <mat-icon>mail</mat-icon>
+                  Contatta l'Agente
+                </button>
+                <button mat-raised-button color="accent" (click)="scheduleViewing()" class="full-width">
+                  <mat-icon>event</mat-icon>
+                  Prenota una Visita
+                </button>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <div class="secondary-actions">
+                <button mat-button (click)="addToFavorites()" class="full-width">
+                  <mat-icon>favorite_border</mat-icon>
+                  Aggiungi ai Preferiti
+                </button>
+                <button mat-button (click)="shareProperty()" class="full-width">
+                  <mat-icon>share</mat-icon>
+                  Condividi
+                </button>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Property Stats -->
+          <mat-card class="stats-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>insights</mat-icon>
+                Statistiche
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="stat-item">
+                <mat-icon>visibility</mat-icon>
+                <span>{{ property()?.views || 0 }} visualizzazioni</span>
+              </div>
+              <div class="stat-item">
+                <mat-icon>favorite</mat-icon>
+                <span>{{ property()?.favorites || 0 }} preferiti</span>
+              </div>
+              <mat-divider></mat-divider>
+              <div class="stat-item">
+                <mat-icon>schedule</mat-icon>
+                <span>Pubblicato il {{ property()?.createdAt | date:'dd/MM/yyyy' }}</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Property Type Info -->
+          <mat-card class="info-card">
+            <mat-card-content>
+              <div class="info-item">
+                <strong>Tipo Immobile:</strong>
+                <span>{{ getPropertyTypeLabel() }}</span>
+              </div>
+              <div class="info-item">
+                <strong>Tipo Contratto:</strong>
+                <span>{{ getListingTypeLabel() }}</span>
+              </div>
+              <div class="info-item">
+                <strong>Stato:</strong>
+                <mat-chip [class]="property()?.status">
+                  {{ property()?.status }}
+                </mat-chip>
+              </div>
+              <div class="info-item">
+                <strong>Codice Immobile:</strong>
+                <span class="property-code">{{ property()?.id }}</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+    </div>
+  }
+</div>

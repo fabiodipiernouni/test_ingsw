@@ -1,0 +1,41 @@
+<div class="property-list-container">
+  @if (properties.length > 0) {
+    <div class="property-grid">
+      @for (prop of properties; track prop.id) {
+        <app-property-card [property]="prop"
+          (propertyClick)="onPropertyClick($event)">
+        </app-property-card>
+      }
+    </div>
+  } @else {
+    <div class="empty-state">
+      <div class="empty-icon">
+        <mat-icon>home_work</mat-icon>
+      </div>
+
+      @if (emptyMessage) {
+        <!-- Messaggio personalizzato passato dal parent -->
+        <h3>Nessun immobile trovato</h3>
+        <p class="custom-message">{{ emptyMessage }}</p>
+      } @else {
+        <!-- Messaggio generico di default -->
+        <h3>Nessun immobile disponibile</h3>
+        <p>
+          Al momento non ci sono immobili da visualizzare.
+          <br>
+          Prova ad effettuare una ricerca utilizzando i filtri disponibili.
+        </p>
+      }
+
+      <div class="empty-suggestions">
+        <h4>Suggerimenti:</h4>
+        <ul>
+          <li>Verifica l'ortografia della località</li>
+          <li>Prova con una zona più ampia</li>
+          <li>Rimuovi alcuni filtri specifici</li>
+          <li>Aumenta la fascia di prezzo</li>
+        </ul>
+      </div>
+    </div>
+  }
+</div>

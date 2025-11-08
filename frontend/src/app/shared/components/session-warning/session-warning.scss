@@ -1,0 +1,65 @@
+.session-warning-banner {
+  position: fixed;
+  top: 64px; // Altezza dell'header
+  left: 0;
+  right: 0;
+  background: #ff9800;
+  color: white;
+  padding: 12px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.warning-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.warning-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.warning-text {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.renew-button {
+  color: white;
+  border: 1px solid white;
+  margin-left: 12px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+@media (max-width: 768px) {
+  .warning-content {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .renew-button {
+    margin-left: 0;
+  }
+}
+

@@ -1,0 +1,272 @@
+@use 'sass:color';
+
+// Variabili principali
+$color-primary: #667eea;
+$color-secondary: #4a5568;
+$color-title: #1a202c;
+$color-label: #718096;
+$color-border: #f0f0f0;
+$color-star: #fbbf24;
+$color-star-empty: #e2e8f0;
+$color-section-title: #2d3748;
+$radius-avatar: 50%;
+$radius-card: 16px;
+$gap-lg: 2rem;
+$gap-md: 1.5rem;
+$gap-sm: 1rem;
+$gap-xs: 0.5rem;
+$font-title: 2rem;
+$font-label: 1.1rem;
+
+.profile-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: $gap-lg;
+
+  @media (max-width: 768px) {
+    padding: $gap-sm;
+  }
+}
+
+.profile-header {
+  margin-bottom: $gap-lg;
+
+  .profile-card {
+    .user-info {
+      display: flex;
+      align-items: flex-start;
+      gap: $gap-lg;
+      padding: $gap-lg;
+
+      @media (max-width: 768px) {
+        flex-direction: column;
+        gap: $gap-sm;
+        padding: $gap-sm;
+      }
+
+      .avatar-section {
+        flex-shrink: 0;
+      }
+
+      .user-details {
+        flex: 1;
+        min-width: 0;
+
+        .user-name {
+          margin: 0 0 0.5rem 0;
+          font-size: $font-title;
+          font-weight: 600;
+          color: $color-title;
+
+          @media (max-width: 768px) {
+            font-size: 1.5rem;
+            text-align: center;
+          }
+        }
+
+        .user-role,
+        .user-email,
+        .user-phone,
+        .agency-info,
+        .license-info {
+          display: flex;
+          align-items: center;
+          gap: $gap-xs;
+          margin: $gap-xs 0;
+          color: $color-secondary;
+
+          @media (max-width: 768px) {
+            justify-content: center;
+          }
+
+          mat-icon {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+            color: $color-primary;
+          }
+        }
+
+        .user-role {
+          font-weight: 500;
+          color: $color-primary;
+          font-size: $font-label;
+        }
+      }
+
+      .user-stats {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-shrink: 0;
+
+        @media (max-width: 768px) {
+          flex-direction: column;
+          gap: $gap-sm;
+          width: 100%;
+        }
+
+        .stat-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+
+          .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: $color-primary;
+            line-height: 1;
+          }
+
+          .stat-label {
+            font-size: 0.875rem;
+            color: $color-label;
+            margin-top: 0.25rem;
+          }
+
+          .rating-stars {
+            display: flex;
+            gap: 2px;
+            margin-top: 0.25rem;
+
+            mat-icon {
+              font-size: 16px;
+              width: 16px;
+              height: 16px;
+              color: $color-star-empty;
+
+              &.filled {
+                color: $color-star;
+              }
+            }
+          }
+        }
+
+        mat-divider {
+          height: 40px;
+
+          @media (max-width: 768px) {
+            display: none;
+          }
+        }
+      }
+    }
+  }
+}
+
+.biography-section,
+.specializations-section {
+  margin: $gap-md 0;
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: $gap-xs;
+    margin: 0 0 1rem 0;
+    font-size: $font-label;
+    font-weight: 500;
+    color: $color-section-title;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      color: $color-primary;
+    }
+  }
+
+  p {
+    color: $color-secondary;
+    line-height: 1.6;
+    margin: 0;
+  }
+}
+
+.specializations-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $gap-xs;
+
+  mat-chip {
+    background-color: #edf2f7;
+    color: $color-secondary;
+  }
+}
+
+.profile-actions {
+  padding: $gap-sm $gap-lg;
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-start;
+
+  @media (max-width: 768px) {
+    padding: $gap-sm;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: $gap-xs;
+  }
+}
+
+.profile-tabs {
+  .tab-content {
+    padding: $gap-lg;
+
+    @media (max-width: 768px) {
+      padding: $gap-sm;
+    }
+  }
+
+  .coming-soon {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #718096;
+
+    mat-icon {
+      font-size: 3rem;
+      width: 3rem;
+      height: 3rem;
+      margin-bottom: 1rem;
+      color: #cbd5e0;
+    }
+
+    h3 {
+      margin: 1rem 0 0.5rem 0;
+      font-size: 1.5rem;
+      font-weight: 500;
+    }
+
+    p {
+      margin: 0;
+      font-size: 1rem;
+    }
+  }
+}
+
+// Tab group customization
+::ng-deep {
+  .mat-mdc-tab-group {
+    .mat-mdc-tab-header {
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .mat-mdc-tab {
+      .mdc-tab__text-label {
+        font-weight: 500;
+      }
+    }
+
+    .mat-mdc-tab-body-wrapper {
+      .mat-mdc-tab-body {
+        .mat-mdc-tab-body-content {
+          overflow: visible;
+        }
+      }
+    }
+  }
+}

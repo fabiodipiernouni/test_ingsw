@@ -1,0 +1,138 @@
+<div class="saved-searches-container">
+  <div class="page-header">
+    <h1>
+      <mat-icon>bookmark</mat-icon>
+      Le Tue Ricerche Salvate
+    </h1>
+    <p class="subtitle">
+      Gestisci e monitora le tue ricerche preferite per essere sempre aggiornato sui nuovi immobili
+    </p>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <mat-icon class="spin">refresh</mat-icon>
+      <p>Caricamento ricerche salvate...</p>
+    </div>
+  } @else if (savedSearches().length === 0) {
+    <div class="empty-state">
+      <mat-icon>bookmark_border</mat-icon>
+      <h3>Nessuna ricerca salvata</h3>
+      <p>
+        Non hai ancora salvato nessuna ricerca.
+        <br>
+        Effettua una ricerca e salvala per tenere traccia dei nuovi immobili che corrispondono ai tuoi criteri.
+      </p>
+      <button mat-raised-button color="primary" [routerLink]="['/search']">
+        <mat-icon>search</mat-icon>
+        Inizia una Ricerca
+      </button>
+    </div>
+  } @else {
+    <div class="searches-grid">
+      @for (search of savedSearches(); track search.id) {
+        <mat-card class="search-card">
+          <mat-card-header>
+            <div class="card-header-content">
+              <div class="search-info">
+                <mat-card-title>{{ search.name }}</mat-card-title>
+                <mat-card-subtitle>
+                  Creata il {{ formatDate(search.createdAt) }}
+                  • Ultima ricerca: {{ formatDate(search.lastSearchedAt) }}
+                </mat-card-subtitle>
+              </div>
+              <div class="search-actions">
+                <button mat-icon-button [matMenuTriggerFor]="searchMenu">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #searchMenu="matMenu">
+                  <button mat-menu-item (click)="editSearch(search)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Modifica nome</span>
+                  </button>
+                  <button mat-menu-item (click)="toggleNotifications(search)">
+                    <mat-icon>{{ search.isNotificationEnabled ? 'notifications_off' : 'notifications' }}</mat-icon>
+                    <span>{{ search.isNotificationEnabled ? 'Disattiva notifiche' : 'Attiva notifiche' }}</span>
+                  </button>
+                  <button mat-menu-item (click)="deleteSearch(search)" class="delete-action">
+                    <mat-icon>delete</mat-icon>
+                    <span>Elimina</span>
+                  </button>
+                </mat-menu>
+              </div>
+            </div>
+          </mat-card-header>
+
+          <mat-card-content>
+            <!-- Search Filters Summary -->
+            <div class="filters-summary">
+              @for (filter of getFilterSummary(search); track $index) {
+                <mat-chip class="filter-chip">{{ filter }}</mat-chip>
+              }
+            </div>
+
+            <!-- Notification Status -->
+            <div class="notification-status">
+              @if (search.isNotificationEnabled) {
+                <mat-icon class="notification-icon enabled">notifications</mat-icon>
+                <span class="notification-text">Notifiche attive</span>
+              } @else {
+                <mat-icon class="notification-icon disabled">notifications_off</mat-icon>
+                <span class="notification-text">Notifiche disattivate</span>
+              }
+            </div>
+          </mat-card-content>
+
+          <mat-card-actions>
+            <button mat-raised-button
+                    color="primary"
+                    (click)="executeSearch(search)"
+                    class="execute-search-btn">
+              <mat-icon>search</mat-icon>
+              Esegui Ricerca
+            </button>
+
+            <button mat-button
+                    (click)="toggleNotifications(search)"
+                    class="notification-toggle-btn">
+              <mat-icon>{{ search.isNotificationEnabled ? 'notifications_off' : 'notifications' }}</mat-icon>
+              {{ search.isNotificationEnabled ? 'Disattiva' : 'Attiva' }}
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      }
+    </div>
+
+    <!-- Info Section -->
+    <div class="info-section">
+      <mat-card class="info-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>info</mat-icon>
+            Come funzionano le ricerche salvate
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <ul class="info-list">
+            <li>
+              <mat-icon>check_circle</mat-icon>
+              <span>Salva le tue ricerche preferite per ritrovarle facilmente</span>
+            </li>
+            <li>
+              <mat-icon>check_circle</mat-icon>
+              <span>Attiva le notifiche per essere avvisato quando ci sono nuovi immobili che corrispondono ai tuoi criteri</span>
+            </li>
+            <li>
+              <mat-icon>check_circle</mat-icon>
+              <span>Esegui nuovamente le tue ricerche salvate con un semplice click</span>
+            </li>
+            <li>
+              <mat-icon>check_circle</mat-icon>
+              <span>Il nome della ricerca viene generato automaticamente in base ai filtri selezionati</span>
+            </li>
+          </ul>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+</div>

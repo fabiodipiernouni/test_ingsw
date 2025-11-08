@@ -1,0 +1,192 @@
+<div class="search-page">
+  <!-- Hero Section with Search Form -->
+  <div class="search-hero">
+    <div class="hero-content">
+      <h1 class="hero-title">
+        <mat-icon>search</mat-icon>
+        Trova la Casa dei Tuoi Sogni
+      </h1>
+      <p class="hero-subtitle">
+        Scopri migliaia di immobili in vendita e affitto in tutta Italia
+      </p>
+    </div>
+
+    <!-- Search Form -->
+    <app-search-form
+      (searchStarted)="onSearchStarted($event)"
+      (mapSearchClicked)="onMapSearchClicked($event)">
+    </app-search-form>
+  </div>
+
+  <!-- Search Results -->
+  @if (hasSearched()) {
+    <div class="search-results-container">
+      <!-- Results Header -->
+      <div class="results-header">
+        <div class="results-info">
+          @if (isLoading() && (searchResult()?.currentPage || 1) === 1) {
+            <div class="loading-text">
+              <mat-spinner diameter="20"></mat-spinner>
+              <span>Ricerca in corso...</span>
+            </div>
+          } @else if (searchResult()) {
+            <h2 class="results-title">
+              <mat-icon>home_work</mat-icon>
+              {{ searchResult()?.totalCount || 0 }} immobili trovati
+            </h2>
+            @if (searchResult()?.totalCount === 0) {
+              <p class="no-results-subtitle">
+                Prova a modificare i filtri di ricerca per trovare più risultati
+              </p>
+            }
+          }
+        </div>
+
+        <div class="results-actions">
+          @if (isAuthenticated() && (searchResult()?.totalCount ?? 0) > 0) {
+            @if (currentSavedSearchId()) {
+              <!-- Pulsante per eliminare la ricerca salvata -->
+              <button mat-icon-button
+                      (click)="deleteSavedSearch()"
+                      matTooltip="Elimina ricerca salvata"
+                      class="desktop-map-toggle">
+                <mat-icon>bookmark_remove</mat-icon>
+              </button>
+            } @else {
+              <!-- Pulsante per salvare la ricerca -->
+              <button mat-icon-button
+                      (click)="saveCurrentSearch()"
+                      matTooltip="Salva questa ricerca"
+                      class="desktop-map-toggle">
+                <mat-icon>bookmark_add</mat-icon>
+              </button>
+            }
+
+            <!-- Mobile: Toggle Lista/Mappa -->
+            <div class="mobile-view-toggle">
+              <button mat-icon-button
+                      [class.active]="viewMode() === 'list'"
+                      (click)="toggleViewMode('list')"
+                      matTooltip="Vista lista">
+                <mat-icon>list</mat-icon>
+              </button>
+              <button mat-icon-button
+                      [class.active]="viewMode() === 'map'"
+                      (click)="toggleViewMode('map')"
+                      matTooltip="Vista mappa">
+                <mat-icon>map</mat-icon>
+              </button>
+            </div>
+          }
+          <!-- Desktop: Toggle Mappa -->
+          <button mat-icon-button
+                  class="desktop-map-toggle"
+                  (click)="toggleMapView()"
+                  [class.active]="showMap()"
+                  matTooltip="{{ showMap() ? 'Nascondi mappa' : 'Mostra mappa' }}">
+            <mat-icon>{{ showMap() ? 'list' : 'map' }}</mat-icon>
+          </button>
+
+          @if (hasSearched()) {
+            <button mat-button (click)="clearSearch()">
+              <mat-icon>clear</mat-icon>
+              Pulisci Ricerca
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Split View: Lista + Mappa (Desktop) / Solo Lista o Mappa (Mobile) -->
+      @if (hasSearched() && (showMap() || viewMode() !== 'list')) {
+        <div class="results-content" [class.split-view]="showMap()">
+          <!-- Property List -->
+          <div class="list-section"
+               [class.hidden-mobile]="viewMode() === 'map'"
+               [class.visible-mobile]="viewMode() === 'list'">
+            @if (!isLoading() || (searchResult()?.currentPage || 1) > 1) {
+              <app-property-list
+                [properties]="searchResult()?.data || []"
+                [emptyMessage]="emptyResultMessage()"
+                (propertyClick)="onPropertySelected($event)">
+              </app-property-list>
+            }
+          </div>
+
+          <!-- Map Section - sempre visibile quando showMap è true -->
+          <div class="map-section"
+               [class.hidden-mobile]="viewMode() === 'list'"
+               [class.visible-mobile]="viewMode() === 'map'">
+            <app-search-map
+              [properties]="searchGeoResult()"
+              [center]="mapCenter()"
+              [radius]="mapRadius()"
+              (boundsChanged)="onMapBoundsChanged($event)"
+              (propertySelected)="onGeoPropertySelected($event)">
+            </app-search-map>
+          </div>
+        </div>
+      } @else if (hasSearched() && !isLoading()) {
+        <!-- Solo lista quando la mappa non è attiva -->
+        <app-property-list
+          [properties]="searchResult()?.data || []"
+          [emptyMessage]="emptyResultMessage()"
+          (propertyClick)="onPropertySelected($event)">
+        </app-property-list>
+      }
+
+      <!-- Load More Button -->
+      @if (searchResult()?.hasNextPage && !isLoading()) {
+        <div class="load-more-section">
+          <button mat-raised-button
+                  color="primary"
+                  (click)="onLoadMore()"
+                  class="load-more-button">
+            <mat-icon>expand_more</mat-icon>
+            Carica Altri Immobili
+          </button>
+
+          <p class="load-more-info">
+            Mostrando {{ searchResult()?.data?.length || 0 }} di {{ searchResult()?.totalCount }} immobili
+          </p>
+        </div>
+      }
+
+      <!-- Loading indicator for subsequent pages -->
+      @if (isLoading() && (searchResult()?.currentPage || 1) > 1) {
+        <div class="loading-more">
+          <mat-spinner diameter="40"></mat-spinner>
+          <span>Caricamento...</span>
+        </div>
+      }
+    </div>
+  } @else {
+    <!-- Welcome State -->
+    <div class="welcome-state">
+      <div class="welcome-content">
+        <mat-icon>home_work</mat-icon>
+        <h2>Inizia la Tua Ricerca</h2>
+        <p>
+          Utilizza i filtri sopra per trovare l'immobile perfetto per te.
+          <br>
+          Puoi cercare per località, tipo di immobile, prezzo e molto altro.
+        </p>
+
+        <!-- Quick Stats -->
+        <div class="quick-stats">
+          <div class="stat-item">
+            <div class="stat-number">1.200+</div>
+            <div class="stat-label">Immobili Disponibili</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">150+</div>
+            <div class="stat-label">Agenzie Partner</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">4.8★</div>
+            <div class="stat-label">Rating Medio</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>
