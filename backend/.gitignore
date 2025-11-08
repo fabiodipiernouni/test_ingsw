@@ -8,7 +8,7 @@ yarn-error.log*
 dist/
 build/
 
-doc/
+docs/
 
 # Environment variables
 .env
