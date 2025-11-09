@@ -24,7 +24,7 @@ import { SearchPropertiesFilters } from '@core/services/property/dto/SearchPrope
 import { PagedRequest } from '@service-shared/dto/pagedRequest';
 import {GetPropertiesCardsRequest} from '@core/services/property/dto/GetPropertiesCardsRequest';
 import {GeoSearchPropertiesFilters} from '@core/services/property/dto/GeoSearchPropertiesFilters';
-import {environment} from '@src/environments/environment';
+import {environment} from '@src/environments/';
 import { SavedSearchFilters } from '@src/app/core/services/search/dto/SavedSearchFilters';
 import { AuthService } from '@src/app/core/services/auth/auth.service';
 import { inject, computed } from '@angular/core';

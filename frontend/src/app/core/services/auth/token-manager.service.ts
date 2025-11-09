@@ -2,7 +2,7 @@ import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, throwError, tap, interval, Subscription } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { environment } from '@src/environments/environment';
+import { environment } from '@src/environments/';
 import { RefreshTokenRequest } from '@core-services/auth/dto/RefreshTokenRequest';
 import { RefreshTokenResponse } from '@core-services/auth/dto/RefreshTokenResponse';
 import { ApiResponse } from '@service-shared/dto/ApiResponse';

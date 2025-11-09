@@ -12,6 +12,7 @@ docs/
 
 # Environment variables
 .env
+.env.before
 .env.local
 .env.development.local
 .env.test.local

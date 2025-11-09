@@ -23,7 +23,7 @@ import {GetGeoPropertiesCardsRequest} from '@core/services/property/dto/GetGeoPr
 import {GeoPropertyCardDto} from '@core/services/property/dto/GeoPropertyCardDto';
 import { AuthService } from '@src/app/core/services/auth/auth.service';
 import { SavedSearchFilters } from '@src/app/core/services/search/dto/SavedSearchFilters';
-import { environment } from '@src/environments/environment';
+import { environment } from '@src/environments/';
 
 @Component({
   selector: 'app-search',

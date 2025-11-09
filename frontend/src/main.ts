@@ -7,7 +7,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { routes } from '@app/app.routes';
 import { App } from '@app/app';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
-import { environment } from './environments/environment';
+import { environment } from './environments/';
 
 bootstrapApplication(App, {
   providers: [

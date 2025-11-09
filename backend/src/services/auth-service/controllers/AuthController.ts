@@ -334,8 +334,7 @@ export class AuthController {
       logger.error('Error in forgotPassword controller:', error);
 
       if (error.name === 'NotFoundError') {
-        // Per sicurezza, non rivelare se l'utente esiste o meno
-        setResponseAsSuccess(res, { message: 'If an account exists, a password reset code has been sent' });
+        setResponseAsNotFound(res, 'User');
         return;
       }
 
@@ -346,6 +345,11 @@ export class AuthController {
 
       if (error.name === 'UserNotConfirmedException') {        
         setResponseAsError(res, 'USER_NOT_CONFIRMED', 'User email not verified. Please verify your email first.', 403);
+        return;
+      }
+
+      if (error.name === 'ForbiddenError') {
+        setResponseAsError(res, 'FORBIDDEN', error.message, 403);
         return;
       }
 

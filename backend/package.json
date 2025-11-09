@@ -4,9 +4,14 @@
   "description": "Backend per DietiEstates25 - Piattaforma gestione servizi immobiliari",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "build:watch": "tsc --watch",
-    "start": "node dist/index.js",
+    "start:auth": "node dist/services/auth-service/index.js",
+    "start:property": "node dist/services/property-service/index.js",
+    "start:search": "node dist/services/search-service/index.js",
+    "start:notification": "node dist/services/notification-service/index.js",
+    "start:email-worker": "node dist/workers/email-worker/index.js",
+    "start:property-matcher-worker": "node dist/workers/property-matcher-worker/index.js",
     "dev": "concurrently \"npm run build:watch\" \"nodemon dist/index.js\"",
     "dev:auth": "cross-env SERVICE=auth nodemon --exec ts-node src/services/auth-service/index.ts",
     "dev:auth:debug": "node --inspect-brk=9230 -r ts-node/register src/services/auth-service/index.ts",
@@ -24,10 +29,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix",
-    "docker:build": "docker-compose build",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down"
+    "lint:fix": "eslint src --ext .ts --fix"
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.901.0",
@@ -102,6 +104,7 @@
     "supertest": "^6.3.3",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.1",
+    "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.2.2"
   },

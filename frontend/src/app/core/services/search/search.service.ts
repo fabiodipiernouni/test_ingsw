@@ -4,7 +4,7 @@ import { Observable, throwError } from 'rxjs';
 import { map, tap, catchError } from 'rxjs/operators';
 
 import { ApiResponse } from '@service-shared/dto/ApiResponse';
-import { environment } from '@src/environments/environment';
+import { environment } from '@src/environments/';
 import { SavedSearchCreateDto } from './dto/SavedSearchCreateDto';
 import { SavedSearchResponse } from './dto/SavedSearchResponse';
 import { ToggleNotificationsDto } from './dto/ToggleNotificationsDto';

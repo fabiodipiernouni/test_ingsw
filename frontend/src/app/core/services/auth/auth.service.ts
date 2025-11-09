@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, BehaviorSubject, throwError, catchError, tap } from 'rxjs';
-import { environment } from '@src/environments/environment';
+import { environment } from '@src/environments/';
 
 import { TokenManagerService } from '@core-services/auth/token-manager.service';
 import { AuthResponse } from '@core-services/auth/dto/AuthResponse';

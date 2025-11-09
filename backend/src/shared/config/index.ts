@@ -37,16 +37,14 @@ const cognitoConfig: CognitoConfig = {
 };
 
 const uploadConfig: UploadConfig = {
-  dir: process.env.UPLOAD_DIR || 'uploads',
   maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760'), // 10MB default
-  allowedImageTypes: (process.env.ALLOWED_IMAGE_TYPES || 'image/jpeg,image/png,image/webp').split(',')
 };
 
 const s3Config: S3Config = {
   bucketName: process.env.AWS_S3_BUCKET_NAME || '',
   region: process.env.AWS_REGION || 'eu-south-1',
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+  accessKeyId: process.env.AWS_S3_ACCESS_KEY_ID || '',
+  secretAccessKey: process.env.AWS_S3_SECRET_ACCESS_KEY || '',
   signedUrlExpiration: parseInt(process.env.S3_SIGNED_URL_EXPIRATION || '3600'),
   imageSizes: {
     small: { width: 400, height: 300, quality: 80 },
@@ -62,7 +60,6 @@ const config: AppConfig = {
   cognito: cognitoConfig,
   upload: uploadConfig,
   s3: s3Config,
-  serviceSecret: process.env.SERVICE_SECRET || 'your-internal-service-secret',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
 };
 

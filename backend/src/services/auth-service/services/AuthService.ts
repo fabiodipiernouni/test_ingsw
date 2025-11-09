@@ -432,8 +432,23 @@ export class AuthService {
    * Forgot password - Invia codice di reset via email
    */
   async forgotPassword(data: ForgotPasswordDto): Promise<void> {
+
     try {
       const { email } = data;
+
+      // 1. Verifica se l'utente esiste nel DB locale
+      const user = await User.findOne({ where: { email } });
+      
+      if (!user) {
+        throw new NotFoundError('User not found');
+      }
+
+      // 2. Verifica se l'utente è registrato solo con OAuth (senza email/password)
+      // Se linkedProviders non è vuoto e non include 'email', allora l'utente usa solo OAuth
+      if (user.linkedProviders && user.linkedProviders.length > 0) {
+        // L'utente ha solo provider OAuth, non può recuperare la password
+        throw new ForbiddenError('Cannot reset password for accounts registered with social login. Please use your social login provider.');
+      }
 
       const forgotPasswordCommand = new ForgotPasswordCommand({
         ClientId: config.cognito.clientId,
@@ -449,7 +464,7 @@ export class AuthService {
       if (error.name === 'UserNotFoundException') {
         // Per sicurezza, non rivelare che l'utente non esiste
         logger.warn('Password reset requested for non-existent user');
-        return; // Silenzioso
+        throw new NotFoundError('User not found');
       }
 
       if (error.name === 'LimitExceededException') {
