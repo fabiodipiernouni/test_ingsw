@@ -1,3 +1,5 @@
 .idea/
 frontend2/
 beanstalk/
+
+.env*
