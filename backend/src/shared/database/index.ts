@@ -58,6 +58,7 @@ class Database {
       }
     } catch (error) {
       console.error('Unable to connect to the database:', error);
+      console.error("Credentials used:", config.database);
       throw error;
     }
   }

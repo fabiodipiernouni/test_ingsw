@@ -33,9 +33,7 @@ export interface CognitoConfig {
 }
 
 export interface UploadConfig {
-  dir: string;
   maxFileSize: number;
-  allowedImageTypes: string[];
 }
 
 export interface S3Config {
@@ -58,6 +56,5 @@ export interface AppConfig {
   cognito: CognitoConfig;
   upload: UploadConfig;
   s3: S3Config;
-  serviceSecret: string;
   frontendUrl: string;
 }

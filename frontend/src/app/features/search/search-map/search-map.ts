@@ -16,7 +16,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RadiusSearch } from '@service-shared/dto/RadiusSearch';
 import { ListingType } from '@core/services/property/models/types';
 import { GeoPropertyCardDto } from '@core/services/property/dto/GeoPropertyCardDto';
-import { environment } from '@src/environments/environment';
+import { environment } from '@src/environments/';
 
 declare const google: any;
 

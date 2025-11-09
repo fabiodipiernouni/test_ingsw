@@ -9,7 +9,7 @@ import {PropertyCardDto} from '@core/services/property/dto/PropertyCardDto';
 import {PropertyModel} from '@features/properties/models/PropertyModel';
 import {PropertyImageModel} from '@core/services/property/models/PropertyImageModel';
 import {Helper} from '@core/services/property/Utils/helper';
-import {environment} from '@src/environments/environment';
+import {environment} from '@src/environments/';
 import {GetPropertiesCardsRequest} from '@core/services/property/dto/GetPropertiesCardsRequest';
 import {GeoPropertyCardDto} from '@core/services/property/dto/GeoPropertyCardDto';
 import {GetGeoPropertiesCardsRequest} from '@core/services/property/dto/GetGeoPropertiesCardsRequest';

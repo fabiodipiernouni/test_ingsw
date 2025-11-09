@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '@src/environments/environment';
+import { environment } from '@src/environments/';
 import { ApiResponse } from '@service-shared/dto/ApiResponse';
 import { UserResponse } from '@core-services/auth/dto/UserResponse';
 import { PagedResult } from '@service-shared/dto/pagedResult';

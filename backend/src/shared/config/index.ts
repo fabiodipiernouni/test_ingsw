@@ -37,9 +37,7 @@ const cognitoConfig: CognitoConfig = {
 };
 
 const uploadConfig: UploadConfig = {
-  dir: process.env.UPLOAD_DIR || 'uploads',
   maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760'), // 10MB default
-  allowedImageTypes: (process.env.ALLOWED_IMAGE_TYPES || 'image/jpeg,image/png,image/webp').split(',')
 };
 
 const s3Config: S3Config = {
@@ -62,7 +60,6 @@ const config: AppConfig = {
   cognito: cognitoConfig,
   upload: uploadConfig,
   s3: s3Config,
-  serviceSecret: process.env.SERVICE_SECRET || 'your-internal-service-secret',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
 };
 

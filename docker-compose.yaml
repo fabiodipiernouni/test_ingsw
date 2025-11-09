@@ -8,7 +8,7 @@ x-backend-service: &backend-service
 services:
   # --- SERVIZIO FRONTEND ---
   frontend:
-    build:
+    build: # (su beanstalk cancellare la fase di build perché viene fatto il pull dell'immagine da docker hub)
       context: ./frontend
       dockerfile: Dockerfile
     image: dieti25estates/dietiestates25:frontend
@@ -17,17 +17,15 @@ services:
     restart: unless-stopped
 
   # --- SERVIZI BACKEND ---
-  # Solo auth-service costruisce l'immagine backend
+  # Solo auth-service costruisce l'immagine backend 
   auth-service:
     <<: *backend-service
-    build:
+    build:   # (su beanstalk cancellare la fase di build perché viene fatto il pull dell'immagine da docker hub)
       context: ./backend
       dockerfile: Dockerfile
     environment:
       - SERVICE=auth
       - PORT=3001
-    ports:
-      - "3001:3001"
 
   # Gli altri servizi riutilizzano l'immagine
   property-service:
@@ -35,24 +33,18 @@ services:
     environment:
       - SERVICE=property
       - PORT=3002
-    ports:
-      - "3002:3002"
 
   search-service:
     <<: *backend-service
     environment:
       - SERVICE=search
       - PORT=3003
-    ports:
-      - "3003:3003"
 
   notification-service:
     <<: *backend-service
     environment:
       - SERVICE=notification
       - PORT=3004
-    ports:
-      - "3004:3004"
 
   # --- WORKERS BACKEND ---
   email-worker:

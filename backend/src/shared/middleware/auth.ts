@@ -251,23 +251,6 @@ export const requireOwnership = (
 };
 
 /**
- * Service-to-service authentication middleware
- */
-export const authenticateService = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const serviceToken = req.headers['x-service-token'];
-  
-  if (!serviceToken || serviceToken !== appConfig.serviceSecret) {
-    return unauthorizedResponse(res, 'Invalid service token');
-  }
-
-  next();
-};
-
-/**
  * Middleware che controlla se l'utente deve cambiare password
  * Ritorna errore 403 con codice PASSWORD_CHANGE_REQUIRED
  */
