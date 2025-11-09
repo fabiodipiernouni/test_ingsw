@@ -68,14 +68,14 @@ export class AuthController {
 
       // Handle user already exists
       if (error.name === 'UsernameExistsException' ||
-          (error.message && error.message.includes('already exists'))) {
+          error.message?.includes('already exists')) {
         setResponseAsError(res, 'USER_ALREADY_EXISTS', 'An account with this email already exists.', 409);
         return;
       }
 
       // Handle invalid password
       if (error.name === 'InvalidPasswordException' ||
-          (error.message && error.message.includes('password does not conform'))) {
+          error.message?.includes('password does not conform')) {
         setResponseAsError(res, 'INVALID_PASSWORD', 'Password does not meet security requirements. Must be at least 8 characters with letters and numbers.', 400);
         return;
       }
@@ -131,7 +131,7 @@ export class AuthController {
 
       // Handle too many failed attempts
       if (error.name === 'TooManyRequestsException' ||
-          (error.message && error.message.includes('too many'))) {
+          error.message?.includes('too many')) {
         setResponseAsError(res, 'TOO_MANY_ATTEMPTS', 'Too many failed login attempts. Please try again later.', 429);
         return;
       }
@@ -175,20 +175,20 @@ export class AuthController {
 
       // Handle invalid or expired verification code
       if (error.name === 'CodeMismatchException' || 
-          (error.message && error.message.includes('Invalid code provided'))) {
+          error.message?.includes('Invalid code provided')) {
         setResponseAsError(res, 'INVALID_CODE', 'Invalid or expired verification code. Please request a new code.', 400);
         return;
       }
 
       if (error.name === 'ExpiredCodeException' || 
-          (error.message && error.message.includes('code has expired'))) {
+          error.message?.includes('code has expired')) {
         setResponseAsError(res, 'CODE_EXPIRED', 'Verification code has expired. Please request a new code.', 400);
         return;
       }
 
       // Handle invalid password format
       if (error.name === 'InvalidPasswordException' || 
-          (error.message && error.message.includes('password does not conform'))) {
+          error.message?.includes('password does not conform')) {
         setResponseAsError(res, 'INVALID_PASSWORD', 'Password does not meet security requirements. Must be at least 8 characters with letters and numbers.', 400);
         return;
       }
@@ -248,8 +248,8 @@ export class AuthController {
 
       if (error.name === 'NotFoundError' ||
           error.name === 'UserNotFoundException' || 
-          (error.message?.includes('Username/client id combination not found')) ||
-          (error.message?.includes('User not found'))) {
+          error.message?.includes('Username/client id combination not found') ||
+          error.message?.includes('User not found')) {
         setResponseAsNotFound(res, 'User not found. Please check your email or register first.');
         return;
       }
@@ -440,7 +440,7 @@ export class AuthController {
 
       // Handle incorrect current password
       if (error.name === 'NotAuthorizedException' ||
-        (error.message && error.message.includes('Incorrect username or password'))) {
+        error.message?.includes('Incorrect username or password')) {
         setResponseAsError(res, 'INCORRECT_PASSWORD', 'Current password is incorrect.', 401);
         return;
       }
@@ -448,7 +448,7 @@ export class AuthController {
       // Handle invalid new password
 
       if (error.name === 'InvalidPasswordException' ||
-        (error.message && error.message.includes('password does not conform'))) {
+        error.message?.includes('password does not conform')) {
         setResponseAsError(res, 'INVALID_PASSWORD', 'New password does not meet security requirements. Must be at least 8 characters with letters and numbers.', 400);
         return;
       }
@@ -456,7 +456,7 @@ export class AuthController {
       // Handle attempt limit exceeded
 
       if (error.name === 'LimitExceededException' ||
-        (error.message && error.message.includes('Attempt limit exceeded'))) {
+        error.message?.includes('Attempt limit exceeded')) {
         setResponseAsError(res, 'TOO_MANY_ATTEMPTS', 'Too many password change attempts. Please try again later.', 429);
         return;
       }
@@ -752,8 +752,8 @@ export class AuthController {
       // Costruisci GetAgentsRequest dai query params
       const getAgentsRequest: GetAgentsRequest = {
         pagedRequest: {
-          page: req.query.page ? parseInt(req.query.page as string) : 1,
-          limit: Math.min(req.query.limit ? parseInt(req.query.limit as string) : 20, 100),
+          page: req.query.page ? Number.parseInt(req.query.page as string) : 1,
+          limit: Math.min(req.query.limit ? Number.parseInt(req.query.limit as string) : 20, 100),
           sortBy: (req.query.sortBy as string) || 'createdAt',
           sortOrder: (req.query.sortOrder as 'ASC' | 'DESC') || 'DESC'
         }
@@ -797,8 +797,8 @@ export class AuthController {
       // Costruisci GetAdminsRequest dai query params
       const getAdminsRequest: GetAdminsRequest = {
         pagedRequest: {
-          page: req.query.page ? parseInt(req.query.page as string) : 1,
-          limit: Math.min(req.query.limit ? parseInt(req.query.limit as string) : 20, 100),
+          page: req.query.page ? Number.parseInt(req.query.page as string) : 1,
+          limit: Math.min(req.query.limit ? Number.parseInt(req.query.limit as string) : 20, 100),
           sortBy: (req.query.sortBy as string) || 'createdAt',
           sortOrder: (req.query.sortOrder as 'ASC' | 'DESC') || 'DESC'
         }

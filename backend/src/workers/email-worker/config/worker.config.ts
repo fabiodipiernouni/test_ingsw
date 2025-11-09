@@ -20,7 +20,7 @@ export interface EmailConfig {
  */
 export const emailConfig: EmailConfig = {
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
+  port: Number.parseInt(process.env.SMTP_PORT || '587'),
   secure: process.env.SMTP_PORT === '465',
   user: process.env.SMTP_USER || '',
   password: process.env.SMTP_PASSWORD || '',
@@ -48,9 +48,9 @@ export const emailWorkerConfig: WorkerConfig = {
 export const emailWorkerOptions = {
 
   // Delay in millisecondi tra un invio e l'altro (rate limiting)
-  sendDelay: parseInt(process.env.EMAIL_WORKER_SEND_DELAY || '1000'),
+  sendDelay: Number.parseInt(process.env.EMAIL_WORKER_SEND_DELAY || '1000'),
   
   // Numero di notifiche da processare per batch
-  batchSize: parseInt(process.env.EMAIL_WORKER_BATCH_SIZE || '10'),
+  batchSize: Number.parseInt(process.env.EMAIL_WORKER_BATCH_SIZE || '10'),
   
 };

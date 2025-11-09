@@ -3,12 +3,11 @@ import { AuthenticatedRequest } from '@shared/dto/AuthenticatedRequest';
 import { NotificationService } from '@notification/services/NotificationService';
 import { GetNotificationsRequest } from '@notification/dto/GetNotificationsRequest';
 import { SendPromotionalMessageDto } from '@notification/dto/SendPromotionalMessageDto';
-import { setResponseAsSuccess, setResponseAsError, setResponseAsValidationError } from '@shared/utils/helpers';
+import { setResponseAsSuccess, setResponseAsError, setResponseAsValidationError, formatValidationErrors } from '@shared/utils/helpers';
 import logger from '@shared/utils/logger';
 import { NotificationType } from '@shared/types/notification.types';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { formatValidationErrors } from '@shared/utils/helpers';
 
 const notificationService = new NotificationService();
 
@@ -28,8 +27,8 @@ export class NotificationController {
         try {
             const getNotificationsRequest: GetNotificationsRequest = {
                 pagedRequest: {
-                    page: req.query.page ? parseInt(req.query.page as string) : 1,
-                    limit: Math.min(req.query.limit ? parseInt(req.query.limit as string) : 20, 100),
+                    page: req.query.page ? Number.parseInt(req.query.page as string) : 1,
+                    limit: Math.min(req.query.limit ? Number.parseInt(req.query.limit as string) : 20, 100),
                     sortBy: (req.query.sortBy as string) || 'createdAt',
                     sortOrder: (req.query.sortOrder as 'ASC' | 'DESC') || 'DESC'
                 },

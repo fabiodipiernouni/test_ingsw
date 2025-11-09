@@ -22,7 +22,7 @@ export class NotificationService {
         // Recupera l'agenzia del creatore se presente
         let agency: { id: string; name: string } | undefined;
         
-        if (notification.creator && notification.creator.agency) {
+        if (notification.creator?.agency) {
             agency = {
                 id: notification.creator.agency.id,
                 name: notification.creator.agency.name

@@ -102,5 +102,4 @@ export const getDatabase = (): Sequelize => {
   return database.getInstance();
 };
 
-export { Sequelize };
 export default database;

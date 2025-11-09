@@ -64,25 +64,23 @@ export class SearchMap implements AfterViewInit, OnDestroy {
    */
   private readonly ZOOM_LEVELS: ReadonlyMap<number, number> = new Map([
     [18, 1],      // 1km - quartiere (ZOOM MINIMO CONSENTITO)
-    [17, 2],      // 2km
-    [16, 3],      // 3km
-    [15, 5],      // 5km - città piccola
-    [14, 8],      // 8km
-    [13, 10],     // 10km - città media
-    [12, 15],     // 15km
-    [11, 25],     // 25km - area metropolitana
-    [10, 50],     // 50km - provincia
-    [9, 75],      // 75km
-    [8, 100],     // 100km - regione piccola
-    [7, 150],     // 150km
-    [6, 200],     // 200km - regione
-    [5, 300],     // 300km - più regioni
-    [4, 500],     // 500km - mezza Italia
-    [3, 1000],    // 1000km - Italia intera
+    [17, 3],      // 3km
+    [16, 5],      // 5km - città piccola
+    [15, 10],     // 10km - città media
+    [14, 15],     // 15km
+    [13, 25],     // 25km - area metropolitana
+    [12, 50],     // 50km - provincia
+    [11, 75],      // 75km
+    [10, 100],     // 100km - regione piccola
+    [9, 150],     // 150km
+    [8, 200],     // 200km - regione
+    [7, 300],     // 300km - più regioni
+    [6, 500],     // 500km - mezza Italia
+    [5, 1000],    // 1000km - Italia intera
   ]);
 
   private readonly MIN_ZOOM = 18; // 1km - limite minimo
-  private readonly MAX_ZOOM = 3;  // 1000km - limite massimo
+  private readonly MAX_ZOOM = 5;  // 1000km - limite massimo
 
   constructor() {
 

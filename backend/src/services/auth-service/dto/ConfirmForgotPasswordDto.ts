@@ -1,5 +1,4 @@
 import { IsString, MinLength, Matches, IsEmail } from 'class-validator';
-import { Transform } from 'class-transformer';
 import { ToLowerCase, Trim } from '@shared/decorators';
 
 export class ConfirmForgotPasswordDto {

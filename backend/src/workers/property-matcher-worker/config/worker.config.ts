@@ -22,10 +22,10 @@ export const propertyMatcherWorkerConfig = {
 
 export const propertyMatcherWorkerOptions = {
   // Numero massimo di ricerche salvate da processare per batch
-  savedSearchBatchSize: parseInt(process.env.PROPERTY_MATCHER_SAVED_SEARCH_BATCH_SIZE || '50', 10),
+  savedSearchBatchSize: Number.parseInt(process.env.PROPERTY_MATCHER_SAVED_SEARCH_BATCH_SIZE || '50', 10),
   
   // Delay in millisecondi tra i batch (per non sovraccaricare il DB)
-  batchDelay: parseInt(process.env.PROPERTY_MATCHER_BATCH_DELAY || '100', 10)
+  batchDelay: Number.parseInt(process.env.PROPERTY_MATCHER_BATCH_DELAY || '100', 10)
 
 };
 

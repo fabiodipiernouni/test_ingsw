@@ -1,7 +1,6 @@
 import { SavedSearch, User } from '@shared/database/models';
 import { SavedSearchCreateDto } from '../dto/SavedSearchCreateDto';
 import { SavedSearchResponse } from '../dto/SavedSearchResponse';
-import { SavedSearchFilters } from '../dto/SavedSearchFilters';
 import logger from '@shared/utils/logger';
 
 class NotFoundError extends Error {
@@ -113,7 +112,7 @@ export class SearchService {
       console.log(userModel);
       console.log(userModel.enabledNotificationTypes);
 
-      if (isNotificationEnabled && !(userModel.enabledNotificationTypes.some(type => type === 'new_property_match_saved_search'))) {
+      if (isNotificationEnabled && !userModel.enabledNotificationTypes.includes('new_property_match_saved_search')) {
         throw new NotificationsDisabledError('User has disabled notifications for new property matches on saved searches');
       }
 

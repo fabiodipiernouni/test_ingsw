@@ -66,3 +66,6 @@ pids/
 
 # Data
 data/
+
+# SonarQube
+.scannerwork/

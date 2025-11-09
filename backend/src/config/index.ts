@@ -25,27 +25,27 @@ const config = {
   },
 
   auth: {
-    port: parseInt(process.env.AUTH_SERVICE_PORT || '3001'),
+    port: Number.parseInt(process.env.AUTH_SERVICE_PORT || '3001'),
   },
 
   property: {
-    port: parseInt(process.env.PROPERTY_SERVICE_PORT || '3002')
+    port: Number.parseInt(process.env.PROPERTY_SERVICE_PORT || '3002')
   },
 
   search: {
-    port: parseInt(process.env.SEARCH_SERVICE_PORT || '3003')
+    port: Number.parseInt(process.env.SEARCH_SERVICE_PORT || '3003')
   },
 
   user: {
-    port: parseInt(process.env.USER_SERVICE_PORT || '3004')
+    port: Number.parseInt(process.env.USER_SERVICE_PORT || '3004')
   },
 
   notification: {
-    port: parseInt(process.env.NOTIFICATION_SERVICE_PORT || '3005')
+    port: Number.parseInt(process.env.NOTIFICATION_SERVICE_PORT || '3005')
   },
 
   upload: {
-    maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760'), // 10MB
+    maxFileSize: Number.parseInt(process.env.MAX_FILE_SIZE || '10485760'), // 10MB
   },
 
   s3: {
@@ -53,7 +53,7 @@ const config = {
     region: process.env.AWS_REGION || 'eu-south-1',
     accessKeyId: process.env.AWS_S3_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.AWS_S3_SECRET_ACCESS_KEY || '',
-    signedUrlExpiration: parseInt(process.env.S3_SIGNED_URL_EXPIRATION || '3600'), // 1 ora
+    signedUrlExpiration: Number.parseInt(process.env.S3_SIGNED_URL_EXPIRATION || '3600'), // 1 ora
     imageSizes: {
       small: { width: 400, height: 300, quality: 80 },
       medium: { width: 800, height: 600, quality: 85 },

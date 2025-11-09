@@ -84,6 +84,7 @@
   "devDependencies": {
     "@faker-js/faker": "^10.0.0",
     "@openapitools/openapi-generator-cli": "^2.7.0",
+    "@sonar/scan": "^4.3.2",
     "@types/jest": "^29.5.7",
     "@types/js-yaml": "^4.0.9",
     "@types/multer": "^2.0.0",

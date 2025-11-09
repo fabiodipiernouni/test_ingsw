@@ -842,7 +842,7 @@ export class AuthService {
       }
 
       if (error.name === 'UserNotFoundException' ||
-        (error.message && error.message.includes('Username/client id combination not found'))) {
+        error.message?.includes('Username/client id combination not found')) {
         throw new NotFoundError('User not found. Please check your email or register first.');
       }
 
