@@ -92,7 +92,7 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
   // Step 1: Basic Information
   basicInfoForm: FormGroup = this.fb.group({
     title: ['', [Validators.required, Validators.minLength(10)]],
-    description: ['', [Validators.required, Validators.minLength(50)]],
+    description: ['', [Validators.required, Validators.minLength(50), Validators.maxLength(2000)]],
     price: [null, [Validators.required, Validators.min(1)]],
     propertyType: ['', Validators.required],
     listingType: ['', Validators.required]
@@ -773,6 +773,9 @@ export class PropertyUpload implements OnDestroy, AfterViewInit {
     }
     if (control?.hasError('minlength')) {
       return `Minimo ${control.getError('minlength').requiredLength} caratteri`;
+    }
+    if (control?.hasError('maxlength')) {
+      return `Massimo ${control.getError('maxlength').requiredLength} caratteri`;
     }
     if (control?.hasError('min')) {
       return `Valore minimo: ${control.getError('min').min}`;

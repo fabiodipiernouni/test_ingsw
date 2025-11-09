@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal, AfterViewInit } from '@angular/core';
+import { Component, computed, OnInit, OnDestroy, inject, signal, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
@@ -15,6 +15,7 @@ import { PropertyService } from '@core/services/property/property.service';
 import { PropertyModel } from '@features/properties/models/PropertyModel';
 import { PropertyImageModel } from '@core/services/property/models/PropertyImageModel';
 import { PropertyLocationMap } from './property-location-map/property-location-map';
+import { AuthService } from '@src/app/core/services/auth/auth.service';
 
 @Component({
   selector: 'app-property-detail',
@@ -37,6 +38,7 @@ export class PropertyDetail implements OnInit, AfterViewInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly propertyService = inject(PropertyService);
+  private readonly authService = inject(AuthService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroy$ = new Subject<void>();
 
@@ -76,6 +78,9 @@ export class PropertyDetail implements OnInit, AfterViewInit, OnDestroy {
     }
 
   }
+
+  isAuthenticated = this.authService.isAuthenticated;
+  isClient = computed(() => this.authService.isClient());
 
   private async loadProperty(id: string): Promise<void> {
     this.isLoading.set(true);

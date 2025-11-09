@@ -269,6 +269,7 @@
                 <mat-divider></mat-divider>
               }
 
+              @if(!isAuthenticated() || isClient()) {
               <div class="contact-actions">
                 <button mat-raised-button color="primary" (click)="contactAgent()" class="full-width">
                   <mat-icon>mail</mat-icon>
@@ -279,8 +280,8 @@
                   Prenota una Visita
                 </button>
               </div>
-
               <mat-divider></mat-divider>
+              }
 
               <div class="secondary-actions">
                 <button mat-button (click)="addToFavorites()" class="full-width">
